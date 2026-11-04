@@ -8,7 +8,7 @@ export default function GoldenEggReward() {
     {
       id: 1,
       name: 'Incubator Alpha',
-      badge: 'High Yield',
+      badge: 'High Yield Flock',
       reward: '+5 Bonus Eggs (Rs. 150 Value)',
       icon: 'fa-egg',
       color: '#c9f36a'
@@ -16,15 +16,15 @@ export default function GoldenEggReward() {
     {
       id: 2,
       name: 'Imperial Golden Nest',
-      badge: 'VIP Mystery',
-      reward: '2x Speed Turbo Booster Token',
+      badge: 'VIP Mystery Harvest',
+      reward: '2x Speed Turbo Booster',
       icon: 'fa-bolt-lightning',
       color: '#ffd700'
     },
     {
       id: 3,
       name: 'Celestial Roost',
-      badge: 'Daily Cashback',
+      badge: 'Daily Farm Cashback',
       reward: 'Rs. 250 Farm Cash Voucher',
       icon: 'fa-coins',
       color: '#38bdf8'
@@ -88,7 +88,7 @@ export default function GoldenEggReward() {
                   style={
                     isCracked
                       ? {
-                          transform: 'scale(1.1) rotate(6deg)',
+                          transform: 'scale(1.08) rotate(4deg)',
                           boxShadow: '0 0 35px rgba(201, 243, 106, 0.8), inset 0 0 15px #fff'
                         }
                       : {}
@@ -101,18 +101,20 @@ export default function GoldenEggReward() {
                   )}
                 </div>
 
-                <div className="bounty-card-title">{egg.name}</div>
-                <div className="bounty-card-sub">{egg.badge}</div>
+                <div className="bounty-card-info" style={{ width: '100%' }}>
+                  <div className="bounty-card-title">{egg.name}</div>
+                  <div className="bounty-card-sub">{egg.badge}</div>
 
-                {isCracked ? (
-                  <div className="bounty-reveal-pill">
-                    <i className={`fa-solid ${egg.icon}`}></i> {egg.reward}
-                  </div>
-                ) : (
-                  <div className="bounty-tap-hint">
-                    <i className="fa-solid fa-hand-pointer"></i> Tap to Crack
-                  </div>
-                )}
+                  {isCracked ? (
+                    <div className="bounty-reveal-pill">
+                      <i className={`fa-solid ${egg.icon}`}></i> {egg.reward}
+                    </div>
+                  ) : (
+                    <div className="bounty-tap-hint">
+                      <i className="fa-solid fa-hand-pointer"></i> Tap to Crack
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}
@@ -124,26 +126,13 @@ export default function GoldenEggReward() {
             {!claimed ? (
               <button
                 type="button"
-                className="btn btn-lime"
-                style={{ padding: '12px 32px', fontSize: '15px' }}
+                className="bounty-claim-btn"
                 onClick={handleClaim}
               >
                 <i className="fa-solid fa-circle-check"></i> Claim Bounty to Wallet
               </button>
             ) : (
-              <div
-                style={{
-                  background: 'rgba(34, 197, 94, 0.2)',
-                  border: '1px solid #22c55e',
-                  color: '#4ade80',
-                  padding: '12px 28px',
-                  borderRadius: '12px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}
-              >
+              <div className="bounty-claimed-alert">
                 <i className="fa-solid fa-champagne-glasses"></i> Bonus successfully credited to your farm account!
               </div>
             )}

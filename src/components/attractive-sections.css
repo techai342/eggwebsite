@@ -1,5 +1,6 @@
 /* ========================================================================= */
 /* ATTRACTIVE SECTIONS STYLING: TICKER, IOT TELEMETRY & GOLDEN EGG CRACKER  */
+/* FULLY MOBILE-RESPONSIVE & TOUCH-OPTIMIZED FOR ALL SCREEN SIZES           */
 /* ========================================================================= */
 
 /* --- 1. LIVE HARVEST & PAYOUT TICKER --- */
@@ -7,10 +8,11 @@
   background: var(--deep);
   border-top: 1px solid rgba(201, 243, 106, 0.15);
   border-bottom: 1px solid rgba(201, 243, 106, 0.15);
-  padding: 14px 0;
+  padding: 12px 0;
   overflow: hidden;
   position: relative;
   box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.35);
+  width: 100%;
 }
 
 .ticker-section::before,
@@ -19,7 +21,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 90px;
+  width: 60px;
   z-index: 5;
   pointer-events: none;
 }
@@ -37,14 +39,14 @@
 .ticker-wrapper {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
 }
 
 .ticker-badge-lead {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: rgba(201, 243, 106, 0.12);
   border: 1px solid rgba(201, 243, 106, 0.3);
   padding: 6px 14px;
@@ -53,8 +55,9 @@
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
-  margin-left: 20px;
+  margin-left: 16px;
   letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 .ticker-live-dot {
@@ -74,8 +77,8 @@
 .ticker-track-scroller {
   display: flex;
   align-items: center;
-  gap: 22px;
-  animation: ticker-slide 32s linear infinite;
+  gap: 16px;
+  animation: ticker-slide 30s linear infinite;
   white-space: nowrap;
   width: max-content;
 }
@@ -92,15 +95,16 @@
 .ticker-item {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 7px 16px;
+  padding: 6px 14px;
   border-radius: 999px;
   color: #e5e7eb;
   font-size: 13px;
   backdrop-filter: blur(8px);
   transition: all 0.25s ease;
+  flex-shrink: 0;
 }
 
 .ticker-item:hover {
@@ -135,17 +139,20 @@
   background: linear-gradient(180deg, #f8f7f0 0%, #edf1e6 100%);
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .telemetry-inner {
   max-width: 1200px;
   margin: auto;
+  box-sizing: border-box;
 }
 
 .telemetry-header {
   text-align: center;
   max-width: 760px;
-  margin: 0 auto 46px;
+  margin: 0 auto 40px;
+  padding: 0 10px;
 }
 
 .telemetry-eyebrow {
@@ -161,16 +168,16 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .telemetry-title {
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(28px, 4vw, 42px);
+  font-size: clamp(24px, 4vw, 42px);
   font-weight: 800;
   color: var(--deep);
-  line-height: 1.18;
-  margin-bottom: 14px;
+  line-height: 1.2;
+  margin-bottom: 12px;
 }
 
 .telemetry-title-highlight {
@@ -180,7 +187,7 @@
 }
 
 .telemetry-desc {
-  font-size: 16px;
+  font-size: clamp(14px, 2vw, 16px);
   color: var(--muted);
   line-height: 1.6;
 }
@@ -194,6 +201,7 @@
   overflow: hidden;
   position: relative;
   color: #f8f7f0;
+  box-sizing: border-box;
 }
 
 .telemetry-topbar {
@@ -201,9 +209,9 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
-  padding: 20px 28px;
-  background: rgba(0, 0, 0, 0.25);
+  gap: 14px;
+  padding: 18px 24px;
+  background: rgba(0, 0, 0, 0.28);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -215,12 +223,13 @@
   padding: 4px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  max-width: 100%;
 }
 
 .telemetry-tab-btn {
   background: transparent;
   border: none;
-  padding: 8px 18px;
+  padding: 8px 16px;
   border-radius: 10px;
   color: #9ca3af;
   font-size: 13px;
@@ -229,6 +238,8 @@
   display: flex;
   align-items: center;
   gap: 7px;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .telemetry-tab-btn.active {
@@ -240,7 +251,8 @@
 .telemetry-mode-toggle {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .telemetry-pill-status {
@@ -254,6 +266,7 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .telemetry-mode-btn {
@@ -268,6 +281,8 @@
   align-items: center;
   gap: 6px;
   transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .telemetry-mode-btn:hover {
@@ -281,29 +296,19 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  padding: 28px;
-}
-
-@media (max-width: 992px) {
-  .telemetry-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .telemetry-grid {
-    grid-template-columns: 1fr;
-  }
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 .telemetry-gauge-card {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  padding: 22px;
+  padding: 20px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .telemetry-gauge-card:hover {
@@ -333,19 +338,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .gauge-icon-wrap {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   background: rgba(201, 243, 106, 0.12);
   color: var(--lime);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 17px;
+  flex-shrink: 0;
 }
 
 .gauge-pill-badge {
@@ -355,25 +361,27 @@
   background: rgba(255, 255, 255, 0.08);
   color: #d1d5db;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .gauge-value-row {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .gauge-val-big {
   font-family: 'Manrope', sans-serif;
-  font-size: 32px;
+  font-size: clamp(24px, 3.5vw, 32px);
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .gauge-val-unit {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--lime);
   font-weight: 600;
 }
@@ -381,16 +389,17 @@
 .gauge-label {
   font-size: 13px;
   color: #9ca3af;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  line-height: 1.35;
 }
 
 .gauge-progress-track {
   width: 100%;
-  height: 8px;
+  height: 7px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .gauge-progress-bar {
@@ -417,11 +426,12 @@
 
 /* --- 3. GOLDEN EGG MYSTERY BOUNTY & CRACKER --- */
 .bounty-section {
-  padding: 95px 24px;
+  padding: 85px 24px;
   background: linear-gradient(180deg, #0d2c20 0%, #153d2b 100%);
   color: #f8f7f0;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .bounty-ambient-stars {
@@ -446,6 +456,7 @@
   position: relative;
   z-index: 2;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .bounty-eyebrow {
@@ -461,15 +472,16 @@
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .bounty-title {
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(28px, 4vw, 44px);
+  font-size: clamp(24px, 4vw, 44px);
   font-weight: 800;
   color: #ffffff;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  line-height: 1.2;
 }
 
 .bounty-title-highlight {
@@ -478,34 +490,27 @@
 }
 
 .bounty-desc {
-  font-size: 16px;
+  font-size: clamp(14px, 2vw, 16px);
   color: #9ca3af;
   max-width: 650px;
-  margin: 0 auto 50px;
+  margin: 0 auto 40px;
   line-height: 1.6;
+  padding: 0 10px;
 }
 
 .bounty-eggs-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  margin-bottom: 40px;
-}
-
-@media (max-width: 768px) {
-  .bounty-eggs-grid {
-    grid-template-columns: 1fr;
-    max-width: 360px;
-    margin-left: auto;
-    margin-right: auto;
-  }
+  gap: 24px;
+  margin-bottom: 34px;
+  box-sizing: border-box;
 }
 
 .bounty-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(201, 243, 106, 0.2);
   border-radius: 24px;
-  padding: 34px 22px;
+  padding: 30px 18px;
   cursor: pointer;
   position: relative;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -513,19 +518,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .bounty-card:hover {
   background: rgba(201, 243, 106, 0.08);
   border-color: rgba(201, 243, 106, 0.6);
-  transform: translateY(-8px);
+  transform: translateY(-6px);
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(201, 243, 106, 0.2);
 }
 
 .bounty-card.cracked {
   border-color: #ffd700;
   background: rgba(251, 191, 36, 0.1);
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: 0 16px 35px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 215, 0, 0.3);
 }
 
@@ -549,8 +556,8 @@
 }
 
 .egg-3d-visual {
-  width: 110px;
-  height: 145px;
+  width: 100px;
+  height: 135px;
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
   background: radial-gradient(circle at 35% 30%, #fffbe6 0%, #ffd700 40%, #eab308 70%, #92400e 100%);
   box-shadow: 
@@ -558,19 +565,20 @@
     inset 6px 8px 15px rgba(255, 255, 255, 0.8),
     0 15px 30px rgba(0, 0, 0, 0.4),
     0 0 20px rgba(251, 191, 36, 0.5);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   position: relative;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   animation: egg-float 3.6s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 .bounty-card:hover .egg-3d-visual {
-  transform: scale(1.08) rotate(4deg);
+  transform: scale(1.06) rotate(4deg);
 }
 
 @keyframes egg-float {
   0% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(-3deg); }
+  50% { transform: translateY(-8px) rotate(-3deg); }
   100% { transform: translateY(0px) rotate(0deg); }
 }
 
@@ -580,7 +588,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 38px;
+  font-size: 34px;
   color: #ffffff;
   text-shadow: 0 0 10px rgba(0,0,0,0.8);
   animation: crack-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -593,16 +601,16 @@
 
 .bounty-card-title {
   font-family: 'Manrope', sans-serif;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 700;
   color: #ffffff;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .bounty-card-sub {
   font-size: 13px;
   color: #9ca3af;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .bounty-reveal-pill {
@@ -611,13 +619,14 @@
   gap: 6px;
   background: var(--lime);
   color: var(--deep);
-  padding: 7px 18px;
+  padding: 7px 16px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.3px;
   box-shadow: 0 4px 14px rgba(201, 243, 106, 0.35);
   animation: reveal-pulse 0.4s ease;
+  line-height: 1.25;
 }
 
 @keyframes reveal-pulse {
@@ -643,15 +652,49 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 14px;
   flex-wrap: wrap;
+}
+
+.bounty-claim-btn {
+  background: var(--lime);
+  color: var(--deep);
+  border: none;
+  font-weight: 800;
+  padding: 13px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 18px rgba(201, 243, 106, 0.35);
+  transition: all 0.25s ease;
+}
+
+.bounty-claim-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(201, 243, 106, 0.5);
+}
+
+.bounty-claimed-alert {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid #22c55e;
+  color: #4ade80;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .bounty-reset-btn {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #ffffff;
-  padding: 12px 24px;
+  padding: 12px 22px;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
@@ -665,4 +708,267 @@
 .bounty-reset-btn:hover {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================================================= */
+/* DEDICATED RESPONSIVE BREAKPOINTS (TABLETS, MOBILES & SMALL SCREENS)       */
+/* ========================================================================= */
+
+/* --- TABLET (max-width: 992px) --- */
+@media (max-width: 992px) {
+  .telemetry-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 20px;
+  }
+}
+
+/* --- MOBILE LARGE / LANDSCAPE (max-width: 768px) --- */
+@media (max-width: 768px) {
+  .ticker-section {
+    padding: 10px 0;
+  }
+
+  .ticker-badge-lead {
+    font-size: 11px;
+    padding: 4px 10px;
+    margin-left: 10px;
+    gap: 6px;
+  }
+
+  .ticker-item {
+    font-size: 12px;
+    padding: 5px 12px;
+    gap: 6px;
+  }
+
+  /* Telemetry adjustments */
+  .telemetry-section {
+    padding: 55px 16px;
+  }
+
+  .telemetry-board {
+    border-radius: 20px;
+  }
+
+  .telemetry-topbar {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .telemetry-coop-tabs {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    justify-content: space-between;
+  }
+
+  .telemetry-coop-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .telemetry-tab-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .telemetry-mode-toggle {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .telemetry-pill-status {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .telemetry-mode-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  /* Bounty adjustments */
+  .bounty-section {
+    padding: 55px 16px;
+  }
+
+  .bounty-eggs-grid {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+    gap: 16px;
+  }
+
+  .bounty-card {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    padding: 16px 20px;
+    gap: 18px;
+    border-radius: 20px;
+  }
+
+  .bounty-card:hover {
+    transform: translateY(-3px);
+  }
+
+  .egg-3d-visual {
+    width: 75px;
+    height: 100px;
+    margin-bottom: 0;
+  }
+
+  .bounty-card-title {
+    font-size: 17px;
+    margin-bottom: 4px;
+  }
+
+  .bounty-card-sub {
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+
+  .bounty-reveal-pill {
+    font-size: 12px;
+    padding: 6px 14px;
+  }
+
+  .bounty-actions-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bounty-claim-btn,
+  .bounty-reset-btn,
+  .bounty-claimed-alert {
+    width: 100%;
+    max-width: 340px;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+/* --- MOBILE SMALL / STANDARD (max-width: 540px) --- */
+@media (max-width: 540px) {
+  .telemetry-section {
+    padding: 42px 12px;
+  }
+
+  .telemetry-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .telemetry-gauge-card {
+    padding: 14px 12px;
+    border-radius: 16px;
+  }
+
+  .gauge-head {
+    margin-bottom: 10px;
+  }
+
+  .gauge-icon-wrap {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .gauge-pill-badge {
+    font-size: 9.5px;
+    padding: 3px 7px;
+  }
+
+  .gauge-val-big {
+    font-size: 22px;
+  }
+
+  .gauge-val-unit {
+    font-size: 12px;
+  }
+
+  .gauge-label {
+    font-size: 11px;
+    margin-bottom: 8px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .gauge-progress-track {
+    height: 5px;
+    margin-bottom: 8px;
+  }
+
+  .gauge-footer-note {
+    font-size: 10.5px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  /* Bounty Horizontal Card on compact mobile */
+  .bounty-card {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .egg-3d-visual {
+    width: 65px;
+    height: 88px;
+  }
+
+  .bounty-card-title {
+    font-size: 15px;
+  }
+
+  .bounty-card-sub {
+    font-size: 11.5px;
+  }
+
+  .bounty-tap-hint {
+    font-size: 12px;
+  }
+
+  .bounty-reveal-pill {
+    font-size: 11.5px;
+    padding: 5px 12px;
+  }
+}
+
+/* --- ULTRA COMPACT MOBILE (max-width: 375px) --- */
+@media (max-width: 375px) {
+  .telemetry-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .telemetry-gauge-card {
+    padding: 16px 14px;
+  }
+
+  .gauge-footer-note {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .bounty-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 14px;
+  }
+
+  .egg-3d-visual {
+    margin-bottom: 14px;
+  }
 }
