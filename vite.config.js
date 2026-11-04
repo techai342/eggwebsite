@@ -8,6 +8,13 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    open: false
+    open: false,
+    watch: {
+      ignored: [
+        '**/rawafiles/**',
+        '**/Alkram Meta Eggs _ Home_files/**',
+        '**/*_files/**'
+      ]
+    }
   }
 })
