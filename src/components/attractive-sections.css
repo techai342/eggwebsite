@@ -1,0 +1,668 @@
+/* ========================================================================= */
+/* ATTRACTIVE SECTIONS STYLING: TICKER, IOT TELEMETRY & GOLDEN EGG CRACKER  */
+/* ========================================================================= */
+
+/* --- 1. LIVE HARVEST & PAYOUT TICKER --- */
+.ticker-section {
+  background: var(--deep);
+  border-top: 1px solid rgba(201, 243, 106, 0.15);
+  border-bottom: 1px solid rgba(201, 243, 106, 0.15);
+  padding: 14px 0;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.ticker-section::before,
+.ticker-section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 90px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.ticker-section::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--deep), transparent);
+}
+
+.ticker-section::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--deep), transparent);
+}
+
+.ticker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.ticker-badge-lead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(201, 243, 106, 0.12);
+  border: 1px solid rgba(201, 243, 106, 0.3);
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: var(--lime);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-left: 20px;
+  letter-spacing: 0.5px;
+}
+
+.ticker-live-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #22c55e;
+  animation: ticker-pulse 1.4s infinite alternate;
+}
+
+@keyframes ticker-pulse {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 14px #22c55e; }
+}
+
+.ticker-track-scroller {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  animation: ticker-slide 32s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+
+.ticker-track-scroller:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 7px 16px;
+  border-radius: 999px;
+  color: #e5e7eb;
+  font-size: 13px;
+  backdrop-filter: blur(8px);
+  transition: all 0.25s ease;
+}
+
+.ticker-item:hover {
+  background: rgba(201, 243, 106, 0.12);
+  border-color: rgba(201, 243, 106, 0.4);
+  transform: translateY(-1px);
+}
+
+.ticker-item-user {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.ticker-item-action {
+  color: #9ca3af;
+}
+
+.ticker-item-amount {
+  color: var(--lime);
+  font-weight: 700;
+}
+
+.ticker-item-time {
+  font-size: 11px;
+  color: #6b7280;
+  margin-left: 2px;
+}
+
+/* --- 2. IOT SMART COOP TELEMETRY DASHBOARD --- */
+.telemetry-section {
+  padding: 85px 24px;
+  background: linear-gradient(180deg, #f8f7f0 0%, #edf1e6 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.telemetry-inner {
+  max-width: 1200px;
+  margin: auto;
+}
+
+.telemetry-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 46px;
+}
+
+.telemetry-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(21, 61, 43, 0.08);
+  border: 1px solid rgba(21, 61, 43, 0.14);
+  color: var(--forest);
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.telemetry-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800;
+  color: var(--deep);
+  line-height: 1.18;
+  margin-bottom: 14px;
+}
+
+.telemetry-title-highlight {
+  background: linear-gradient(135deg, var(--forest) 0%, var(--green) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.telemetry-desc {
+  font-size: 16px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Telemetry Dashboard Frame */
+.telemetry-board {
+  background: var(--deep);
+  border-radius: 28px;
+  border: 1px solid rgba(201, 243, 106, 0.2);
+  box-shadow: 0 24px 60px rgba(13, 44, 32, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  position: relative;
+  color: #f8f7f0;
+}
+
+.telemetry-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px 28px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.telemetry-coop-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.telemetry-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 10px;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.telemetry-tab-btn.active {
+  background: var(--green);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(40, 115, 74, 0.4);
+}
+
+.telemetry-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.telemetry-pill-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.telemetry-mode-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.telemetry-mode-btn:hover {
+  background: rgba(201, 243, 106, 0.2);
+  border-color: var(--lime);
+  color: var(--lime);
+}
+
+/* Telemetry Grid of Gauges */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  padding: 28px;
+}
+
+@media (max-width: 992px) {
+  .telemetry-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.telemetry-gauge-card {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 22px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.telemetry-gauge-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(201, 243, 106, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25);
+}
+
+.telemetry-gauge-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lime), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.telemetry-gauge-card:hover::before {
+  opacity: 1;
+}
+
+.gauge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.gauge-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(201, 243, 106, 0.12);
+  color: var(--lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.gauge-pill-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
+  font-weight: 600;
+}
+
+.gauge-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gauge-val-big {
+  font-family: 'Manrope', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.gauge-val-unit {
+  font-size: 15px;
+  color: var(--lime);
+  font-weight: 600;
+}
+
+.gauge-label {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 14px;
+}
+
+.gauge-progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.gauge-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gauge-footer-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.gauge-status-active {
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+/* --- 3. GOLDEN EGG MYSTERY BOUNTY & CRACKER --- */
+.bounty-section {
+  padding: 95px 24px;
+  background: linear-gradient(180deg, #0d2c20 0%, #153d2b 100%);
+  color: #f8f7f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.bounty-ambient-stars {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, #c9f36a, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 140px 180px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 280px 70px, #ffd700, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 450px 240px, #c9f36a, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 620px 120px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 800px 320px, #ffd700, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 800px 400px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.bounty-inner {
+  max-width: 1140px;
+  margin: auto;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.bounty-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(201, 243, 106, 0.14);
+  border: 1px solid rgba(201, 243, 106, 0.3);
+  color: var(--lime);
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.bounty-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.bounty-title-highlight {
+  color: var(--lime);
+  text-shadow: 0 0 25px rgba(201, 243, 106, 0.45);
+}
+
+.bounty-desc {
+  font-size: 16px;
+  color: #9ca3af;
+  max-width: 650px;
+  margin: 0 auto 50px;
+  line-height: 1.6;
+}
+
+.bounty-eggs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 768px) {
+  .bounty-eggs-grid {
+    grid-template-columns: 1fr;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.bounty-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(201, 243, 106, 0.2);
+  border-radius: 24px;
+  padding: 34px 22px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bounty-card:hover {
+  background: rgba(201, 243, 106, 0.08);
+  border-color: rgba(201, 243, 106, 0.6);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(201, 243, 106, 0.2);
+}
+
+.bounty-card.cracked {
+  border-color: #ffd700;
+  background: rgba(251, 191, 36, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 215, 0, 0.3);
+}
+
+.egg-aura-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 243, 106, 0.35) 0%, transparent 70%);
+  filter: blur(14px);
+  pointer-events: none;
+  animation: egg-glow-pulse 3s infinite alternate;
+}
+
+@keyframes egg-glow-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
+}
+
+.egg-3d-visual {
+  width: 110px;
+  height: 145px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 35% 30%, #fffbe6 0%, #ffd700 40%, #eab308 70%, #92400e 100%);
+  box-shadow: 
+    inset -8px -12px 25px rgba(0, 0, 0, 0.4),
+    inset 6px 8px 15px rgba(255, 255, 255, 0.8),
+    0 15px 30px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(251, 191, 36, 0.5);
+  margin-bottom: 24px;
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: egg-float 3.6s ease-in-out infinite;
+}
+
+.bounty-card:hover .egg-3d-visual {
+  transform: scale(1.08) rotate(4deg);
+}
+
+@keyframes egg-float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(-3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.egg-crack-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  animation: crack-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes crack-pop {
+  0% { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.bounty-card-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.bounty-card-sub {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.bounty-reveal-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--lime);
+  color: var(--deep);
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px rgba(201, 243, 106, 0.35);
+  animation: reveal-pulse 0.4s ease;
+}
+
+@keyframes reveal-pulse {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.bounty-tap-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lime);
+  font-size: 13px;
+  font-weight: 600;
+  transition: gap 0.2s ease;
+}
+
+.bounty-card:hover .bounty-tap-hint {
+  gap: 10px;
+}
+
+.bounty-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.bounty-reset-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.bounty-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
