@@ -25,11 +25,29 @@ export default function Navbar() {
         </nav>
 
         <div className="nav-actions">
-          <a href="#login" className="btn btn-dark" onClick={(e) => { e.preventDefault(); alert('Login Modal / Page: Connect backend or auth service.'); }}>
+          <a
+            href="#/login"
+            className="btn btn-dark"
+            onClick={(e) => {
+              e.preventDefault();
+              if (typeof window !== 'undefined') {
+                window.location.hash = '#/login';
+              }
+            }}
+          >
             <i className="fa-solid fa-arrow-right-to-bracket"></i>
             Login
           </a>
-          <a href="#register" className="btn btn-lime nav-register" onClick={(e) => { e.preventDefault(); alert('Registration Modal / Page: Connect backend or auth service.'); }}>
+          <a
+            href="#/login"
+            className="btn btn-lime nav-register"
+            onClick={(e) => {
+              e.preventDefault();
+              if (typeof window !== 'undefined') {
+                window.location.hash = '#/login';
+              }
+            }}
+          >
             Get Started <i className="fa-solid fa-arrow-right"></i>
           </a>
         </div>
