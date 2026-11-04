@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import logoImg from '../assets/logo.webp'
 
 export default function Preloader() {
   const [visible, setVisible] = useState(true)
@@ -58,7 +59,7 @@ export default function Preloader() {
           }}
         >
           <img
-            src="/assets/1791888810_1_logo.webp"
+            src={logoImg}
             alt="AL Rehman Meta Eggs Logo"
             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />

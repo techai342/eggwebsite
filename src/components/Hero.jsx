@@ -1,4 +1,7 @@
 import React from 'react'
+import logoImg from '../assets/logo.webp'
+import henImg from '../assets/hen.png'
+import eggCoinImg from '../assets/egg.png'
 
 export default function Hero() {
   return (
@@ -89,7 +92,7 @@ export default function Hero() {
                 }}
                 title="Egg"
               >
-                <img src="/assets/1791888810_1_logo.webp" alt="Egg" loading="lazy" />
+                <img src={logoImg} alt="Egg" loading="lazy" />
               </div>
             </div>
 
@@ -102,7 +105,7 @@ export default function Hero() {
                 }}
                 title="Daily Rs Profit"
               >
-                <img src="/assets/272525.png" alt="Daily Rs Profit" loading="lazy" />
+                <img src={eggCoinImg} alt="Daily Rs Profit" loading="lazy" />
               </div>
             </div>
 
@@ -115,7 +118,7 @@ export default function Hero() {
                 }}
                 title="Fresh Yield"
               >
-                <img src="/assets/1791888810_1_logo.webp" alt="Fresh Yield" loading="lazy" />
+                <img src={logoImg} alt="Fresh Yield" loading="lazy" />
               </div>
             </div>
 
@@ -128,7 +131,7 @@ export default function Hero() {
                 }}
                 title="AL Rehman Meta Eggs"
               >
-                <img src="/assets/1791906408_1_image.png" alt="AL Rehman Meta Eggs" loading="lazy" />
+                <img src={henImg} alt="AL Rehman Meta Eggs" loading="lazy" />
               </div>
             </div>
 
@@ -141,7 +144,7 @@ export default function Hero() {
                 }}
                 title="Instant Payout"
               >
-                <img src="/assets/272525.png" alt="Instant Payout" loading="lazy" />
+                <img src={eggCoinImg} alt="Instant Payout" loading="lazy" />
               </div>
             </div>
 
@@ -154,7 +157,7 @@ export default function Hero() {
                 }}
                 title="Golden Harvest"
               >
-                <img src="/assets/1791888810_1_logo.webp" alt="Golden Harvest" loading="lazy" />
+                <img src={logoImg} alt="Golden Harvest" loading="lazy" />
               </div>
             </div>
           </div>
@@ -163,7 +166,7 @@ export default function Hero() {
           <div className="hero-center-wrapper">
             <div className="hero-center-aura"></div>
             <div className="hero-center-disc">
-              <img src="/assets/1791906408_1_image.png" alt="AL Rehman Meta Eggs" className="hero-center-img" />
+              <img src={henImg} alt="AL Rehman Meta Eggs" className="hero-center-img" />
             </div>
           </div>
 
@@ -175,7 +178,7 @@ export default function Hero() {
 
           {/* Floating Right Dynamic Yield Badge */}
           <div className="egg-float">
-            <img src="/assets/1791888810_1_logo.webp" alt="Egg" />
+            <img src={logoImg} alt="Egg" />
             <span>EGG</span>
           </div>
         </div>

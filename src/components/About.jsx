@@ -1,4 +1,5 @@
 import React from 'react'
+import farmImg from '../assets/farm.jpg'
 
 export default function About() {
   return (
@@ -23,7 +24,7 @@ export default function About() {
           <div className="about-center-avatar" aria-label="Organic Farm Flock & Fresh Eggs">
             <div className="about-avatar-frame">
               <img
-                src="/assets/360_F_854433524_58tbvMvWTqyYvjzt0HWyMIjkPs5SKT5E.jpg"
+                src={farmImg}
                 alt="AL Rehman Meta Eggs Poultry & Fresh Eggs"
                 loading="lazy"
               />

@@ -1,4 +1,5 @@
 import React from 'react'
+import henImg from '../assets/hen.png'
 
 export default function Plans() {
   const plans = [
@@ -11,7 +12,7 @@ export default function Plans() {
       earnType: "Egg",
       unitRate: 30,
       totalReturn: "3,600.00",
-      image: "/assets/1791906408_1_image.png",
+      image: henImg,
       tag: "Active Batch",
       perks: [
         "Automated Daily Egg Collection",
