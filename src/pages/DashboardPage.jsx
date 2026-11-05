@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useFarm } from '../context/FarmContext';
 import { AppShell } from '../components/AppNavigation';
+import SupportChatModal from '../components/SupportChatModal';
 import henImg from '../assets/hen.png';
 import logoImg from '../assets/logo.webp';
 import eggImg from '../assets/egg.png';
@@ -21,10 +22,13 @@ export default function DashboardPage() {
     withdrawals,
     showToast,
     VERIFIED_MERCHANTS,
-    referralStats
+    referralStats,
+    platformSettings,
+    getWhatsAppSupportUrl
   } = useFarm();
 
   // Modals state
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isCooldownModalOpen, setIsCooldownModalOpen] = useState(false);
   const [isHarvestCelebrationOpen, setIsHarvestCelebrationOpen] = useState(false);
   const [harvestYieldAmount, setHarvestYieldAmount] = useState(0);
@@ -1715,7 +1719,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <a
-                      href="https://wa.me/+923237574209"
+                      href={getWhatsAppSupportUrl()}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-manrope font-black text-[9.5px] py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all uppercase tracking-wider"
@@ -1737,7 +1741,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <a
-                      href="tel:+923412017923"
+                      href={`tel:${platformSettings?.communityLinks?.supportPhone || '+923412017923'}`}
                       className="w-full bg-gradient-to-r from-sky-600 to-blue-700 text-white font-manrope font-black text-[9.5px] py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all uppercase tracking-wider"
                     >
                       <i className="fa-solid fa-phone text-[9.5px]"></i>
@@ -1757,7 +1761,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <a
-                      href="https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j"
+                      href={platformSettings?.communityLinks?.whatsappGroup || 'https://chat.whatsapp.com/alrehman-meta-eggs-official'}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white font-manrope font-black text-[9.5px] py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all uppercase tracking-wider"
@@ -1779,7 +1783,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <a
-                      href="https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j"
+                      href={platformSettings?.communityLinks?.whatsappChannel || 'https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j'}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full bg-gradient-to-r from-purple-600 to-indigo-700 text-white font-manrope font-black text-[9.5px] py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all uppercase tracking-wider"
@@ -1789,6 +1793,17 @@ export default function DashboardPage() {
                     </a>
                   </div>
                 </div>
+
+                {/* Direct In-App Live Support Chat Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setIsSupportModalOpen(true)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#0d2c20] via-[#153d2b] to-[#0d2c20] text-[#c9f36a] border border-[#c9f36a]/40 font-manrope font-black text-[10.5px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                >
+                  <i className="fa-solid fa-comments text-xs"></i>
+                  <span>Open In-App Support Chat &amp; Helpdesk</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                </button>
 
                 <div className="bg-white/80 border border-[#28734a]/15 rounded-xl p-2 flex items-center justify-between text-[8px] text-[#153d2b] font-medium shadow-xs">
                   <span className="flex items-center gap-1.5 font-bold">
@@ -2231,6 +2246,12 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* VIP 24/7 Live Support Chat & WhatsApp Modal */}
+      <SupportChatModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+      />
     </AppShell>
   );
 }

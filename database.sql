@@ -145,6 +145,26 @@ CREATE TABLE IF NOT EXISTS `platform_settings` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------------------------
+-- 8. Table: support_messages (VIP Support Chat & In-App Helpdesk)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `support_messages` (
+  `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` VARCHAR(64) NOT NULL,
+  `sender_role` ENUM('farmer', 'admin', 'system') NOT NULL DEFAULT 'farmer',
+  `sender_name` VARCHAR(128) NOT NULL DEFAULT 'Farmer',
+  `sender_email` VARCHAR(128) DEFAULT NULL,
+  `message` TEXT NOT NULL,
+  `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_edited` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_support_messages_user_id` (`user_id`),
+  KEY `idx_support_messages_created_at` (`created_at`),
+  KEY `idx_support_messages_is_read` (`is_read`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ==============================================================================
 -- Seed Data Initialization
 -- ==============================================================================

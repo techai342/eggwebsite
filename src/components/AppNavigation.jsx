@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFarm } from '../context/FarmContext';
 import henImg from '../assets/hen.png';
 import logoImg from '../assets/logo.webp';
+import SupportChatModal from './SupportChatModal';
 import '../rawafiles.css';
 
 /**
@@ -16,7 +17,7 @@ export function AppHeader({
   onChatClick,
   variant = 'canopy'
 }) {
-  const { navigateTo, user } = useFarm();
+  const { navigateTo, user, getWhatsAppSupportUrl } = useFarm();
 
   const handleBack = () => {
     if (onBack) {
@@ -31,6 +32,8 @@ export function AppHeader({
   const handleChat = () => {
     if (onChatClick) {
       onChatClick();
+    } else if (getWhatsAppSupportUrl) {
+      window.open(getWhatsAppSupportUrl(), '_blank');
     } else {
       alert('AL Rehman Meta Eggs Official Live Support Desk: 24/7 WhatsApp & Farm Community Support Active.');
     }
@@ -196,8 +199,8 @@ export function AppHeader({
  * AppSidebar: Sliding VIP farmer drawer with account telemetry,
  * egg balance overview, and full destination routing.
  */
-export function AppSidebar({ isOpen, onClose }) {
-  const { user, eggVault, balance, logout, navigateTo } = useFarm();
+export function AppSidebar({ isOpen, onClose, onOpenSupport }) {
+  const { user, eggVault, balance, logout, navigateTo, getWhatsAppSupportUrl } = useFarm();
 
   const handleNav = (path) => {
     if (onClose) onClose();
@@ -448,6 +451,34 @@ export function AppSidebar({ isOpen, onClose }) {
               <i className="fa-solid fa-chevron-right text-[11px] text-slate-300"></i>
             </a>
           </li>
+
+          <li className="tc-menu-item">
+            <button
+              type="button"
+              onClick={() => {
+                if (onClose) onClose();
+                if (onOpenSupport) {
+                  onOpenSupport();
+                } else if (getWhatsAppSupportUrl) {
+                  window.open(getWhatsAppSupportUrl(), '_blank');
+                }
+              }}
+              className="tc-menu-link w-full text-left cursor-pointer"
+            >
+              <div className="tc-menu-link-left">
+                <div className="tc-menu-icon-box" style={{ background: '#ecfdf5', color: '#059669' }}>
+                  <i className="fa-solid fa-headset"></i>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-bold text-slate-800 text-[13px]">Support &amp; Live Chat</span>
+                  <span className="text-[10px] text-emerald-600 font-bold">24/7 WhatsApp &amp; In-App Desk</span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 text-[8.5px] font-black rounded-full bg-emerald-100 text-emerald-800 uppercase">
+                Online
+              </span>
+            </button>
+          </li>
         </ul>
 
         {/* Sidebar Footer with Logout & Security Badge */}
@@ -581,6 +612,7 @@ export function AppShell({
   onBack
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
 
   return (
     <div className="app-desktop-canvas">
@@ -591,12 +623,17 @@ export function AppShell({
             showBack={showBack}
             onBack={onBack}
             onMenuToggle={() => setIsSidebarOpen(true)}
+            onChatClick={() => setIsSupportOpen(true)}
           />
         )}
 
         <AppSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          onOpenSupport={() => {
+            setIsSidebarOpen(false);
+            setIsSupportOpen(true);
+          }}
         />
 
         <main className={`flex-1 relative z-10 ${showNav ? 'pb-24' : 'pb-6'}`}>
@@ -604,6 +641,11 @@ export function AppShell({
         </main>
 
         {showNav && <AppBottomNav currentRoute={currentRoute} />}
+
+        <SupportChatModal
+          isOpen={isSupportOpen}
+          onClose={() => setIsSupportOpen(false)}
+        />
       </div>
     </div>
   );

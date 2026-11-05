@@ -233,6 +233,7 @@ const DEFAULT_INITIAL_STATE = {
   users: DEFAULT_USERS,
   platformSettings: DEFAULT_PLATFORM_SETTINGS,
   activityLogs: [],
+  supportMessages: [],
   lastHarvest: null,
   cooldownActive: false
 };
@@ -312,6 +313,19 @@ function loadInitialState() {
           return u;
         });
 
+        let initialSupportMsgs = [];
+        try {
+          if (Array.isArray(parsed.supportMessages)) {
+            initialSupportMsgs = parsed.supportMessages;
+          } else {
+            const rawStoredMsgs = window.localStorage.getItem('metaeggs_support_messages');
+            if (rawStoredMsgs) {
+              const parsedMsgs = JSON.parse(rawStoredMsgs);
+              if (Array.isArray(parsedMsgs)) initialSupportMsgs = parsedMsgs;
+            }
+          }
+        } catch (_) {}
+
         const sanitizedState = {
           user: loadedUser,
           credentials: parsed.credentials || DEFAULT_INITIAL_STATE.credentials,
@@ -326,6 +340,7 @@ function loadInitialState() {
           activityLogs: Array.isArray(parsed.activityLogs)
             ? parsed.activityLogs.filter((l) => !String(l.id || '').startsWith('LOG-INIT-'))
             : [],
+          supportMessages: initialSupportMsgs,
           lastHarvest: parsed.lastHarvest || null,
           cooldownActive: parsed.cooldownActive !== undefined ? Boolean(parsed.cooldownActive) : false
         };
@@ -361,6 +376,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   const [users, setUsers] = useState(initial.users || DEFAULT_USERS);
   const [platformSettings, setPlatformSettings] = useState(initial.platformSettings || DEFAULT_PLATFORM_SETTINGS);
   const [activityLogs, setActivityLogs] = useState(initial.activityLogs || DEFAULT_ACTIVITY_LOGS);
+  const [supportMessages, setSupportMessages] = useState(initial.supportMessages || []);
   const [lastHarvest, setLastHarvest] = useState(initial.lastHarvest);
   const [cooldownActive, setCooldownActive] = useState(initial.cooldownActive);
   const [toasts, setToasts] = useState([]);
@@ -381,6 +397,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         users: patch.users !== undefined ? patch.users : users,
         platformSettings: patch.platformSettings !== undefined ? patch.platformSettings : platformSettings,
         activityLogs: patch.activityLogs !== undefined ? patch.activityLogs : activityLogs,
+        supportMessages: patch.supportMessages !== undefined ? patch.supportMessages : supportMessages,
         lastHarvest: patch.lastHarvest !== undefined ? patch.lastHarvest : lastHarvest,
         cooldownActive: patch.cooldownActive !== undefined ? patch.cooldownActive : cooldownActive
       };
@@ -392,10 +409,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       window.localStorage.setItem('farm_users', JSON.stringify(snapshot.users));
       window.localStorage.setItem('farm_platform_settings', JSON.stringify(snapshot.platformSettings));
       window.localStorage.setItem('farm_activity_logs', JSON.stringify(snapshot.activityLogs));
+      window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(snapshot.supportMessages || []));
     } catch (err) {
       console.warn('Error saving state to localStorage:', err);
     }
-  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, users, platformSettings, activityLogs, lastHarvest, cooldownActive]);
+  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, users, platformSettings, activityLogs, supportMessages, lastHarvest, cooldownActive]);
 
   // Initial sync check on mount
   useEffect(() => {
@@ -550,6 +568,36 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             }));
             setTransactions(formattedTxs);
           }
+        }
+
+        // 4. Fetch live support messages from Supabase (safe fallback)
+        try {
+          const { data: dbMessages } = await supabase
+            .from('support_messages')
+            .select('*')
+            .order('created_at', { ascending: true });
+
+          if (Array.isArray(dbMessages) && dbMessages.length > 0 && isMounted) {
+            const formattedMsgs = dbMessages.map((m) => ({
+              id: String(m.id),
+              userId: String(m.user_id),
+              username: m.sender_name || 'Farmer',
+              senderRole: m.sender_role || 'farmer',
+              senderName: m.sender_name || 'Farmer',
+              senderEmail: m.sender_email,
+              message: m.message,
+              isRead: Boolean(m.is_read),
+              isEdited: Boolean(m.is_edited),
+              createdAt: m.created_at,
+              updatedAt: m.updated_at
+            }));
+            setSupportMessages(formattedMsgs);
+            try {
+              window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(formattedMsgs));
+            } catch (_) {}
+          }
+        } catch (msgErr) {
+          console.info('Supabase support_messages note:', msgErr?.message || msgErr);
         }
       } catch (err) {
         console.info('Supabase initial hydration note:', err?.message || err);
@@ -2292,6 +2340,170 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     return { success: true, message: msg };
   }, [showToast]);
 
+  // ============================================================================
+  // VIP Support & Live Chat Engine (Farmer <-> Admin Messaging & WhatsApp Link)
+  // ============================================================================
+
+  // Generate clean direct WhatsApp URL to official support phone
+  const getWhatsAppSupportUrl = useCallback((customText) => {
+    const rawPhone = platformSettings?.communityLinks?.supportPhone || '+923412017923';
+    let cleanDigits = String(rawPhone || '+923412017923').replace(/\D/g, '');
+    if (cleanDigits.startsWith('03')) {
+      cleanDigits = '92' + cleanDigits.slice(1);
+    }
+    if (!cleanDigits.startsWith('92')) {
+      cleanDigits = '92' + cleanDigits;
+    }
+    const defaultMsg = `Assalam-o-Alaikum AL Rehman Meta Eggs Support, I need assistance with my account.\nFarmer: ${user?.username || 'Guest'} (ID: ${user?.accountId || 'N/A'})\nBalance: ${Number(balance || 0).toLocaleString()} PKR | Eggs: ${Number(eggVault || 0).toLocaleString()}`;
+    const encoded = encodeURIComponent(customText || defaultMsg);
+    return `https://wa.me/${cleanDigits}?text=${encoded}`;
+  }, [platformSettings?.communityLinks?.supportPhone, user?.username, user?.accountId, balance, eggVault]);
+
+  // Send support message (Farmer -> Admin OR Admin -> Farmer)
+  const sendSupportMessage = useCallback(async ({ message, targetUserId = null }) => {
+    const text = (message || '').trim();
+    if (!text) {
+      showToast('error', 'Please enter a message before sending.');
+      return { success: false, message: 'Message cannot be empty.' };
+    }
+
+    const isAdmin = (user?.role === 'admin' || user?.email === 'admin@gmail.com');
+    const senderRole = isAdmin ? 'admin' : 'farmer';
+    const resolvedUserId = isAdmin
+      ? String(targetUserId || 'broadcast')
+      : String(user?.accountId || user?.username || '1197');
+
+    const newMsg = {
+      id: String(Date.now()),
+      userId: resolvedUserId,
+      username: user?.username || (isAdmin ? 'Admin Support' : 'Farmer'),
+      senderRole: senderRole,
+      senderName: user?.name || user?.fullName || (isAdmin ? 'AL Rehman Support' : (user?.username || 'Valued Farmer')),
+      senderEmail: user?.email || null,
+      message: text,
+      isRead: false,
+      isEdited: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Try Supabase insert first to get canonical DB id if available
+    try {
+      const { data: dbInsert } = await supabase.from('support_messages').insert({
+        user_id: newMsg.userId,
+        sender_role: newMsg.senderRole,
+        sender_name: newMsg.senderName,
+        sender_email: newMsg.senderEmail,
+        message: newMsg.message,
+        is_read: false,
+        is_edited: false
+      }).select().maybeSingle();
+
+      if (dbInsert?.id) {
+        newMsg.id = String(dbInsert.id);
+      }
+    } catch (e) {
+      console.info('Supabase support_messages insert fallback:', e?.message || e);
+    }
+
+    // Update state & localStorage
+    setSupportMessages((prev) => {
+      const updated = [...prev, newMsg];
+      try {
+        window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
+
+    logActivity({
+      action: 'SUPPORT_MESSAGE_SENT',
+      category: 'SUPPORT',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: `${isAdmin ? 'Admin reply to #' + resolvedUserId : 'Farmer support query'}: "${text.slice(0, 45)}"`,
+      status: 'SUCCESS'
+    });
+
+    showToast('success', isAdmin ? 'Reply sent to farmer.' : 'Message sent to Support Desk!');
+    return { success: true, message: newMsg };
+  }, [user, showToast, logActivity]);
+
+  // Edit support message (Farmer or Admin)
+  const editSupportMessage = useCallback(async ({ messageId, newMessage }) => {
+    const text = (newMessage || '').trim();
+    if (!text) {
+      showToast('error', 'Message cannot be empty.');
+      return { success: false, message: 'Message cannot be empty.' };
+    }
+
+    let updatedMsg = null;
+    const nowIso = new Date().toISOString();
+
+    setSupportMessages((prev) => {
+      const next = prev.map((m) => {
+        if (String(m.id) === String(messageId)) {
+          updatedMsg = { ...m, message: text, isEdited: true, updatedAt: nowIso };
+          return updatedMsg;
+        }
+        return m;
+      });
+      try {
+        window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+
+    try {
+      await supabase
+        .from('support_messages')
+        .update({ message: text, is_edited: true, updated_at: nowIso })
+        .eq('id', messageId);
+    } catch (err) {
+      console.info('Supabase support_messages update fallback:', err?.message || err);
+    }
+
+    showToast('info', 'Message updated successfully.');
+    return { success: true, message: updatedMsg };
+  }, [showToast]);
+
+  // Delete support message (Farmer or Admin)
+  const deleteSupportMessage = useCallback(async ({ messageId }) => {
+    setSupportMessages((prev) => {
+      const filtered = prev.filter((m) => String(m.id) !== String(messageId));
+      try {
+        window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(filtered));
+      } catch (_) {}
+      return filtered;
+    });
+
+    try {
+      await supabase.from('support_messages').delete().eq('id', messageId);
+    } catch (err) {
+      console.info('Supabase support_messages delete fallback:', err?.message || err);
+    }
+
+    showToast('info', 'Message deleted.');
+    return { success: true };
+  }, [showToast]);
+
+  // Mark all support messages as read for a given user
+  const markSupportMessagesRead = useCallback(async ({ userId }) => {
+    if (!userId) return;
+    const targetId = String(userId);
+
+    setSupportMessages((prev) => {
+      const next = prev.map((m) => (String(m.userId) === targetId ? { ...m, isRead: true } : m));
+      try {
+        window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+
+    try {
+      await supabase.from('support_messages').update({ is_read: true }).eq('user_id', targetId);
+    } catch (_) {}
+  }, []);
+
   // Routing Helper & State (Hash + Path support for SPA zero-config routing)
   const getInitialRoute = () => {
     if (typeof window === 'undefined') return '/';
@@ -2413,6 +2625,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     simulateDays,
     getAnalytics,
     analytics,
+    supportMessages,
+    setSupportMessages,
+    getWhatsAppSupportUrl,
+    sendSupportMessage,
+    editSupportMessage,
+    deleteSupportMessage,
+    markSupportMessagesRead,
     COMMISSION_RATES,
     VERIFIED_MERCHANTS,
     PAYMENT_GATEWAYS,
@@ -2430,6 +2649,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     users,
     platformSettings,
     activityLogs,
+    supportMessages,
+    getWhatsAppSupportUrl,
+    sendSupportMessage,
+    editSupportMessage,
+    deleteSupportMessage,
+    markSupportMessagesRead,
     referralCode,
     referralLink,
     referralStats,

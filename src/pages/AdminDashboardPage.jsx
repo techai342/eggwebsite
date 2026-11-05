@@ -381,6 +381,12 @@ export default function AdminDashboardPage() {
     approveWithdrawal,
     rejectWithdrawal,
     updatePlatformSettings,
+    supportMessages = [],
+    sendSupportMessage,
+    editSupportMessage,
+    deleteSupportMessage,
+    markSupportMessagesRead,
+    getWhatsAppSupportUrl,
     showToast,
     navigateTo,
     logout
@@ -391,7 +397,7 @@ export default function AdminDashboardPage() {
     user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com')
   );
 
-  // Active Tab: 'USERS' | 'WITHDRAWALS' | 'AFFILIATES' | 'GATEWAYS' | 'SETTINGS'
+  // Active Tab: 'USERS' | 'WITHDRAWALS' | 'AFFILIATES' | 'GATEWAYS' | 'SETTINGS' | 'SUPPORT'
   const [activeTab, setActiveTab] = useState('USERS');
 
   // Modal states
@@ -419,6 +425,13 @@ export default function AdminDashboardPage() {
   const [jazzNumber, setJazzNumber] = useState(platformSettings?.depositGateways?.jazzcash?.accountNumber || '');
   const [jazzQr, setJazzQr] = useState(platformSettings?.depositGateways?.jazzcash?.qrCodeUrl || '/src/assets/jazzcash.png');
   const [jazzInst, setJazzInst] = useState(platformSettings?.depositGateways?.jazzcash?.instructions || '');
+
+  // Tab 6 (Support & Live Chat) state
+  const [selectedChatUserId, setSelectedChatUserId] = useState(null);
+  const [adminReplyText, setAdminReplyText] = useState('');
+  const [adminEditingMsgId, setAdminEditingMsgId] = useState(null);
+  const [adminEditText, setAdminEditText] = useState('');
+  const [supportSearch, setSupportSearch] = useState('');
 
   // Tab 5 (Settings & Platform Economics) state
   const [waGroup, setWaGroup] = useState(platformSettings?.communityLinks?.whatsappGroup || '');
@@ -485,6 +498,76 @@ export default function AdminDashboardPage() {
       setRateSyed(platformSettings.marketRates.eggRates.syed ?? 33);
     }
   }, [platformSettings]);
+
+  // Live Support Chat Threads Memo
+  const chatThreads = useMemo(() => {
+    const threadsMap = {};
+    const msgs = Array.isArray(supportMessages) ? supportMessages : [];
+
+    msgs.forEach((msg) => {
+      const uid = String(msg.userId || '1197');
+      if (!threadsMap[uid]) {
+        const matchedUser = (Array.isArray(users) ? users : []).find(
+          (u) => String(u.accountId) === uid || String(u.username) === uid || String(u.id) === uid
+        );
+        threadsMap[uid] = {
+          userId: uid,
+          farmer: matchedUser || {
+            username: msg.username || msg.senderName || 'Farmer #' + uid,
+            name: msg.senderName || 'Valued Farmer',
+            accountId: uid,
+            phone: null,
+            balance: 0,
+            eggVault: 0,
+            role: 'farmer'
+          },
+          messages: [],
+          unreadCount: 0,
+          lastMessage: null
+        };
+      }
+      threadsMap[uid].messages.push(msg);
+      if (!msg.isRead && msg.senderRole !== 'admin') {
+        threadsMap[uid].unreadCount += 1;
+      }
+    });
+
+    Object.values(threadsMap).forEach((t) => {
+      t.messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      t.lastMessage = t.messages[t.messages.length - 1];
+    });
+
+    return Object.values(threadsMap).sort((a, b) => {
+      const tA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
+      const tB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      return tB - tA;
+    });
+  }, [supportMessages, users]);
+
+  const totalUnreadSupport = useMemo(() => {
+    return (Array.isArray(supportMessages) ? supportMessages : []).filter(
+      (m) => !m.isRead && m.senderRole !== 'admin'
+    ).length;
+  }, [supportMessages]);
+
+  const filteredChatThreads = useMemo(() => {
+    if (!supportSearch.trim()) return chatThreads;
+    const q = supportSearch.toLowerCase();
+    return chatThreads.filter(
+      (t) =>
+        t.userId.toLowerCase().includes(q) ||
+        (t.farmer.username && t.farmer.username.toLowerCase().includes(q)) ||
+        (t.farmer.name && t.farmer.name.toLowerCase().includes(q))
+    );
+  }, [chatThreads, supportSearch]);
+
+  const activeThread = useMemo(() => {
+    if (selectedChatUserId) {
+      const found = chatThreads.find((t) => t.userId === selectedChatUserId);
+      if (found) return found;
+    }
+    return chatThreads.length > 0 ? chatThreads[0] : null;
+  }, [selectedChatUserId, chatThreads]);
 
   // Compute Platform KPI Metrics
   const kpis = useMemo(() => {
@@ -1042,6 +1125,26 @@ export default function AdminDashboardPage() {
           >
             <i className="fa-solid fa-sliders text-sm"></i>
             <span>Platform Settings</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('SUPPORT')}
+            className={`flex-1 min-w-[150px] py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none relative cursor-pointer ${
+              activeTab === 'SUPPORT'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-[#082013] font-black shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <i className="fa-solid fa-headset text-sm"></i>
+            <span>Live Chat Desk</span>
+            {totalUnreadSupport > 0 && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                activeTab === 'SUPPORT' ? 'bg-rose-600 text-white' : 'bg-rose-500 text-white animate-pulse'
+              }`}>
+                {totalUnreadSupport}
+              </span>
+            )}
           </button>
         </div>
 
@@ -2595,6 +2698,386 @@ export default function AdminDashboardPage() {
               </button>
             </div>
           </form>
+        )}
+
+        {/* =========================================================================
+            TAB 6: LIVE SUPPORT INBOX & CHAT COCKPIT
+           ========================================================================= */}
+        {activeTab === 'SUPPORT' && (
+          <div className="space-y-4">
+            {/* Top Control Banner */}
+            <div className="rounded-2xl p-4 sm:p-5 bg-black/40 border border-emerald-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shadow-inner">
+                  <i className="fa-solid fa-headset text-xl"></i>
+                </div>
+                <div>
+                  <h3 className="font-manrope font-black text-sm uppercase tracking-wider text-emerald-300 flex items-center gap-2">
+                    <span>VIP Farmer Support &amp; Live Chat Console</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Real-time farmer queries, in-app messaging, message edit/delete &amp; direct WhatsApp connectivity.
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Pills & Direct WhatsApp Test */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="px-3 py-1.5 rounded-xl bg-black/50 border border-emerald-500/30 text-xs">
+                  <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Unread Queries:</span>
+                  <span className={`font-mono font-black ${totalUnreadSupport > 0 ? 'text-rose-400 font-bold' : 'text-emerald-400'}`}>
+                    {totalUnreadSupport} Messages
+                  </span>
+                </div>
+
+                <div className="px-3 py-1.5 rounded-xl bg-black/50 border border-slate-700 text-xs">
+                  <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Configured WhatsApp:</span>
+                  <span className="text-[#c9f36a] font-mono font-bold">{supportPhone || 'Not Configured'}</span>
+                </div>
+
+                <a
+                  href={getWhatsAppSupportUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-manrope font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  title="Test Admin WhatsApp Link"
+                >
+                  <i className="fa-brands fa-whatsapp text-sm"></i>
+                  <span>Test WhatsApp</span>
+                </a>
+              </div>
+            </div>
+
+            {/* 2-Column Chat Cockpit */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              
+              {/* Left Column: Farmer Threads (col-span-4) */}
+              <div className="lg:col-span-4 rounded-2xl bg-black/40 border border-slate-800 p-3.5 flex flex-col max-h-[650px] shadow-md">
+                <div className="mb-3">
+                  <div className="relative">
+                    <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input
+                      type="text"
+                      placeholder="Search farmer or ID..."
+                      value={supportSearch}
+                      onChange={(e) => setSupportSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-2 bg-black/50 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 font-manrope"
+                    />
+                  </div>
+                </div>
+
+                {/* Threads List */}
+                <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
+                  {filteredChatThreads.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500 text-xs">
+                      <i className="fa-solid fa-inbox text-3xl mb-2 text-slate-600 block"></i>
+                      <span>No farmer conversations found.</span>
+                    </div>
+                  ) : (
+                    filteredChatThreads.map((thread) => {
+                      const isSelected = activeThread?.userId === thread.userId;
+                      const hasUnread = thread.unreadCount > 0;
+                      const farmerPhone = thread.farmer?.phone;
+
+                      return (
+                        <div
+                          key={thread.userId}
+                          onClick={() => {
+                            setSelectedChatUserId(thread.userId);
+                            markSupportMessagesRead({ userId: thread.userId });
+                          }}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-emerald-950/80 to-[#0e3020] border-emerald-500/60 shadow-md'
+                              : 'bg-black/30 border-slate-800 hover:border-slate-700 hover:bg-black/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-bold text-xs shrink-0">
+                                {thread.farmer?.username ? thread.farmer.username.charAt(0).toUpperCase() : 'F'}
+                              </div>
+                              <div className="overflow-hidden">
+                                <h4 className="font-extrabold text-xs text-white truncate max-w-[130px]">
+                                  {thread.farmer?.name || thread.farmer?.username || 'Farmer'}
+                                </h4>
+                                <span className="text-[10px] text-slate-400 font-mono block truncate">
+                                  @{thread.farmer?.username || thread.userId} • ID: {thread.userId}
+                                </span>
+                              </div>
+                            </div>
+
+                            {hasUnread && (
+                              <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white font-mono font-black text-[9px] animate-pulse">
+                                {thread.unreadCount} NEW
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Last message snippet */}
+                          <p className="text-[11px] text-slate-300 truncate font-sans">
+                            {thread.lastMessage ? (
+                              <>
+                                <span className="text-slate-400 font-bold mr-1">
+                                  {thread.lastMessage.senderRole === 'admin' ? 'You:' : 'Farmer:'}
+                                </span>
+                                {thread.lastMessage.message}
+                              </>
+                            ) : (
+                              <span className="italic text-slate-500">No messages yet</span>
+                            )}
+                          </p>
+
+                          <div className="flex items-center justify-between text-[9px] text-slate-500 pt-1 border-t border-slate-800/60">
+                            <span>
+                              {thread.lastMessage?.createdAt
+                                ? new Date(thread.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                : ''}
+                            </span>
+                            {farmerPhone && (
+                              <span className="text-emerald-400/80 font-mono">
+                                <i className="fa-solid fa-phone text-[8px] mr-1"></i>
+                                {farmerPhone}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: Active Conversation (col-span-8) */}
+              <div className="lg:col-span-8 rounded-2xl bg-black/40 border border-slate-800 flex flex-col max-h-[650px] shadow-md overflow-hidden">
+                {activeThread ? (
+                  <>
+                    {/* Conversation Header */}
+                    <div className="p-3.5 bg-black/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-[#082013] flex items-center justify-center font-black text-sm shadow-sm">
+                          {activeThread.farmer?.username ? activeThread.farmer.username.charAt(0).toUpperCase() : 'F'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-extrabold text-sm text-white">
+                              {activeThread.farmer?.name || activeThread.farmer?.username || 'Farmer'}
+                            </h3>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-[9px] uppercase font-bold">
+                              ID: #{activeThread.userId}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10.5px] text-slate-400 mt-0.5">
+                            <span>@{activeThread.farmer?.username}</span>
+                            <span>•</span>
+                            <span className="text-amber-400 font-mono">
+                              Vault: {Number(activeThread.farmer?.eggVault || 0)} Eggs
+                            </span>
+                            <span>•</span>
+                            <span className="text-emerald-400 font-mono">
+                              Balance: {Number(activeThread.farmer?.balance || 0).toLocaleString()} PKR
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Direct WhatsApp Farmer Button */}
+                      {activeThread.farmer?.phone ? (
+                        <a
+                          href={`https://wa.me/${String(activeThread.farmer.phone).replace(/\D/g, '').replace(/^0/, '92')}?text=${encodeURIComponent(`Assalam-o-Alaikum ${activeThread.farmer?.username || 'Farmer'}, this is AL Rehman Meta Eggs Official Support.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-manrope font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm hover:brightness-110 active:scale-95 transition-all"
+                        >
+                          <i className="fa-brands fa-whatsapp text-sm"></i>
+                          <span>WhatsApp Farmer</span>
+                        </a>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 bg-slate-800/60 px-2.5 py-1 rounded-lg">
+                          No Phone Registered
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Messages Scroll Area */}
+                    <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scrollbar bg-black/20">
+                      {activeThread.messages.length === 0 ? (
+                        <div className="text-center py-16 text-slate-500 text-xs">
+                          <i className="fa-solid fa-comments text-3xl mb-2 text-slate-600 block"></i>
+                          <span>No messages in this thread yet. Send a greeting below!</span>
+                        </div>
+                      ) : (
+                        activeThread.messages.map((msg) => {
+                          const isAdminMsg = msg.senderRole === 'admin';
+                          const isEditingThis = adminEditingMsgId === msg.id;
+
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`flex flex-col ${isAdminMsg ? 'items-end' : 'items-start'} group`}
+                            >
+                              <div className="flex items-center gap-1.5 mb-1 px-1">
+                                <span className="text-[9.5px] font-bold text-slate-400">
+                                  {isAdminMsg ? 'You (Support)' : (msg.senderName || 'Farmer')}
+                                </span>
+                                <span className="text-[8.5px] text-slate-500 font-mono">
+                                  {msg.createdAt
+                                    ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                    : ''}
+                                </span>
+                                {msg.isEdited && (
+                                  <span className="text-[8px] text-amber-400/80 italic">(edited)</span>
+                                )}
+                              </div>
+
+                              {/* Bubble */}
+                              <div
+                                className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs shadow-md ${
+                                  isAdminMsg
+                                    ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400/40 text-amber-100 rounded-tr-xs'
+                                    : 'bg-[#0f2d1e] border border-emerald-500/40 text-emerald-100 rounded-tl-xs'
+                                }`}
+                              >
+                                {isEditingThis ? (
+                                  <div className="space-y-2">
+                                    <textarea
+                                      rows={2}
+                                      value={adminEditText}
+                                      onChange={(e) => setAdminEditText(e.target.value)}
+                                      className="w-full bg-black/60 border border-amber-400/60 rounded-lg p-2 text-xs text-white focus:outline-none"
+                                    />
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => { setAdminEditingMsgId(null); setAdminEditText(''); }}
+                                        className="px-2 py-1 rounded bg-black/40 text-slate-300 text-[10px] hover:text-white"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          if (!adminEditText.trim()) return;
+                                          await editSupportMessage({ messageId: msg.id, newMessage: adminEditText });
+                                          setAdminEditingMsgId(null);
+                                          setAdminEditText('');
+                                        }}
+                                        className="px-2.5 py-1 rounded bg-amber-500 text-black font-extrabold text-[10px] hover:bg-amber-400"
+                                      >
+                                        Save
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="whitespace-pre-wrap break-words leading-relaxed font-sans">
+                                    {msg.message}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Actions: Edit / Delete */}
+                              {!isEditingThis && (
+                                <div className="flex items-center gap-2 mt-1 px-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAdminEditingMsgId(msg.id);
+                                      setAdminEditText(msg.message);
+                                    }}
+                                    className="text-[9.5px] text-amber-300 hover:text-amber-200 flex items-center gap-1 cursor-pointer"
+                                    title="Edit this message"
+                                  >
+                                    <i className="fa-solid fa-pen text-[8px]"></i>
+                                    <span>Edit</span>
+                                  </button>
+                                  <span className="text-slate-600">•</span>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (window.confirm('Delete this message?')) {
+                                        await deleteSupportMessage({ messageId: msg.id });
+                                      }
+                                    }}
+                                    className="text-[9.5px] text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer"
+                                    title="Delete message"
+                                  >
+                                    <i className="fa-solid fa-trash-can text-[8px]"></i>
+                                    <span>Delete</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Quick Response Chips */}
+                    <div className="p-2 bg-black/60 border-t border-slate-800 flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
+                      <span className="text-[9px] uppercase font-bold text-slate-500 whitespace-nowrap pl-1">
+                        Quick Reply:
+                      </span>
+                      {[
+                        'Assalam-o-Alaikum! We are checking your account.',
+                        'Your withdrawal request has been verified and processed.',
+                        'Please provide your payment transaction ID or receipt.',
+                        'Your egg rate and balance have been refreshed.'
+                      ].map((chip, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setAdminReplyText(chip)}
+                          className="px-2 py-1 rounded-lg bg-black/40 hover:bg-black/80 border border-slate-700 text-[10px] text-slate-300 hover:text-white whitespace-nowrap cursor-pointer transition-all"
+                        >
+                          {chip.slice(0, 30)}...
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Reply Input Form */}
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!adminReplyText.trim()) return;
+                        const text = adminReplyText;
+                        setAdminReplyText('');
+                        await sendSupportMessage({
+                          message: text,
+                          targetUserId: activeThread.userId
+                        });
+                      }}
+                      className="p-3 bg-black/50 border-t border-slate-800 flex items-center gap-2"
+                    >
+                      <input
+                        type="text"
+                        placeholder={`Reply to ${activeThread.farmer?.name || 'Farmer'}...`}
+                        value={adminReplyText}
+                        onChange={(e) => setAdminReplyText(e.target.value)}
+                        className="flex-1 bg-black/60 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-400 font-manrope"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!adminReplyText.trim()}
+                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-manrope font-black text-xs uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+                      >
+                        <i className="fa-solid fa-paper-plane text-xs"></i>
+                        <span>Reply</span>
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-500">
+                    <i className="fa-solid fa-headset text-4xl text-slate-700 mb-3"></i>
+                    <h4 className="font-extrabold text-sm text-slate-300 mb-1">No Conversation Selected</h4>
+                    <p className="text-xs text-slate-400 max-w-sm">
+                      Select a farmer thread from the left or wait for incoming farmer support tickets.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </main>
 
