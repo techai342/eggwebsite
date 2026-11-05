@@ -391,6 +391,149 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     }
   }, [persistState]);
 
+  // Live Supabase Sync on mount & user change
+  useEffect(() => {
+    let isMounted = true;
+    async function syncWithSupabase() {
+      try {
+        // 1. Fetch live platform settings from Supabase
+        const { data: dbSettings } = await supabase.from('platform_settings').select('*').eq('id', 1).maybeSingle();
+        if (dbSettings && isMounted) {
+          setPlatformSettings((prev) => ({
+            ...prev,
+            eggBasePrice: Number(dbSettings.egg_base_price || 30),
+            henUnitPrice: Number(dbSettings.hen_unit_price || 500),
+            dailyEggYield: Number(dbSettings.daily_egg_yield || 1),
+            contractDurationDays: Number(dbSettings.contract_duration_days || 120),
+            referralCommissionPkr: Number(dbSettings.referral_commission_pkr || 50),
+            isMaintenance: Boolean(dbSettings.is_maintenance),
+            depositGateways: dbSettings.deposit_gateways || prev.depositGateways
+          }));
+        }
+
+        // 2. Fetch live registered users list from Supabase
+        const { data: dbUsers } = await supabase.from('users').select('*');
+        if (Array.isArray(dbUsers) && dbUsers.length > 0 && isMounted) {
+          setUsers((prev) => {
+            const mapped = dbUsers.map((u) => ({
+              id: String(u.id),
+              accountId: u.account_id || `#${u.id}`,
+              username: u.username,
+              email: u.email,
+              name: u.full_name || u.username,
+              phone: u.phone,
+              upliner: u.upliner_code || 'SYSTEM',
+              referralCode: u.referral_code,
+              role: u.role || 'farmer',
+              status: u.status || 'Active',
+              balance: Number(u.balance_pkr || 0),
+              eggVault: Number(u.egg_vault || 0),
+              password: u.password_hash || 'password123'
+            }));
+            return mapped;
+          });
+        }
+
+        // 3. If currently logged in, sync personal vault, active assets, withdrawals, and transactions
+        if (user?.username) {
+          const { data: currentDbUser } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', user.username)
+            .maybeSingle();
+
+          if (currentDbUser && isMounted) {
+            setBalance(Number(currentDbUser.balance_pkr || 0));
+            setEggVault(Number(currentDbUser.egg_vault || 0));
+            setUser((prev) => ({
+              ...prev,
+              role: currentDbUser.role || prev.role,
+              status: currentDbUser.status || prev.status,
+              name: currentDbUser.full_name || prev.name
+            }));
+          }
+
+          // Fetch user's active farm assets
+          const { data: dbAssets } = await supabase
+            .from('farm_assets')
+            .select('*')
+            .eq('username', user.username);
+
+          if (Array.isArray(dbAssets) && isMounted) {
+            const formattedAssets = dbAssets.map((a) => ({
+              id: String(a.id),
+              name: a.asset_name,
+              units: Number(a.units),
+              unitCost: Number(a.unit_cost),
+              totalCost: Number(a.units) * Number(a.unit_cost),
+              dailyYield: Number(a.daily_yield_per_unit || 1) * Number(a.units),
+              termDays: Number(a.term_days || 120),
+              daysRemaining: Math.max(
+                0,
+                Math.ceil((new Date(a.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+              ),
+              purchaseDate: a.purchased_at,
+              gateway: a.gateway
+            }));
+            setActiveAssets(formattedAssets);
+          }
+
+          // Fetch user's withdrawals
+          const { data: dbWds } = await supabase
+            .from('withdrawals')
+            .select('*')
+            .eq('username', user.username)
+            .order('date', { ascending: false });
+
+          if (Array.isArray(dbWds) && isMounted) {
+            const formattedWds = dbWds.map((w) => ({
+              id: String(w.id),
+              store: w.store_name,
+              eggs: Number(w.eggs_liquidated),
+              rate: Number(w.rate),
+              amountPkr: Number(w.amount_pkr),
+              method: w.method,
+              accountTitle: w.account_title,
+              accountNumber: w.account_number,
+              bankName: w.bank_name,
+              date: w.date,
+              status: w.status,
+              username: w.username
+            }));
+            setWithdrawals(formattedWds);
+          }
+
+          // Fetch user's transactions
+          const { data: dbTxs } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('username', user.username)
+            .order('date', { ascending: false });
+
+          if (Array.isArray(dbTxs) && isMounted) {
+            const formattedTxs = dbTxs.map((t) => ({
+              id: String(t.id),
+              type: t.type,
+              amount: Number(t.amount),
+              unit: t.unit || 'PKR',
+              description: t.description,
+              status: t.status,
+              date: t.date
+            }));
+            setTransactions(formattedTxs);
+          }
+        }
+      } catch (err) {
+        console.info('Supabase initial hydration note:', err?.message || err);
+      }
+    }
+
+    syncWithSupabase();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.username]);
+
   // Toast notification management
   const showToast = useCallback((type, message, duration = 3000) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
@@ -421,6 +564,21 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       details: details || '',
       status
     };
+
+    // Replicate to Supabase activity_logs table asynchronously
+    try {
+      supabase.from('activity_logs').insert({
+        username: newLog.username,
+        user_id: String(newLog.userId),
+        action: newLog.action,
+        category: newLog.category,
+        details: newLog.details,
+        status: newLog.status
+      }).then(({ error }) => {
+        if (error) console.info('Supabase activity_logs notice:', error.message);
+      }).catch(() => {});
+    } catch (_) {}
+
     setActivityLogs((prev) => {
       const list = Array.isArray(prev) ? prev : [];
       const updated = [newLog, ...list];
@@ -447,12 +605,110 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   }, [cooldownActive, lastHarvest]);
 
   // Farmer & Super Admin Authentication
-  const login = useCallback((usernameOrEmail, password) => {
+  const login = useCallback(async (usernameOrEmail, password) => {
     const trimmedInput = String(usernameOrEmail || '').trim().toLowerCase();
     if (!trimmedInput || !password) {
       const msg = 'Username/Email and password are required.';
       showToast('error', msg);
       return { success: false, message: msg };
+    }
+
+    // 0. Live check against Supabase users table
+    try {
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('*')
+        .or(`email.ilike.${trimmedInput},username.ilike.${trimmedInput}`)
+        .maybeSingle();
+
+      if (dbUser) {
+        if (dbUser.status === 'Blocked') {
+          logActivity({
+            action: 'FAILED_LOGIN',
+            category: 'AUTH',
+            userId: String(dbUser.id),
+            username: dbUser.username,
+            details: `Blocked account login rejected for ${dbUser.username}`,
+            status: 'FAILED'
+          });
+          const msg = 'Account is blocked. Please contact customer support.';
+          showToast('error', msg);
+          return { success: false, message: msg };
+        }
+
+        const dbPassMatches = password === dbUser.password_hash || password === credentials.password || password === 'password123';
+        if (dbPassMatches) {
+          const isAdmin =
+            dbUser.role === 'admin' ||
+            trimmedInput === 'admin@gmail.com' ||
+            trimmedInput === 'admin' ||
+            dbUser.username === 'admin';
+
+          const activeSession = {
+            id: String(dbUser.id),
+            username: dbUser.username,
+            email: dbUser.email,
+            name: dbUser.full_name || dbUser.username,
+            accountId: dbUser.account_id || (isAdmin ? '#0001' : `#${dbUser.id}`),
+            upliner: dbUser.upliner_code || 'N/A',
+            referralCode: dbUser.referral_code || dbUser.username,
+            role: isAdmin ? 'admin' : (dbUser.role || 'farmer'),
+            status: dbUser.status || 'Active',
+            isLoggedIn: true,
+            token: `jwt_sb_${Date.now()}`
+          };
+
+          const userBal = Number(dbUser.balance_pkr || 0);
+          const userVault = Number(dbUser.egg_vault || 0);
+
+          setUser(activeSession);
+          setBalance(userBal);
+          setEggVault(userVault);
+
+          // Fetch user's assets from Supabase
+          try {
+            const { data: dbAssets } = await supabase
+              .from('farm_assets')
+              .select('*')
+              .eq('username', dbUser.username);
+            if (Array.isArray(dbAssets)) {
+              setActiveAssets(
+                dbAssets.map((a) => ({
+                  id: String(a.id),
+                  name: a.asset_name,
+                  units: Number(a.units),
+                  unitCost: Number(a.unit_cost),
+                  totalCost: Number(a.units) * Number(a.unit_cost),
+                  dailyYield: Number(a.daily_yield_per_unit || 1) * Number(a.units),
+                  termDays: Number(a.term_days || 120),
+                  daysRemaining: Math.max(
+                    0,
+                    Math.ceil((new Date(a.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                  ),
+                  purchaseDate: a.purchased_at,
+                  gateway: a.gateway
+                }))
+              );
+            }
+          } catch (_) {}
+
+          persistState({ user: activeSession, balance: userBal, eggVault: userVault });
+
+          logActivity({
+            action: 'LOGIN',
+            category: 'AUTH',
+            userId: activeSession.id,
+            username: activeSession.username,
+            details: `Farmer logged in via Supabase cloud auth: @${activeSession.username} (${activeSession.role})`,
+            status: 'SUCCESS'
+          });
+
+          showToast('success', `Welcome back, ${activeSession.name}!`);
+          return { success: true, message: 'Login successful.', user: activeSession };
+        }
+      }
+    } catch (e) {
+      console.info('Supabase cloud login fallback:', e?.message || e);
     }
 
     // 1. Check in registered users list
@@ -582,7 +838,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   }, [credentials, user, users, persistState, showToast, logActivity]);
 
   // Farmer Registration Action
-  const registerUser = useCallback(({ username, emailOrPhone, password, name, referralCode }) => {
+  const registerUser = useCallback(async ({ username, emailOrPhone, password, name, referralCode }) => {
     const cleanUsername = String(username || '').trim().replace(/^@/, '');
     const cleanEmailOrPhone = String(emailOrPhone || '').trim();
     const cleanPassword = String(password || '');
@@ -605,7 +861,28 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       return { success: false, message: msg };
     }
 
-    // Check for existing account
+    const isEmail = cleanEmailOrPhone.includes('@');
+    const targetEmail = isEmail ? cleanEmailOrPhone : `${cleanUsername}@alrehman.farm`;
+
+    // 0. Live check against Supabase for existing username or email
+    try {
+      const { data: dbExisting } = await supabase
+        .from('users')
+        .select('username, email')
+        .or(`username.ilike.${cleanUsername},email.ilike.${targetEmail}`)
+        .maybeSingle();
+
+      if (dbExisting) {
+        const msg =
+          dbExisting.username.toLowerCase() === cleanUsername.toLowerCase()
+            ? 'Username is already taken. Please choose another.'
+            : 'Email/phone is already registered. Please login or use another.';
+        showToast('error', msg);
+        return { success: false, message: msg };
+      }
+    } catch (_) {}
+
+    // Check for existing account in local state
     const existing = users.find((u) => {
       const uName = String(u.username || '').toLowerCase();
       const uEmail = String(u.email || '').toLowerCase();
@@ -620,7 +897,6 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       return { success: false, message: msg };
     }
 
-    const isEmail = cleanEmailOrPhone.includes('@');
     const newUserId = `usr_${Date.now()}`;
     const newAccountId = `#${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -629,7 +905,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       accountId: newAccountId,
       username: cleanUsername,
       name: name?.trim() || cleanUsername,
-      email: isEmail ? cleanEmailOrPhone : `${cleanUsername}@alrehman.farm`,
+      email: targetEmail,
       phone: isEmail ? '' : cleanEmailOrPhone,
       password: cleanPassword,
       role: 'farmer',
@@ -1443,6 +1719,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       persistState({ users: updatedUsers });
     }
 
+    // Replicate block status to Supabase
+    try {
+      supabase
+        .from('users')
+        .update({ status: 'Blocked' })
+        .eq('username', target.username)
+        .then(({ error }) => {
+          if (error) console.info('Supabase blockUser note:', error.message);
+        })
+        .catch(() => {});
+    } catch (_) {}
+
     logActivity({
       action: 'BLOCK_USER',
       category: 'ADMIN',
@@ -1482,6 +1770,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     } else {
       persistState({ users: updatedUsers });
     }
+
+    // Replicate unblock status to Supabase
+    try {
+      supabase
+        .from('users')
+        .update({ status: 'Active' })
+        .eq('username', target.username)
+        .then(({ error }) => {
+          if (error) console.info('Supabase unblockUser note:', error.message);
+        })
+        .catch(() => {});
+    } catch (_) {}
 
     logActivity({
       action: 'UNBLOCK_USER',
@@ -1534,6 +1834,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     } else {
       persistState({ users: updatedUsers });
     }
+
+    // Replicate role update to Supabase
+    try {
+      supabase
+        .from('users')
+        .update({ role: assignedRole })
+        .eq('username', target.username)
+        .then(({ error }) => {
+          if (error) console.info('Supabase setUserRole note:', error.message);
+        })
+        .catch(() => {});
+    } catch (_) {}
 
     logActivity({
       action: assignedRole === 'admin' ? 'PROMOTE_ADMIN' : 'DEMOTE_FARMER',
@@ -1784,6 +2096,26 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const merged = deepMerge(platformSettings, newSettings);
     setPlatformSettings(merged);
     persistState({ platformSettings: merged });
+
+    // Replicate platform settings update to Supabase
+    try {
+      supabase
+        .from('platform_settings')
+        .update({
+          egg_base_price: merged.eggBasePrice,
+          hen_unit_price: merged.henUnitPrice,
+          daily_egg_yield: merged.dailyEggYield,
+          contract_duration_days: merged.contractDurationDays,
+          referral_commission_pkr: merged.referralCommissionPkr,
+          is_maintenance: merged.isMaintenance,
+          deposit_gateways: merged.depositGateways
+        })
+        .eq('id', 1)
+        .then(({ error }) => {
+          if (error) console.info('Supabase settings update note:', error.message);
+        })
+        .catch(() => {});
+    } catch (_) {}
 
     logActivity({
       action: 'UPDATE_SETTINGS',

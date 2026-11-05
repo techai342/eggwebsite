@@ -144,6 +144,23 @@ CREATE TABLE IF NOT EXISTS public.platform_settings (
 );
 
 -- ------------------------------------------------------------------------------
+-- 8. Table: activity_logs (Platform Audit & Security Event Logs)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.activity_logs (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id VARCHAR(64) DEFAULT NULL,
+  username VARCHAR(64) DEFAULT NULL,
+  action VARCHAR(64) NOT NULL,
+  category VARCHAR(64) NOT NULL DEFAULT 'SYSTEM',
+  details TEXT NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'SUCCESS',
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_user ON public.activity_logs(username);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_time ON public.activity_logs(timestamp);
+
+-- ------------------------------------------------------------------------------
 -- Row Level Security (RLS) Policies
 -- ------------------------------------------------------------------------------
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -153,20 +170,24 @@ ALTER TABLE public.p2p_stores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.withdrawals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read of verified stores and platform settings
 CREATE POLICY "Allow public read of stores" ON public.p2p_stores FOR SELECT USING (true);
 CREATE POLICY "Allow public read of platform settings" ON public.platform_settings FOR SELECT USING (true);
+CREATE POLICY "Allow all update platform_settings" ON public.platform_settings FOR UPDATE USING (true);
 
 -- Allow public / anon read and insert for users (signup/login)
 CREATE POLICY "Allow anon insert users" ON public.users FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow anon select users" ON public.users FOR SELECT USING (true);
 CREATE POLICY "Allow anon update users" ON public.users FOR UPDATE USING (true);
+CREATE POLICY "Allow anon delete users" ON public.users FOR DELETE USING (true);
 
--- Allow public / anon operations for farm assets, withdrawals, transactions
+-- Allow public / anon operations for farm assets, withdrawals, transactions, logs
 CREATE POLICY "Allow all select farm_assets" ON public.farm_assets FOR SELECT USING (true);
 CREATE POLICY "Allow all insert farm_assets" ON public.farm_assets FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow all update farm_assets" ON public.farm_assets FOR UPDATE USING (true);
+CREATE POLICY "Allow all delete farm_assets" ON public.farm_assets FOR DELETE USING (true);
 
 CREATE POLICY "Allow all select withdrawals" ON public.withdrawals FOR SELECT USING (true);
 CREATE POLICY "Allow all insert withdrawals" ON public.withdrawals FOR INSERT WITH CHECK (true);
@@ -174,9 +195,14 @@ CREATE POLICY "Allow all update withdrawals" ON public.withdrawals FOR UPDATE US
 
 CREATE POLICY "Allow all select transactions" ON public.transactions FOR SELECT USING (true);
 CREATE POLICY "Allow all insert transactions" ON public.transactions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow all delete transactions" ON public.transactions FOR DELETE USING (true);
 
 CREATE POLICY "Allow all select harvest_logs" ON public.harvest_logs FOR SELECT USING (true);
 CREATE POLICY "Allow all insert harvest_logs" ON public.harvest_logs FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow all select activity_logs" ON public.activity_logs FOR SELECT USING (true);
+CREATE POLICY "Allow all insert activity_logs" ON public.activity_logs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow all delete activity_logs" ON public.activity_logs FOR DELETE USING (true);
 
 -- ------------------------------------------------------------------------------
 -- Seed Initial Clean Baseline Data

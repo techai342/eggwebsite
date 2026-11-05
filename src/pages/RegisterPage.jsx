@@ -86,7 +86,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const result = registerUser({
+      const result = await registerUser({
         name: name.trim() || cleanUsername,
         username: cleanUsername,
         emailOrPhone: cleanIdentifier,

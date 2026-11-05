@@ -36,8 +36,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Simulate realistic network feedback
-      const result = login(username, password);
+      // Authenticate via Supabase with fallback
+      const result = await login(username, password);
       if (result.success) {
         if (rememberMe && typeof window !== 'undefined' && window.localStorage) {
           window.localStorage.setItem('alrehman_remember_user', username);
