@@ -19,9 +19,9 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
   const [selectedStoreId, setSelectedStoreId] = useState(VERIFIED_MERCHANTS[0]?.id || '1');
   const [selectedMethodCode, setSelectedMethodCode] = useState('2'); // 1: Jazzcash, 2: EasyPaisa, 3: Bank
   const [eggsToSell, setEggsToSell] = useState(() => (eggVault > 0 ? Math.floor(eggVault) : 0));
-  const [accountTitle, setAccountTitle] = useState('Farmer Saqib');
-  const [accountNumber, setAccountNumber] = useState('03001234567');
-  const [bankName, setBankName] = useState('HBL');
+  const [accountTitle, setAccountTitle] = useState(user?.name || '');
+  const [accountNumber, setAccountNumber] = useState(user?.phone || '');
+  const [bankName, setBankName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Store lookup

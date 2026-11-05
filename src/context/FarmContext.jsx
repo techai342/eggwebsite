@@ -50,9 +50,9 @@ export const DEFAULT_USERS = [
     name: 'Super Admin',
     role: 'admin',
     status: 'Active',
-    balance: 25000,
-    eggVault: 500,
-    activeHens: 10,
+    balance: 0,
+    eggVault: 0,
+    activeHens: 0,
     upliner: 'N/A',
     joinDate: '2026-10-01',
     accountId: '#0001',
@@ -66,9 +66,9 @@ export const DEFAULT_USERS = [
     name: 'Farmer Saqib',
     role: 'farmer',
     status: 'Active',
-    balance: 4500,
-    eggVault: 180,
-    activeHens: 5,
+    balance: 0,
+    eggVault: 0,
+    activeHens: 0,
     upliner: 'N/A',
     joinDate: '2026-10-15',
     accountId: '#1197',
@@ -82,9 +82,9 @@ export const DEFAULT_USERS = [
     name: 'Zohaib Poultry',
     role: 'farmer',
     status: 'Active',
-    balance: 1200,
-    eggVault: 45,
-    activeHens: 2,
+    balance: 0,
+    eggVault: 0,
+    activeHens: 0,
     upliner: 'mrsaqib242',
     joinDate: '2026-10-25',
     accountId: '#1198',
@@ -98,9 +98,9 @@ export const DEFAULT_USERS = [
     name: 'Hamza Eggs',
     role: 'farmer',
     status: 'Active',
-    balance: 850,
-    eggVault: 20,
-    activeHens: 1,
+    balance: 0,
+    eggVault: 0,
+    activeHens: 0,
     upliner: 'zohaib_egg',
     joinDate: '2026-11-01',
     accountId: '#1199',
@@ -130,9 +130,9 @@ export const DEFAULT_USERS = [
     name: 'Ayesha Layers',
     role: 'farmer',
     status: 'Active',
-    balance: 7800,
-    eggVault: 320,
-    activeHens: 8,
+    balance: 0,
+    eggVault: 0,
+    activeHens: 0,
     upliner: 'mrsaqib242',
     joinDate: '2026-10-18',
     accountId: '#1201',
@@ -180,110 +180,13 @@ export const DEFAULT_PLATFORM_SETTINGS = {
   }
 };
 
-// Activity Audit Event Logs
-export const DEFAULT_ACTIVITY_LOGS = [
-  {
-    id: 'LOG-INIT-1',
-    timestamp: '2026-11-05T04:00:00.000Z',
-    userId: 'usr_admin',
-    username: 'admin',
-    action: 'LOGIN',
-    category: 'AUTH',
-    details: 'Super Admin logged in to Platform Control Center',
-    status: 'SUCCESS'
-  },
-  {
-    id: 'LOG-INIT-2',
-    timestamp: '2026-11-05T03:30:00.000Z',
-    userId: 'usr_saqib',
-    username: 'mrsaqib242',
-    action: 'LOGIN',
-    category: 'AUTH',
-    details: 'Farmer Saqib entered farm coop',
-    status: 'SUCCESS'
-  },
-  {
-    id: 'LOG-INIT-3',
-    timestamp: '2026-11-04T18:15:00.000Z',
-    userId: 'usr_zohaib',
-    username: 'zohaib_egg',
-    action: 'BUY_ASSET',
-    category: 'TRANSACTION',
-    details: 'Acquired 2x AL Rehman Meta Eggs Units via Jazz cash (Rs. 1,000 PKR)',
-    status: 'SUCCESS'
-  },
-  {
-    id: 'LOG-INIT-4',
-    timestamp: '2026-11-03T09:00:00.000Z',
-    userId: 'usr_saqib',
-    username: 'mrsaqib242',
-    action: 'HARVEST',
-    category: 'TRANSACTION',
-    details: 'Collected 24h daily harvest from active hens',
-    status: 'SUCCESS'
-  },
-  {
-    id: 'LOG-INIT-5',
-    timestamp: '2026-10-29T10:05:00.000Z',
-    userId: 'usr_malik',
-    username: 'malik_blocked',
-    action: 'BLOCK_USER',
-    category: 'ADMIN',
-    details: 'Super Admin placed account on suspension',
-    status: 'WARNING'
-  }
-];
+// Activity Audit Event Logs (Pristine clean production baseline)
+export const DEFAULT_ACTIVITY_LOGS = [];
 
-// Seeded Withdrawals with Pending Cashout Queue
-export const DEFAULT_INITIAL_WITHDRAWALS = [
-  {
-    id: 'WD-PEND-1',
-    store: 'Usmaina Poltry Farm',
-    eggs: 50,
-    rate: 30,
-    amountPkr: 1500,
-    method: 'Jazzcash',
-    accountTitle: 'Hamza Tariq',
-    accountNumber: '03001234567',
-    bankName: null,
-    date: '2026-11-04T16:20:00.000Z',
-    status: 'Pending',
-    username: 'hamza_farmer',
-    userId: 'usr_hamza'
-  },
-  {
-    id: 'WD-PEND-2',
-    store: 'Sonica FORM STORE',
-    eggs: 25,
-    rate: 32,
-    amountPkr: 800,
-    method: 'EasyPaisa',
-    accountTitle: 'Zohaib Khan',
-    accountNumber: '03459876543',
-    bankName: null,
-    date: '2026-11-04T18:45:00.000Z',
-    status: 'Pending',
-    username: 'zohaib_egg',
-    userId: 'usr_zohaib'
-  },
-  {
-    id: 'WD-INIT-1',
-    store: 'Sonica FORM STORE',
-    eggs: 10,
-    rate: 32,
-    amountPkr: 320,
-    method: 'EasyPaisa',
-    accountTitle: 'Saqib Ali',
-    accountNumber: '03001234567',
-    bankName: null,
-    date: '2026-11-01T14:30:00.000Z',
-    status: 'Completed',
-    username: 'mrsaqib242',
-    userId: 'usr_saqib'
-  }
-];
+// Seeded Withdrawals with Pending Cashout Queue (Empty clean baseline)
+export const DEFAULT_INITIAL_WITHDRAWALS = [];
 
-// Default Initial State if no persistence exists in storage
+// Default Initial State if no persistence exists in storage (Zero dummy data)
 const DEFAULT_INITIAL_STATE = {
   user: {
     id: 'usr_saqib',
@@ -304,54 +207,20 @@ const DEFAULT_INITIAL_STATE = {
     email: 'admin@gmail.com',
     password: 'password123'
   },
-  balance: 1500.00,
-  eggVault: 18,
-  activeAssets: [
-    {
-      id: 'asset-1',
-      name: 'AL Rehman Meta Eggs',
-      units: 1,
-      unitCost: 500,
-      totalCost: 500,
-      dailyYield: 1,
-      termDays: 120,
-      daysRemaining: 115,
-      purchaseDate: '2026-10-30T10:00:00.000Z',
-      gateway: 'Easypisa'
-    }
-  ],
-  transactions: [
-    {
-      id: 'TRX-INIT-1',
-      type: 'BUY',
-      description: 'Purchased 1x AL Rehman Meta Eggs Units',
-      amount: 500,
-      unit: 'PKR',
-      date: '2026-10-30T10:00:00.000Z',
-      status: 'Completed',
-      gateway: 'Easypisa'
-    },
-    {
-      id: 'TRX-INIT-2',
-      type: 'HARVEST',
-      description: 'Collected 24h daily harvest from 1 active hens',
-      amount: 1,
-      unit: 'Egg',
-      date: '2026-11-03T09:00:00.000Z',
-      status: 'Completed'
-    }
-  ],
-  withdrawals: DEFAULT_INITIAL_WITHDRAWALS,
+  balance: 0,
+  eggVault: 0,
+  activeAssets: [],
+  transactions: [],
+  withdrawals: [],
   teamMembers: [],
   users: DEFAULT_USERS,
   platformSettings: DEFAULT_PLATFORM_SETTINGS,
-  activityLogs: DEFAULT_ACTIVITY_LOGS,
-  // 25 hours ago allows immediate harvest on first user action
-  lastHarvest: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
+  activityLogs: [],
+  lastHarvest: null,
   cooldownActive: false
 };
 
-// Safe localStorage loader supporting corruption resilience
+// Safe localStorage loader supporting corruption resilience & automatic dummy data sanitization
 function loadInitialState() {
   if (typeof window === 'undefined' || !window.localStorage) {
     return DEFAULT_INITIAL_STATE;
@@ -391,21 +260,66 @@ function loadInitialState() {
             }
           : DEFAULT_PLATFORM_SETTINGS;
 
-        return {
+        // Auto-purge any stale legacy dummy seed values (e.g. 18 eggs, 1500 balance, dummy asset-1)
+        let cleanBalance = typeof parsed.balance === 'number' ? parsed.balance : 0;
+        let cleanEggVault = typeof parsed.eggVault === 'number' ? parsed.eggVault : 0;
+        let cleanAssets = Array.isArray(parsed.activeAssets) ? parsed.activeAssets : [];
+        let cleanTransactions = Array.isArray(parsed.transactions) ? parsed.transactions : [];
+        let cleanWithdrawals = Array.isArray(parsed.withdrawals) ? parsed.withdrawals : [];
+
+        // Purge dummy seeds if detected from old sessions
+        if (cleanEggVault === 18) cleanEggVault = 0;
+        if (cleanBalance === 1500) cleanBalance = 0;
+        cleanAssets = cleanAssets.filter((a) => a.id !== 'asset-1');
+        cleanTransactions = cleanTransactions.filter((t) => !String(t.id || '').startsWith('TRX-INIT-') && !String(t.id || '').startsWith('LOG-INIT-'));
+        cleanWithdrawals = cleanWithdrawals.filter((w) => !String(w.id || '').startsWith('WD-PEND-') && !String(w.id || '').startsWith('WD-INIT-'));
+
+        // Sanitize users in storage to ensure zero fake inflated balances
+        let cleanUsers = Array.isArray(parsed.users) && parsed.users.length > 0 ? parsed.users : DEFAULT_USERS;
+        cleanUsers = cleanUsers.map((u) => {
+          if (u.id === 'usr_admin' && (u.balance === 25000 || u.eggVault === 500)) {
+            return { ...u, balance: 0, eggVault: 0, activeHens: 0 };
+          }
+          if (u.id === 'usr_saqib' && (u.balance === 4500 || u.eggVault === 180)) {
+            return { ...u, balance: 0, eggVault: 0, activeHens: 0 };
+          }
+          if (u.id === 'usr_zohaib' && (u.balance === 1200 || u.eggVault === 45)) {
+            return { ...u, balance: 0, eggVault: 0, activeHens: 0 };
+          }
+          if (u.id === 'usr_hamza' && (u.balance === 850 || u.eggVault === 20)) {
+            return { ...u, balance: 0, eggVault: 0, activeHens: 0 };
+          }
+          if (u.id === 'usr_ayesha' && (u.balance === 7800 || u.eggVault === 320)) {
+            return { ...u, balance: 0, eggVault: 0, activeHens: 0 };
+          }
+          return u;
+        });
+
+        const sanitizedState = {
           user: loadedUser,
           credentials: parsed.credentials || DEFAULT_INITIAL_STATE.credentials,
-          balance: typeof parsed.balance === 'number' ? parsed.balance : DEFAULT_INITIAL_STATE.balance,
-          eggVault: typeof parsed.eggVault === 'number' ? parsed.eggVault : DEFAULT_INITIAL_STATE.eggVault,
-          activeAssets: Array.isArray(parsed.activeAssets) ? parsed.activeAssets : DEFAULT_INITIAL_STATE.activeAssets,
-          transactions: Array.isArray(parsed.transactions) ? parsed.transactions : DEFAULT_INITIAL_STATE.transactions,
-          withdrawals: Array.isArray(parsed.withdrawals) && parsed.withdrawals.length > 0 ? parsed.withdrawals : DEFAULT_INITIAL_WITHDRAWALS,
-          teamMembers: Array.isArray(parsed.teamMembers) ? parsed.teamMembers : DEFAULT_INITIAL_STATE.teamMembers,
-          users: Array.isArray(parsed.users) && parsed.users.length > 0 ? parsed.users : DEFAULT_USERS,
+          balance: cleanBalance,
+          eggVault: cleanEggVault,
+          activeAssets: cleanAssets,
+          transactions: cleanTransactions,
+          withdrawals: cleanWithdrawals,
+          teamMembers: Array.isArray(parsed.teamMembers) ? parsed.teamMembers : [],
+          users: cleanUsers,
           platformSettings: loadedSettings,
-          activityLogs: Array.isArray(parsed.activityLogs) && parsed.activityLogs.length > 0 ? parsed.activityLogs : DEFAULT_ACTIVITY_LOGS,
-          lastHarvest: parsed.lastHarvest || DEFAULT_INITIAL_STATE.lastHarvest,
-          cooldownActive: parsed.cooldownActive !== undefined ? Boolean(parsed.cooldownActive) : DEFAULT_INITIAL_STATE.cooldownActive
+          activityLogs: Array.isArray(parsed.activityLogs)
+            ? parsed.activityLogs.filter((l) => !String(l.id || '').startsWith('LOG-INIT-'))
+            : [],
+          lastHarvest: parsed.lastHarvest || null,
+          cooldownActive: parsed.cooldownActive !== undefined ? Boolean(parsed.cooldownActive) : false
         };
+
+        // Write sanitized state back to localStorage immediately
+        try {
+          window.localStorage.setItem(STORAGE_KEY_PRIMARY, JSON.stringify(sanitizedState));
+          window.localStorage.setItem(STORAGE_KEY_SECONDARY, JSON.stringify(sanitizedState));
+        } catch (_) {}
+
+        return sanitizedState;
       }
     }
   } catch (err) {
@@ -754,7 +668,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const updatedUsers = [...users, newUserRecord];
     setUsers(updatedUsers);
 
-    // Auto login
+    // Auto login with fresh zero balances
+    setBalance(0);
+    setEggVault(0);
+    setActiveAssets([]);
+    setTransactions([]);
+    setWithdrawals([]);
+
     const activeSession = {
       id: newUserRecord.id,
       username: newUserRecord.username,
@@ -772,6 +692,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setUser(activeSession);
     persistState({
       user: activeSession,
+      balance: 0,
+      eggVault: 0,
+      activeAssets: [],
+      transactions: [],
+      withdrawals: [],
       users: updatedUsers
     });
 
