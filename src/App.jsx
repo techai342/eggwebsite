@@ -13,7 +13,8 @@ import MyFarmPage from './pages/MyFarmPage';
 import './rawafiles.css';
 
 // Export route page components for downstream milestone imports
-export { LandingPage, LoginPage, RegisterPage, DashboardPage, BuyAssetPage, SellEggPage, ChangePasswordPage };
+export { LandingPage, LoginPage, DashboardPage, BuyAssetPage, SellEggPage, ChangePasswordPage };
+export { RegisterPage };
 export { TeamPage };
 export { AdminDashboardPage };
 export { MyFarmPage };
