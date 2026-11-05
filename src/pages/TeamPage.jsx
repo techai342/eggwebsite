@@ -30,8 +30,14 @@ export default function TeamPage() {
     resetToFreshState,
     showToast,
     navigateTo,
-    balance = 0
+    balance = 0,
+    platformSettings
   } = useFarm();
+
+  // Dynamic affiliate rates and unit price
+  const l1Percent = Number(platformSettings?.referralCommissionLevel1 !== undefined ? platformSettings.referralCommissionLevel1 : 2.0);
+  const l2Percent = Number(platformSettings?.referralCommissionLevel2 !== undefined ? platformSettings.referralCommissionLevel2 : 1.0);
+  const henUnitPrice = Number(platformSettings?.henUnitPrice || ASSET_SPEC?.unitPrice || 500);
 
   // Active tab for Simulator Tool: 'REGISTER' | 'PURCHASE'
   const [simulatorTab, setSimulatorTab] = useState('REGISTER');
@@ -62,15 +68,15 @@ export default function TeamPage() {
   // Live calculation preview for purchase simulator
   const simulatedPurchaseVolumePkr = useMemo(() => {
     const qty = Math.max(1, Number(purchaseUnits) || 1);
-    return qty * (ASSET_SPEC?.unitPrice || 500);
-  }, [purchaseUnits]);
+    return qty * henUnitPrice;
+  }, [purchaseUnits, henUnitPrice]);
 
   const simulatedCommissionRate = useMemo(() => {
-    if (!selectedDownlineMember) return COMMISSION_RATES?.LEVEL_1 || 0.02;
+    if (!selectedDownlineMember) return l1Percent / 100;
     return Number(selectedDownlineMember.tierLevel) === 2
-      ? (COMMISSION_RATES?.LEVEL_2 || 0.01)
-      : (COMMISSION_RATES?.LEVEL_1 || 0.02);
-  }, [selectedDownlineMember]);
+      ? l2Percent / 100
+      : l1Percent / 100;
+  }, [selectedDownlineMember, l1Percent, l2Percent]);
 
   const simulatedCommissionPkr = useMemo(() => {
     return Number((simulatedPurchaseVolumePkr * simulatedCommissionRate).toFixed(2));
@@ -336,7 +342,7 @@ export default function TeamPage() {
 
                 <span className="text-[7.5px] font-black bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-white px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
                   <i className="fa-solid fa-gift text-[8px]"></i>
-                  <span>Instant 2% / 1%</span>
+                  <span>Instant {l1Percent}% / {l2Percent}%</span>
                 </span>
               </div>
 
@@ -658,7 +664,7 @@ export default function TeamPage() {
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-manrope font-black text-[11px] uppercase">Level 1</span>
                       <span className="text-[7.5px] font-black bg-emerald-600 text-white px-1.5 py-0.5 rounded-md">
-                        Direct 2%
+                        Direct {l1Percent}%
                       </span>
                     </div>
                     <span className="text-[7.5px] font-medium text-slate-500">
@@ -678,7 +684,7 @@ export default function TeamPage() {
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-manrope font-black text-[11px] uppercase">Level 2</span>
                       <span className="text-[7.5px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded-md">
-                        Secondary 1%
+                        Secondary {l2Percent}%
                       </span>
                     </div>
                     <span className="text-[7.5px] font-medium text-slate-500">
@@ -717,7 +723,7 @@ export default function TeamPage() {
                     />
                   )}
                   <span className="text-[7px] text-slate-400 mt-1 block">
-                    Level 2 referrals award you 1.00% commission whenever they buy hen units.
+                    Level 2 referrals award you {l2Percent.toFixed(2)}% commission whenever they buy hen units.
                   </span>
                 </div>
               )}
@@ -771,7 +777,7 @@ export default function TeamPage() {
                     >
                       {teamMembers.map((m) => (
                         <option key={m.id} value={m.id}>
-                          {m.username} — Level {m.tierLevel} ({Number(m.tierLevel) === 1 ? 'Direct 2%' : 'Secondary 1%'}) | Upliner: {m.upliner}
+                          {m.username} — Level {m.tierLevel} ({Number(m.tierLevel) === 1 ? `Direct ${l1Percent}%` : `Secondary ${l2Percent}%`}) | Upliner: {m.upliner}
                         </option>
                       ))}
                     </select>
@@ -781,7 +787,7 @@ export default function TeamPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-[8px] font-black text-[#0d2c20] uppercase tracking-wider">
-                        Hen Assets to Purchase (500 PKR/Unit)
+                        Hen Assets to Purchase ({henUnitPrice} PKR/Unit)
                       </label>
                       <span className="text-[8px] font-bold text-[#15803d]">
                         Rs. 500 / Hen
@@ -1046,7 +1052,7 @@ export default function TeamPage() {
                               isL1 ? 'bg-emerald-600' : 'bg-indigo-600'
                             }`}
                           ></span>
-                          <span>{isL1 ? 'Level 1 (2%)' : 'Level 2 (1%)'}</span>
+                          <span>{isL1 ? `Level 1 (${l1Percent}%)` : `Level 2 (${l2Percent}%)`}</span>
                         </span>
                       </div>
                     </div>
@@ -1123,10 +1129,10 @@ export default function TeamPage() {
                 </span>
                 <div>
                   <span className="font-black text-emerald-900 block">
-                    Direct Tier 1 Referrals: 2.00% Cash Commission
+                    Direct Tier 1 Referrals: {l1Percent.toFixed(2)}% Cash Commission
                   </span>
                   <span className="text-slate-600">
-                    Earn 2.00% on every hen asset purchased by farmers who register with your referral link/code (Rs. 10.00 PKR per 500 PKR unit).
+                    Earn {l1Percent.toFixed(2)}% on every hen asset purchased by farmers who register with your referral link/code (Rs. {(henUnitPrice * l1Percent / 100).toFixed(2)} PKR per {henUnitPrice} PKR unit).
                   </span>
                 </div>
               </div>
@@ -1137,10 +1143,10 @@ export default function TeamPage() {
                 </span>
                 <div>
                   <span className="font-black text-indigo-900 block">
-                    Secondary Tier 2 Referrals: 1.00% Cash Commission
+                    Secondary Tier 2 Referrals: {l2Percent.toFixed(2)}% Cash Commission
                   </span>
                   <span className="text-slate-600">
-                    Earn 1.00% on every hen asset purchased by farmers invited by your direct downlines (Rs. 5.00 PKR per 500 PKR unit).
+                    Earn {l2Percent.toFixed(2)}% on every hen asset purchased by farmers invited by your direct downlines (Rs. {(henUnitPrice * l2Percent / 100).toFixed(2)} PKR per {henUnitPrice} PKR unit).
                   </span>
                 </div>
               </div>

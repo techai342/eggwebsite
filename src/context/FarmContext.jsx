@@ -141,8 +141,24 @@ export const DEFAULT_USERS = [
   }
 ];
 
-// Configurable Platform Settings
+// Configurable Platform Settings & Economics
 export const DEFAULT_PLATFORM_SETTINGS = {
+  // 1. Hen Livestock & Yield Economics
+  henUnitPrice: 500,
+  dailyEggYield: 1,
+  contractDurationDays: 120,
+
+  // 2. Egg Pricing & Withdrawal Bounds
+  eggBasePrice: 30,
+  minWithdrawalEggs: 1,
+  minWithdrawalPkr: 30,
+  maxWithdrawalEggs: 10000,
+
+  // 3. Affiliate & Referral Commission Controls
+  referralCommissionLevel1: 2.0, // 2%
+  referralCommissionLevel2: 1.0, // 1%
+  referralFlatBonusPkr: 50,
+
   depositGateways: {
     easypisa: {
       accountTitle: 'AL REHMAN META EGGS OFFICIAL',
@@ -399,15 +415,26 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         // 1. Fetch live platform settings from Supabase
         const { data: dbSettings } = await supabase.from('platform_settings').select('*').eq('id', 1).maybeSingle();
         if (dbSettings && isMounted) {
+          const economics = (dbSettings.deposit_gateways && typeof dbSettings.deposit_gateways === 'object')
+            ? (dbSettings.deposit_gateways._economics || {})
+            : {};
+
           setPlatformSettings((prev) => ({
             ...prev,
-            eggBasePrice: Number(dbSettings.egg_base_price || 30),
-            henUnitPrice: Number(dbSettings.hen_unit_price || 500),
-            dailyEggYield: Number(dbSettings.daily_egg_yield || 1),
-            contractDurationDays: Number(dbSettings.contract_duration_days || 120),
-            referralCommissionPkr: Number(dbSettings.referral_commission_pkr || 50),
+            eggBasePrice: Number(dbSettings.egg_base_price || prev.eggBasePrice || 30),
+            henUnitPrice: Number(dbSettings.hen_unit_price || prev.henUnitPrice || 500),
+            dailyEggYield: Number(dbSettings.daily_egg_yield || prev.dailyEggYield || 1),
+            contractDurationDays: Number(dbSettings.contract_duration_days || prev.contractDurationDays || 120),
+            referralCommissionPkr: Number(dbSettings.referral_commission_pkr || prev.referralCommissionPkr || 50),
+            referralFlatBonusPkr: Number(dbSettings.referral_commission_pkr || prev.referralFlatBonusPkr || 50),
             isMaintenance: Boolean(dbSettings.is_maintenance),
-            depositGateways: dbSettings.deposit_gateways || prev.depositGateways
+            depositGateways: dbSettings.deposit_gateways || prev.depositGateways,
+            minWithdrawalEggs: economics.minWithdrawalEggs ?? prev.minWithdrawalEggs ?? 1,
+            minWithdrawalPkr: economics.minWithdrawalPkr ?? prev.minWithdrawalPkr ?? 30,
+            maxWithdrawalEggs: economics.maxWithdrawalEggs ?? prev.maxWithdrawalEggs ?? 10000,
+            referralCommissionLevel1: economics.referralCommissionLevel1 ?? prev.referralCommissionLevel1 ?? 2.0,
+            referralCommissionLevel2: economics.referralCommissionLevel2 ?? prev.referralCommissionLevel2 ?? 1.0,
+            marketRates: economics.marketRates || prev.marketRates
           }));
         }
 
@@ -1140,19 +1167,24 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       return { success: false, message: msg };
     }
 
-    const cost = qty * ASSET_SPEC.unitPrice;
-    const dailyYield = qty * ASSET_SPEC.dailyYieldPerUnit;
-    const fullTermEggs = qty * ASSET_SPEC.totalYieldPerUnit;
+    const henPrice = Number(platformSettings?.henUnitPrice || ASSET_SPEC.unitPrice);
+    const dailyYieldPerUnit = Number(platformSettings?.dailyEggYield || ASSET_SPEC.dailyYieldPerUnit);
+    const termDays = Number(platformSettings?.contractDurationDays || ASSET_SPEC.termDays);
+    const totalYieldPerUnit = dailyYieldPerUnit * termDays;
+
+    const cost = qty * henPrice;
+    const dailyYield = qty * dailyYieldPerUnit;
+    const fullTermEggs = qty * totalYieldPerUnit;
 
     const newAsset = {
       id: `ASSET-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: ASSET_SPEC.name,
       units: qty,
-      unitCost: ASSET_SPEC.unitPrice,
+      unitCost: henPrice,
       totalCost: cost,
       dailyYield: dailyYield,
-      termDays: ASSET_SPEC.termDays,
-      daysRemaining: ASSET_SPEC.termDays,
+      termDays: termDays,
+      daysRemaining: termDays,
       purchaseDate: new Date().toISOString(),
       gateway: validGateway.name
     };
@@ -1181,13 +1213,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         username: user?.username || 'mrsaqib242',
         asset_name: ASSET_SPEC.name,
         units: qty,
-        unit_cost: ASSET_SPEC.unitPrice,
-        daily_yield_per_unit: ASSET_SPEC.dailyYieldPerUnit,
-        term_days: ASSET_SPEC.termDays,
-        total_return_eggs: ASSET_SPEC.totalYieldPerUnit,
+        unit_cost: henPrice,
+        daily_yield_per_unit: dailyYieldPerUnit,
+        term_days: termDays,
+        total_return_eggs: totalYieldPerUnit,
         gateway: validGateway.name,
         status: 'active',
-        expires_at: new Date(Date.now() + ASSET_SPEC.termDays * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: new Date(Date.now() + termDays * 24 * 60 * 60 * 1000).toISOString()
       }).then(({ error }) => {
         if (error) console.info('Supabase farm_assets table sync notice:', error.message);
       }).catch(() => {});
@@ -1212,7 +1244,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       fullTermEggs,
       message: msg
     };
-  }, [user, activeAssets, transactions, persistState, showToast, logActivity]);
+  }, [user, activeAssets, transactions, platformSettings, persistState, showToast, logActivity]);
 
   // 24-Hour Egg Harvest Engine
   const harvestEggs = useCallback((currentTime = new Date()) => {
@@ -1352,8 +1384,20 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       return { success: false, pkrAmount: 0, message: msg };
     }
 
-    if (qty < merchant.min || qty > merchant.max) {
-      const msg = `Store trading limits violated. Must be between ${merchant.min} and ${merchant.max} eggs.`;
+    const storeKey = merchant.id === '1' ? 'sonica' : merchant.id === '2' ? 'usmaina' : merchant.id === '3' ? 'syed' : merchant.id;
+    const effectiveRate = Number(
+      platformSettings?.marketRates?.eggRates?.[storeKey] ||
+      platformSettings?.marketRates?.eggRates?.[merchant.id] ||
+      platformSettings?.eggBasePrice ||
+      merchant.rate
+    );
+
+    const minEggs = Number(platformSettings?.minWithdrawalEggs ?? merchant.min ?? 1);
+    const maxEggs = Number(platformSettings?.maxWithdrawalEggs ?? merchant.max ?? 10000);
+    const minPkr = Number(platformSettings?.minWithdrawalPkr ?? 30);
+
+    if (qty < minEggs || qty > maxEggs) {
+      const msg = `Store trading limits violated. Must be between ${minEggs} and ${maxEggs} eggs.`;
       showToast('error', msg);
       return { success: false, pkrAmount: 0, message: msg };
     }
@@ -1382,7 +1426,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       return { success: false, pkrAmount: 0, message: msg };
     }
 
-    const pkrGross = qty * merchant.rate;
+    const pkrGross = qty * effectiveRate;
+    if (pkrGross < minPkr) {
+      const msg = `Minimum withdrawal amount is ${minPkr} PKR. Current total: Rs. ${pkrGross.toFixed(2)} PKR.`;
+      showToast('error', msg);
+      return { success: false, pkrAmount: 0, message: msg };
+    }
+
     const pkrNet = pkrGross; // 0% transaction fee
 
     const newVault = eggVault - qty;
@@ -1392,7 +1442,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       id: `WD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       store: merchant.name,
       eggs: qty,
-      rate: merchant.rate,
+      rate: effectiveRate,
       amountPkr: pkrNet,
       method: payoutMethod.name,
       accountTitle,
@@ -1407,7 +1457,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const newTrx = {
       id: `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       type: 'SELL',
-      description: `Sold ${qty} eggs to ${merchant.name} via ${payoutMethod.name}`,
+      description: `Sold ${qty} eggs to ${merchant.name} via ${payoutMethod.name} (@ Rs. ${effectiveRate})`,
       amount: pkrNet,
       unit: 'PKR',
       date: new Date().toISOString(),
@@ -1436,7 +1486,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         store_id: String(merchant.id),
         store_name: merchant.name,
         eggs_liquidated: qty,
-        rate: merchant.rate,
+        rate: effectiveRate,
         amount_pkr: pkrNet,
         method: payoutMethod.name,
         account_title: accountTitle,
@@ -1463,13 +1513,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       success: true,
       pkrAmount: pkrNet,
       eggsSold: qty,
-      rate: merchant.rate,
+      rate: effectiveRate,
       eggVault: newVault,
       balance: newBalance,
       withdrawal: withdrawalRecord,
       message: msg
     };
-  }, [user, eggVault, balance, withdrawals, transactions, persistState, showToast, logActivity]);
+  }, [user, eggVault, balance, withdrawals, transactions, platformSettings, persistState, showToast, logActivity]);
 
   // Production Simulation Helper
   const simulateDays = useCallback((daysCount) => {
@@ -1624,8 +1674,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     }
 
     const targetMember = currentList[memberIndex];
-    const purchaseCost = qty * ASSET_SPEC.unitPrice;
-    const rate = Number(targetMember.tierLevel) === 1 ? COMMISSION_RATES.LEVEL_1 : COMMISSION_RATES.LEVEL_2;
+    const henPrice = Number(platformSettings?.henUnitPrice || ASSET_SPEC.unitPrice);
+    const purchaseCost = qty * henPrice;
+    const l1Rate = (Number(platformSettings?.referralCommissionLevel1 ?? 2.0)) / 100;
+    const l2Rate = (Number(platformSettings?.referralCommissionLevel2 ?? 1.0)) / 100;
+    const rate = Number(targetMember.tierLevel) === 1 ? l1Rate : l2Rate;
     const commission = Number((purchaseCost * rate).toFixed(2));
     const newBalance = Number((balance + commission).toFixed(2));
 
@@ -1680,7 +1733,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       transaction: commissionTrx,
       message: msg
     };
-  }, [teamMembers, balance, transactions, user, persistState, showToast]);
+  }, [teamMembers, balance, transactions, user, platformSettings, persistState, showToast]);
 
   // Admin Action: Block User
   const blockUser = useCallback((userId) => {
@@ -2094,21 +2147,46 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     };
 
     const merged = deepMerge(platformSettings, newSettings);
+
+    // Ensure all numeric economics fields are cleanly typed
+    if (merged.henUnitPrice !== undefined) merged.henUnitPrice = Number(merged.henUnitPrice);
+    if (merged.dailyEggYield !== undefined) merged.dailyEggYield = Number(merged.dailyEggYield);
+    if (merged.contractDurationDays !== undefined) merged.contractDurationDays = Number(merged.contractDurationDays);
+    if (merged.eggBasePrice !== undefined) merged.eggBasePrice = Number(merged.eggBasePrice);
+    if (merged.minWithdrawalEggs !== undefined) merged.minWithdrawalEggs = Number(merged.minWithdrawalEggs);
+    if (merged.minWithdrawalPkr !== undefined) merged.minWithdrawalPkr = Number(merged.minWithdrawalPkr);
+    if (merged.maxWithdrawalEggs !== undefined) merged.maxWithdrawalEggs = Number(merged.maxWithdrawalEggs);
+    if (merged.referralCommissionLevel1 !== undefined) merged.referralCommissionLevel1 = Number(merged.referralCommissionLevel1);
+    if (merged.referralCommissionLevel2 !== undefined) merged.referralCommissionLevel2 = Number(merged.referralCommissionLevel2);
+    if (merged.referralFlatBonusPkr !== undefined) merged.referralFlatBonusPkr = Number(merged.referralFlatBonusPkr);
+
     setPlatformSettings(merged);
     persistState({ platformSettings: merged });
 
     // Replicate platform settings update to Supabase
     try {
+      const gatewaysWithEconomics = {
+        ...(merged.depositGateways || {}),
+        _economics: {
+          minWithdrawalEggs: merged.minWithdrawalEggs,
+          minWithdrawalPkr: merged.minWithdrawalPkr,
+          maxWithdrawalEggs: merged.maxWithdrawalEggs,
+          referralCommissionLevel1: merged.referralCommissionLevel1,
+          referralCommissionLevel2: merged.referralCommissionLevel2,
+          marketRates: merged.marketRates
+        }
+      };
+
       supabase
         .from('platform_settings')
         .update({
-          egg_base_price: merged.eggBasePrice,
-          hen_unit_price: merged.henUnitPrice,
-          daily_egg_yield: merged.dailyEggYield,
-          contract_duration_days: merged.contractDurationDays,
-          referral_commission_pkr: merged.referralCommissionPkr,
-          is_maintenance: merged.isMaintenance,
-          deposit_gateways: merged.depositGateways
+          egg_base_price: Number(merged.eggBasePrice) || 30,
+          hen_unit_price: Number(merged.henUnitPrice) || 500,
+          daily_egg_yield: Number(merged.dailyEggYield) || 1,
+          contract_duration_days: Number(merged.contractDurationDays) || 120,
+          referral_commission_pkr: Number(merged.referralFlatBonusPkr || merged.referralCommissionPkr || 50),
+          is_maintenance: Boolean(merged.isMaintenance),
+          deposit_gateways: gatewaysWithEconomics
         })
         .eq('id', 1)
         .then(({ error }) => {

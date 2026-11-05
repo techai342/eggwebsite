@@ -8,7 +8,32 @@ import bankImg from '../assets/bank.jpg';
 import '../rawafiles.css';
 
 export default function SellEggPage({ currentRoute = '/sell-egg' }) {
-  const { user, eggVault, sellEggs, navigateTo, showToast } = useFarm();
+  const { user, eggVault, sellEggs, navigateTo, showToast, platformSettings } = useFarm();
+
+  // Dynamic Verified Merchant Stores computed from Platform Settings
+  const dynamicMerchants = useMemo(() => {
+    return VERIFIED_MERCHANTS.map((m) => {
+      const storeKey = m.id === '1' ? 'sonica' : m.id === '2' ? 'usmaina' : m.id === '3' ? 'syed' : m.id;
+      const dynamicRate = Number(
+        platformSettings?.marketRates?.eggRates?.[storeKey] ||
+        platformSettings?.marketRates?.eggRates?.[m.id] ||
+        platformSettings?.eggBasePrice ||
+        m.rate
+      );
+      const minEggs = Number(platformSettings?.minWithdrawalEggs ?? m.min ?? 1);
+      const maxEggs = Number(platformSettings?.maxWithdrawalEggs ?? m.max ?? 10000);
+      return {
+        ...m,
+        rate: dynamicRate,
+        min: minEggs,
+        max: maxEggs
+      };
+    });
+  }, [platformSettings]);
+
+  // Minimum withdrawal limits
+  const minWithdrawalPkr = Number(platformSettings?.minWithdrawalPkr ?? 30);
+  const minWithdrawalEggs = Number(platformSettings?.minWithdrawalEggs ?? 1);
 
   // 3-Step Wizard Navigation State
   const [currentStep, setCurrentStep] = useState(1);
@@ -16,7 +41,7 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
   const [activeFilter, setActiveFilter] = useState('price'); // 'price', 'trades', 'success', 'rating'
 
   // Selected order state
-  const [selectedStoreId, setSelectedStoreId] = useState(VERIFIED_MERCHANTS[0]?.id || '1');
+  const [selectedStoreId, setSelectedStoreId] = useState(dynamicMerchants[0]?.id || '1');
   const [selectedMethodCode, setSelectedMethodCode] = useState('2'); // 1: Jazzcash, 2: EasyPaisa, 3: Bank
   const [eggsToSell, setEggsToSell] = useState(() => (eggVault > 0 ? Math.floor(eggVault) : 0));
   const [accountTitle, setAccountTitle] = useState(user?.name || user?.username || '');
@@ -25,12 +50,12 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Store lookup
-  const selectedStore = VERIFIED_MERCHANTS.find((m) => m.id === String(selectedStoreId)) || VERIFIED_MERCHANTS[0];
+  const selectedStore = dynamicMerchants.find((m) => m.id === String(selectedStoreId)) || dynamicMerchants[0];
   const selectedMethod = PAYOUT_METHODS.find((p) => p.code === String(selectedMethodCode)) || PAYOUT_METHODS[1];
 
   // Filtering and sorting stores
   const filteredStores = useMemo(() => {
-    let list = [...VERIFIED_MERCHANTS];
+    let list = [...dynamicMerchants];
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -50,7 +75,7 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
     }
 
     return list;
-  }, [searchQuery, activeFilter]);
+  }, [dynamicMerchants, searchQuery, activeFilter]);
 
   // Derived calculations
   const sellerRate = selectedStore?.rate || 30;
@@ -114,6 +139,10 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
     }
     if (qty < selectedStore.min || qty > selectedStore.max) {
       showToast('error', `Quantity must be between ${selectedStore.min} and ${selectedStore.max} eggs.`);
+      return;
+    }
+    if (estimatedPayout < minWithdrawalPkr) {
+      showToast('error', `Minimum withdrawal amount is Rs. ${minWithdrawalPkr} PKR. Current total: Rs. ${estimatedPayout.toFixed(2)} PKR.`);
       return;
     }
     if (!accountTitle.trim() || !accountNumber.trim()) {

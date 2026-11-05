@@ -420,16 +420,32 @@ export default function AdminDashboardPage() {
   const [jazzQr, setJazzQr] = useState(platformSettings?.depositGateways?.jazzcash?.qrCodeUrl || '/src/assets/jazzcash.png');
   const [jazzInst, setJazzInst] = useState(platformSettings?.depositGateways?.jazzcash?.instructions || '');
 
-  // Tab 5 (Settings) state
+  // Tab 5 (Settings & Platform Economics) state
   const [waGroup, setWaGroup] = useState(platformSettings?.communityLinks?.whatsappGroup || '');
   const [waChannel, setWaChannel] = useState(platformSettings?.communityLinks?.whatsappChannel || '');
   const [supportPhone, setSupportPhone] = useState(platformSettings?.communityLinks?.supportPhone || '');
   const [popupEnabled, setPopupEnabled] = useState(Boolean(platformSettings?.communityLinks?.popupEnabled ?? true));
 
+  // 1. Livestock & Production Yield
+  const [henPrice, setHenPrice] = useState(platformSettings?.henUnitPrice ?? platformSettings?.marketRates?.henUnitPrice ?? 500);
+  const [dailyYield, setDailyYield] = useState(platformSettings?.dailyEggYield ?? 1);
+  const [contractDays, setContractDays] = useState(platformSettings?.contractDurationDays ?? 120);
+
+  // 2. P2P Liquidation & Store Payout Rates
+  const [eggBasePrice, setEggBasePrice] = useState(platformSettings?.eggBasePrice ?? 30);
   const [rateSonica, setRateSonica] = useState(platformSettings?.marketRates?.eggRates?.sonica ?? 32);
   const [rateUsmaina, setRateUsmaina] = useState(platformSettings?.marketRates?.eggRates?.usmaina ?? 30);
   const [rateSyed, setRateSyed] = useState(platformSettings?.marketRates?.eggRates?.syed ?? 33);
-  const [henPrice, setHenPrice] = useState(platformSettings?.marketRates?.henUnitPrice ?? 500);
+
+  // 3. Liquidity Bounds & Minimum Withdrawal Limits
+  const [minWdEggs, setMinWdEggs] = useState(platformSettings?.minWithdrawalEggs ?? 1);
+  const [minWdPkr, setMinWdPkr] = useState(platformSettings?.minWithdrawalPkr ?? 30);
+  const [maxWdEggs, setMaxWdEggs] = useState(platformSettings?.maxWithdrawalEggs ?? 10000);
+
+  // 4. Affiliate Matrix & Downline Commission Rates
+  const [commL1, setCommL1] = useState(platformSettings?.referralCommissionLevel1 ?? 2.0);
+  const [commL2, setCommL2] = useState(platformSettings?.referralCommissionLevel2 ?? 1.0);
+  const [flatBonus, setFlatBonus] = useState(platformSettings?.referralFlatBonusPkr ?? 50);
 
   // Sync state if platformSettings changes from context
   React.useEffect(() => {
@@ -451,11 +467,22 @@ export default function AdminDashboardPage() {
       setSupportPhone(platformSettings.communityLinks.supportPhone || '');
       setPopupEnabled(Boolean(platformSettings.communityLinks.popupEnabled ?? true));
     }
-    if (platformSettings?.marketRates) {
-      setRateSonica(platformSettings.marketRates.eggRates?.sonica ?? 32);
-      setRateUsmaina(platformSettings.marketRates.eggRates?.usmaina ?? 30);
-      setRateSyed(platformSettings.marketRates.eggRates?.syed ?? 33);
-      setHenPrice(platformSettings.marketRates.henUnitPrice ?? 500);
+    if (platformSettings) {
+      setHenPrice(platformSettings.henUnitPrice ?? platformSettings.marketRates?.henUnitPrice ?? 500);
+      setDailyYield(platformSettings.dailyEggYield ?? 1);
+      setContractDays(platformSettings.contractDurationDays ?? 120);
+      setEggBasePrice(platformSettings.eggBasePrice ?? 30);
+      setMinWdEggs(platformSettings.minWithdrawalEggs ?? 1);
+      setMinWdPkr(platformSettings.minWithdrawalPkr ?? 30);
+      setMaxWdEggs(platformSettings.maxWithdrawalEggs ?? 10000);
+      setCommL1(platformSettings.referralCommissionLevel1 ?? 2.0);
+      setCommL2(platformSettings.referralCommissionLevel2 ?? 1.0);
+      setFlatBonus(platformSettings.referralFlatBonusPkr ?? 50);
+    }
+    if (platformSettings?.marketRates?.eggRates) {
+      setRateSonica(platformSettings.marketRates.eggRates.sonica ?? 32);
+      setRateUsmaina(platformSettings.marketRates.eggRates.usmaina ?? 30);
+      setRateSyed(platformSettings.marketRates.eggRates.syed ?? 33);
     }
   }, [platformSettings]);
 
@@ -636,10 +663,70 @@ export default function AdminDashboardPage() {
     });
   };
 
-  // Save Platform Settings Handler
+  // Preset configurations for instant economic governance
+  const applyEconomyPreset = (type) => {
+    if (type === 'STANDARD') {
+      setHenPrice(500);
+      setDailyYield(1);
+      setContractDays(120);
+      setEggBasePrice(30);
+      setRateSonica(32);
+      setRateUsmaina(30);
+      setRateSyed(33);
+      setMinWdEggs(1);
+      setMinWdPkr(30);
+      setMaxWdEggs(10000);
+      setCommL1(2.0);
+      setCommL2(1.0);
+      setFlatBonus(50);
+      showToast('info', 'Loaded Standard 500 PKR / 120-Day Farm Economy Preset');
+    } else if (type === 'FESTIVAL_PROMO') {
+      setHenPrice(450);
+      setDailyYield(1);
+      setContractDays(120);
+      setEggBasePrice(35);
+      setRateSonica(36);
+      setRateUsmaina(34);
+      setRateSyed(37);
+      setMinWdEggs(1);
+      setMinWdPkr(35);
+      setMaxWdEggs(10000);
+      setCommL1(3.0);
+      setCommL2(1.5);
+      setFlatBonus(75);
+      showToast('info', 'Loaded Festival Boost 450 PKR / High Payout Preset');
+    } else if (type === 'VIP_HIGH_YIELD') {
+      setHenPrice(1000);
+      setDailyYield(2);
+      setContractDays(90);
+      setEggBasePrice(40);
+      setRateSonica(42);
+      setRateUsmaina(40);
+      setRateSyed(43);
+      setMinWdEggs(5);
+      setMinWdPkr(200);
+      setMaxWdEggs(20000);
+      setCommL1(4.0);
+      setCommL2(2.0);
+      setFlatBonus(100);
+      showToast('info', 'Loaded VIP High-Yield 1,000 PKR / 2 Eggs-Per-Day Preset');
+    }
+  };
+
+  // Save Platform Settings Handler (Replicates to localStorage and live Supabase table)
   const handleSaveSettings = (e) => {
     e.preventDefault();
     updatePlatformSettings({
+      henUnitPrice: Number(henPrice) || 500,
+      dailyEggYield: Number(dailyYield) || 1,
+      contractDurationDays: Number(contractDays) || 120,
+      eggBasePrice: Number(eggBasePrice) || 30,
+      minWithdrawalEggs: Number(minWdEggs) || 1,
+      minWithdrawalPkr: Number(minWdPkr) || 30,
+      maxWithdrawalEggs: Number(maxWdEggs) || 10000,
+      referralCommissionLevel1: Number(commL1) || 2.0,
+      referralCommissionLevel2: Number(commL2) || 1.0,
+      referralFlatBonusPkr: Number(flatBonus) || 50,
       communityLinks: {
         whatsappGroup: waGroup,
         whatsappGroupUrl: waGroup,
@@ -1835,11 +1922,593 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================================
-            TAB 5: PLATFORM SETTINGS & COMMUNITY LINKS
+            TAB 5: PLATFORM SETTINGS & ECONOMIC GOVERNANCE
            ========================================================================= */}
         {activeTab === 'SETTINGS' && (
-          <form onSubmit={handleSaveSettings} className="space-y-4">
-            {/* Community Links & Popups */}
+          <form onSubmit={handleSaveSettings} className="space-y-5">
+            {/* Header & Quick Presets Toolbar */}
+            <div className="rounded-2xl p-5 bg-gradient-to-r from-[#0d2a1c] via-[#092116] to-[#04120a] border border-amber-400/30 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-400 flex items-center justify-center text-sm font-black border border-amber-400/30">
+                    <i className="fa-solid fa-coins"></i>
+                  </span>
+                  <div>
+                    <h3 className="font-manrope font-black text-base text-white uppercase tracking-tight flex items-center gap-2">
+                      <span>Platform Economics &amp; Pricing Governance</span>
+                      <span className="text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full uppercase">
+                        Super Admin Mode
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Configure flock asset costs, P2P egg liquidation rates, cashout thresholds, and affiliate commission percentages.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Presets Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Quick Presets:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => applyEconomyPreset('STANDARD')}
+                  className="px-2.5 py-1.5 rounded-lg bg-black/50 border border-slate-700 hover:border-amber-400 text-[10px] font-bold text-slate-200 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <i className="fa-solid fa-scale-balanced text-amber-400"></i>
+                  <span>Standard 500</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyEconomyPreset('FESTIVAL_PROMO')}
+                  className="px-2.5 py-1.5 rounded-lg bg-black/50 border border-slate-700 hover:border-emerald-400 text-[10px] font-bold text-slate-200 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <i className="fa-solid fa-bolt text-emerald-400"></i>
+                  <span>Festival 450</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyEconomyPreset('VIP_HIGH_YIELD')}
+                  className="px-2.5 py-1.5 rounded-lg bg-black/50 border border-slate-700 hover:border-purple-400 text-[10px] font-bold text-slate-200 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <i className="fa-solid fa-crown text-purple-400"></i>
+                  <span>VIP 1000</span>
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION 1: LIVESTOCK & PRODUCTION YIELD */}
+            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-amber-400/20 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-amber-400/20 text-amber-400 flex items-center justify-center text-xs">
+                    <i className="fa-solid fa-feather"></i>
+                  </div>
+                  <div>
+                    <h4 className="font-manrope font-black text-sm text-white uppercase tracking-tight">
+                      Flock Livestock &amp; Production Yield Controls
+                    </h4>
+                    <p className="text-[10px] text-slate-400">
+                      Controls acquisition costs on the Buy Hen page and daily egg harvesting calculations
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-md hidden sm:inline-block">
+                  Total Yield: {(Number(dailyYield) || 1) * (Number(contractDays) || 120)} Eggs/Hen
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Hen Unit Price
+                    </label>
+                    <span className="text-[9px] text-slate-400">Buy Asset Page</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-amber-400">
+                      Rs
+                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={henPrice}
+                      onChange={(e) => setHenPrice(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 pl-9 pr-3 text-white text-sm font-black font-mono focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setHenPrice((prev) => Math.max(50, Number(prev) - 50))}
+                      className="flex-1 py-1 bg-white/5 hover:bg-white/10 rounded-md text-[9px] font-bold text-slate-300 transition-colors"
+                    >
+                      -50
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHenPrice((prev) => Number(prev) + 50)}
+                      className="flex-1 py-1 bg-white/5 hover:bg-white/10 rounded-md text-[9px] font-bold text-slate-300 transition-colors"
+                    >
+                      +50
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHenPrice(500)}
+                      className="px-2 py-1 bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 rounded-md text-[9px] font-bold transition-colors"
+                    >
+                      Reset 500
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Daily Egg Yield / Hen
+                    </label>
+                    <span className="text-[9px] text-slate-400">Harvest Cycle</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      step="1"
+                      value={dailyYield}
+                      onChange={(e) => setDailyYield(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-sm font-black font-mono focus:outline-none focus:border-amber-400"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">
+                      Egg(s)/Day
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-slate-500 block pt-1">
+                    Standard is 1 egg per 24 hours per hen.
+                  </span>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Contract Term Duration
+                    </label>
+                    <span className="text-[9px] text-slate-400">Lifecycle</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      step="1"
+                      value={contractDays}
+                      onChange={(e) => setContractDays(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-sm font-black font-mono focus:outline-none focus:border-amber-400"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-400">
+                      Days
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-slate-500 block pt-1">
+                    Standard active period is 120 days per unit.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 2: P2P EGG LIQUIDATION & STORE RATES */}
+            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-emerald-400/30 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-emerald-400/20 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-400/20 text-emerald-400 flex items-center justify-center text-xs">
+                    <i className="fa-solid fa-egg"></i>
+                  </div>
+                  <div>
+                    <h4 className="font-manrope font-black text-sm text-white uppercase tracking-tight">
+                      P2P Egg Liquidation &amp; Merchant Store Rates
+                    </h4>
+                    <p className="text-[10px] text-slate-400">
+                      Configure live per-egg liquidation rates paid to farmers on Sell Egg page
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-md hidden sm:inline-block">
+                  Avg Rate: Rs. {(((Number(rateSonica) || 32) + (Number(rateUsmaina) || 30) + (Number(rateSyed) || 33)) / 3).toFixed(1)} PKR
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+                <div className="bg-black/40 rounded-xl p-3 border border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-bold text-slate-300 uppercase block">
+                      Base Egg Price
+                    </span>
+                    <span className="text-[8px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">Reference</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">Rs</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="1"
+                      value={eggBasePrice}
+                      onChange={(e) => setEggBasePrice(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-white text-xs font-bold focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-500 block">System baseline: 30 Rs</span>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3 border border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-bold text-slate-300 uppercase block">
+                      Sonica FORM STORE
+                    </span>
+                    <span className="text-[8px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded">Verified</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">Rs</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="1"
+                      value={rateSonica}
+                      onChange={(e) => setRateSonica(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-white text-xs font-bold focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-500 block">Default: 32 Rs/egg</span>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3 border border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-bold text-slate-300 uppercase block">
+                      Usmaina Poltry Farm
+                    </span>
+                    <span className="text-[8px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded">Verified</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">Rs</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="1"
+                      value={rateUsmaina}
+                      onChange={(e) => setRateUsmaina(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-white text-xs font-bold focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-500 block">Default: 30 Rs/egg</span>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3 border border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-bold text-slate-300 uppercase block">
+                      Syed poultry farm
+                    </span>
+                    <span className="text-[8px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded">Verified</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">Rs</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="1"
+                      value={rateSyed}
+                      onChange={(e) => setRateSyed(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-white text-xs font-bold focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-500 block">Default: 33 Rs/egg</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 3: LIQUIDITY BOUNDS & WITHDRAWAL LIMITS */}
+            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-cyan-400/30 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-cyan-400/20 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-cyan-400/20 text-cyan-400 flex items-center justify-center text-xs">
+                    <i className="fa-solid fa-money-bill-transfer"></i>
+                  </div>
+                  <div>
+                    <h4 className="font-manrope font-black text-sm text-white uppercase tracking-tight">
+                      Liquidity Bounds &amp; Minimum Withdrawal Limits
+                    </h4>
+                    <p className="text-[10px] text-slate-400">
+                      Enforces liquidation barriers to protect merchant reserves and prevent micro-transaction abuse
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded-md hidden sm:inline-block">
+                  Threshold: ≥{minWdEggs} Egg(s) &amp; ≥Rs. {minWdPkr} PKR
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Min Withdrawal (Eggs)
+                    </label>
+                    <span className="text-[9px] text-slate-400">Vault Check</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={minWdEggs}
+                      onChange={(e) => setMinWdEggs(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-sm font-black font-mono focus:outline-none focus:border-cyan-400"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-cyan-400">
+                      Eggs
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-slate-500 block pt-1">
+                    Farmers cannot liquidate fewer eggs than this threshold.
+                  </span>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Min Withdrawal (PKR)
+                    </label>
+                    <span className="text-[9px] text-slate-400">Cashout Net</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-cyan-400">
+                      Rs
+                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="any"
+                      value={minWdPkr}
+                      onChange={(e) => setMinWdPkr(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 pl-9 pr-3 text-white text-sm font-black font-mono focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                  <span className="text-[9.5px] text-slate-500 block pt-1">
+                    Order total in PKR must meet or exceed this amount.
+                  </span>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Max Liquidation Limit
+                    </label>
+                    <span className="text-[9px] text-slate-400">Per Order</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="100"
+                      step="100"
+                      value={maxWdEggs}
+                      onChange={(e) => setMaxWdEggs(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-sm font-black font-mono focus:outline-none focus:border-cyan-400"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      Eggs
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-slate-500 block pt-1">
+                    Maximum eggs allowed in a single liquidation transaction.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 4: AFFILIATE COMMISSION MATRIX */}
+            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-purple-400/30 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-purple-400/20 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-purple-400/20 text-purple-400 flex items-center justify-center text-xs">
+                    <i className="fa-solid fa-users-gear"></i>
+                  </div>
+                  <div>
+                    <h4 className="font-manrope font-black text-sm text-white uppercase tracking-tight">
+                      Affiliate &amp; Downline Commission Matrix
+                    </h4>
+                    <p className="text-[10px] text-slate-400">
+                      Adjust real-time referral cash commissions credited upon hen asset purchases
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-purple-300 bg-purple-400/10 border border-purple-400/20 px-2 py-0.5 rounded-md hidden sm:inline-block">
+                  Total Referral Payout: {(Number(commL1) || 2) + (Number(commL2) || 1)}%
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Level 1 Commission (Direct)
+                    </label>
+                    <span className="text-[8px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded">Tier 1</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="50"
+                      value={commL1}
+                      onChange={(e) => setCommL1(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-sm font-black font-mono focus:outline-none focus:border-purple-400"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-400">
+                      %
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-slate-400 block pt-1">
+                    Direct sponsor earns Rs. {((Number(henPrice) || 500) * (Number(commL1) || 2) / 100).toFixed(2)} PKR per {Number(henPrice) || 500} PKR unit.
+                  </span>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Level 2 Commission (Secondary)
+                    </label>
+                    <span className="text-[8px] bg-indigo-950 text-indigo-300 border border-indigo-800 px-1.5 py-0.5 rounded">Tier 2</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="50"
+                      value={commL2}
+                      onChange={(e) => setCommL2(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-sm font-black font-mono focus:outline-none focus:border-purple-400"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-indigo-400">
+                      %
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] text-slate-400 block pt-1">
+                    Secondary sponsor earns Rs. {((Number(henPrice) || 500) * (Number(commL2) || 1) / 100).toFixed(2)} PKR per {Number(henPrice) || 500} PKR unit.
+                  </span>
+                </div>
+
+                <div className="bg-black/40 rounded-xl p-3.5 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Flat Referral Bonus
+                    </label>
+                    <span className="text-[8px] bg-amber-950 text-amber-300 border border-amber-800 px-1.5 py-0.5 rounded">Signup</span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-amber-400">
+                      Rs
+                    </span>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={flatBonus}
+                      onChange={(e) => setFlatBonus(e.target.value)}
+                      required
+                      className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 pl-9 pr-3 text-white text-sm font-black font-mono focus:outline-none focus:border-purple-400"
+                    />
+                  </div>
+                  <span className="text-[9.5px] text-slate-500 block pt-1">
+                    Bonus credited on confirmed downstream milestones.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 5: LIVE FINANCIAL IMPACT & FARMER ROI SIMULATOR PREVIEW */}
+            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-br from-[#121f14] via-[#0d2618] to-[#06150b] border-2 border-amber-400/50 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/5 rounded-full blur-3xl pointer-events-none"></div>
+
+              <div className="flex items-center justify-between border-b border-amber-400/20 pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 text-black flex items-center justify-center text-sm font-black shadow-md">
+                    <i className="fa-solid fa-calculator"></i>
+                  </div>
+                  <div>
+                    <h4 className="font-manrope font-black text-sm sm:text-base text-white uppercase tracking-tight flex items-center gap-2">
+                      <span>Live Financial Impact &amp; Farmer ROI Preview</span>
+                      <span className="text-[9px] font-bold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-full">
+                        Real-time Pre-Flight Calculation
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300">
+                      Calculates projected return metrics per hen unit under your current settings before saving
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Simulation Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+                <div className="p-3 bg-black/50 border border-slate-800 rounded-xl">
+                  <span className="text-[8.5px] font-bold uppercase text-slate-400 block tracking-wider">
+                    Hen Price
+                  </span>
+                  <strong className="text-base sm:text-lg font-mono font-black text-amber-400 block mt-1">
+                    Rs. {Number(henPrice) || 0}
+                  </strong>
+                  <span className="text-[8px] text-slate-500">Capital Investment</span>
+                </div>
+
+                <div className="p-3 bg-black/50 border border-slate-800 rounded-xl">
+                  <span className="text-[8.5px] font-bold uppercase text-slate-400 block tracking-wider">
+                    Term Output
+                  </span>
+                  <strong className="text-base sm:text-lg font-mono font-black text-white block mt-1">
+                    {(Number(dailyYield) || 1) * (Number(contractDays) || 120)} Eggs
+                  </strong>
+                  <span className="text-[8px] text-slate-500">Over {Number(contractDays) || 120} Days</span>
+                </div>
+
+                <div className="p-3 bg-black/50 border border-slate-800 rounded-xl">
+                  <span className="text-[8.5px] font-bold uppercase text-slate-400 block tracking-wider">
+                    Gross Liquidation
+                  </span>
+                  <strong className="text-base sm:text-lg font-mono font-black text-emerald-400 block mt-1">
+                    Rs. {Math.round(((Number(dailyYield) || 1) * (Number(contractDays) || 120)) * (((Number(rateSonica) || 32) + (Number(rateUsmaina) || 30) + (Number(rateSyed) || 33)) / 3))}
+                  </strong>
+                  <span className="text-[8px] text-slate-500">At Avg Store Rate</span>
+                </div>
+
+                <div className="p-3 bg-black/50 border border-slate-800 rounded-xl">
+                  <span className="text-[8.5px] font-bold uppercase text-slate-400 block tracking-wider">
+                    Farmer Net Profit
+                  </span>
+                  <strong className="text-base sm:text-lg font-mono font-black text-[#c9f36a] block mt-1">
+                    Rs. {Math.round(((Number(dailyYield) || 1) * (Number(contractDays) || 120)) * (((Number(rateSonica) || 32) + (Number(rateUsmaina) || 30) + (Number(rateSyed) || 33)) / 3)) - (Number(henPrice) || 500)}
+                  </strong>
+                  <span className="text-[8px] text-emerald-300">Clean Yield Surplus</span>
+                </div>
+
+                <div className="p-3 bg-black/50 border border-slate-800 rounded-xl">
+                  <span className="text-[8.5px] font-bold uppercase text-slate-400 block tracking-wider">
+                    Projected ROI
+                  </span>
+                  <strong className="text-base sm:text-lg font-mono font-black text-amber-300 block mt-1">
+                    +{Number(henPrice) > 0 ? (((Math.round(((Number(dailyYield) || 1) * (Number(contractDays) || 120)) * (((Number(rateSonica) || 32) + (Number(rateUsmaina) || 30) + (Number(rateSyed) || 33)) / 3)) - (Number(henPrice) || 500)) / Number(henPrice)) * 100).toFixed(1) : '0'}%
+                  </strong>
+                  <span className="text-[8px] text-amber-400">Total Lifecycle Gain</span>
+                </div>
+
+                <div className="p-3 bg-black/50 border border-slate-800 rounded-xl">
+                  <span className="text-[8.5px] font-bold uppercase text-slate-400 block tracking-wider">
+                    Downline Payout
+                  </span>
+                  <strong className="text-base sm:text-lg font-mono font-black text-purple-400 block mt-1">
+                    Rs. {((Number(henPrice) || 500) * ((Number(commL1) || 2) + (Number(commL2) || 1)) / 100).toFixed(1)}
+                  </strong>
+                  <span className="text-[8px] text-purple-300">L1+L2 Cash Bounty</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 6: OFFICIAL COMMUNITY CHANNELS */}
             <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-5 shadow-xl">
               <div className="flex items-center gap-2 border-b border-amber-400/20 pb-3">
                 <i className="fa-brands fa-whatsapp text-emerald-400 text-lg"></i>
@@ -1911,107 +2580,18 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Dynamic Market Rates Manager */}
-            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-5 shadow-xl">
-              <div className="flex items-center gap-2 border-b border-amber-400/20 pb-3">
-                <i className="fa-solid fa-chart-line text-amber-400 text-lg"></i>
-                <div>
-                  <h3 className="font-manrope font-black text-sm sm:text-base text-white uppercase tracking-tight">
-                    Dynamic P2P Egg Liquidation Rates &amp; Asset Price
-                  </h3>
-                  <p className="text-[11px] text-slate-400">
-                    Configure official per-egg payout rates for verified merchant stores
-                  </p>
-                </div>
+            {/* Prominent Save & Deploy Action Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-400/30 rounded-2xl">
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Settings replicate live to Farm Context, LocalStorage &amp; Supabase Database</span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-black/40 rounded-xl p-3 border border-slate-800 space-y-1">
-                  <span className="text-[10.5px] font-bold text-slate-300 uppercase block">
-                    Sonica FORM STORE
-                  </span>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">Rs</span>
-                    <input
-                      type="number"
-                      step="any"
-                      min="1"
-                      value={rateSonica}
-                      onChange={(e) => setRateSonica(e.target.value)}
-                      required
-                      className="w-full bg-black/60 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-white text-xs font-bold focus:outline-none focus:border-amber-400"
-                    />
-                  </div>
-                  <span className="text-[9.5px] text-slate-500 block">Default: 32 Rs/egg</span>
-                </div>
-
-                <div className="bg-black/40 rounded-xl p-3 border border-slate-800 space-y-1">
-                  <span className="text-[10.5px] font-bold text-slate-300 uppercase block">
-                    Usmaina Poltry Farm
-                  </span>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">Rs</span>
-                    <input
-                      type="number"
-                      step="any"
-                      min="1"
-                      value={rateUsmaina}
-                      onChange={(e) => setRateUsmaina(e.target.value)}
-                      required
-                      className="w-full bg-black/60 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-white text-xs font-bold focus:outline-none focus:border-amber-400"
-                    />
-                  </div>
-                  <span className="text-[9.5px] text-slate-500 block">Default: 30 Rs/egg</span>
-                </div>
-
-                <div className="bg-black/40 rounded-xl p-3 border border-slate-800 space-y-1">
-                  <span className="text-[10.5px] font-bold text-slate-300 uppercase block">
-                    Syed poultry farm
-                  </span>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400">Rs</span>
-                    <input
-                      type="number"
-                      step="any"
-                      min="1"
-                      value={rateSyed}
-                      onChange={(e) => setRateSyed(e.target.value)}
-                      required
-                      className="w-full bg-black/60 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-white text-xs font-bold focus:outline-none focus:border-amber-400"
-                    />
-                  </div>
-                  <span className="text-[9.5px] text-slate-500 block">Default: 33 Rs/egg</span>
-                </div>
-
-                <div className="bg-black/40 rounded-xl p-3 border border-slate-800 space-y-1">
-                  <span className="text-[10.5px] font-bold text-slate-300 uppercase block">
-                    Hen Unit Price
-                  </span>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-400">Rs</span>
-                    <input
-                      type="number"
-                      step="1"
-                      min="1"
-                      value={henPrice}
-                      onChange={(e) => setHenPrice(e.target.value)}
-                      required
-                      className="w-full bg-black/60 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-white text-xs font-bold focus:outline-none focus:border-amber-400"
-                    />
-                  </div>
-                  <span className="text-[9.5px] text-slate-500 block">Default: 500 PKR</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Save Button */}
-            <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-manrope font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <i className="fa-solid fa-floppy-disk"></i>
-                <span>Save Platform Settings</span>
+                <i className="fa-solid fa-floppy-disk text-sm"></i>
+                <span>Save &amp; Deploy Platform Economics</span>
               </button>
             </div>
           </form>

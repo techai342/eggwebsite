@@ -48,7 +48,7 @@ function playHenVoiceAudio() {
 }
 
 export default function BuyAssetPage() {
-  const { buyFarmAsset, navigateTo, showToast } = useFarm();
+  const { buyFarmAsset, navigateTo, showToast, platformSettings } = useFarm();
 
   // Wizard state: Step 1 (Showcase), Step 2 (Multiplier), Step 3 (Payment)
   const [currentStep, setCurrentStep] = useState(1);
@@ -57,14 +57,15 @@ export default function BuyAssetPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
-  // Economic calculations
-  const unitPrice = ASSET_SPEC.unitPrice; // Rs. 500
-  const dailyPerUnit = ASSET_SPEC.dailyYieldPerUnit; // 1
-  const contractTermDays = ASSET_SPEC.termDays; // 120
+  // Dynamic economic calculations
+  const unitPrice = Number(platformSettings?.henUnitPrice || ASSET_SPEC.unitPrice); // Dynamic Hen Price
+  const dailyPerUnit = Number(platformSettings?.dailyEggYield || ASSET_SPEC.dailyYieldPerUnit); // Dynamic Daily Yield
+  const contractTermDays = Number(platformSettings?.contractDurationDays || ASSET_SPEC.termDays); // Dynamic Contract Term
+  const totalYieldPerUnit = dailyPerUnit * contractTermDays;
   const totalCost = units * unitPrice;
   const projDaily = units * dailyPerUnit;
   const projMonthly = units * dailyPerUnit * 30;
-  const projFullTerm = units * ASSET_SPEC.totalYieldPerUnit;
+  const projFullTerm = units * totalYieldPerUnit;
 
   // Selected gateway object
   const selectedGateway = PAYMENT_GATEWAYS.find((g) => g.code === selectedGatewayCode) || PAYMENT_GATEWAYS[0];
@@ -376,7 +377,7 @@ export default function BuyAssetPage() {
                     Total Returns
                   </span>
                   <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-[#c9f36a]/20 border border-[#c9f36a]/40 text-[#c9f36a] text-[8.5px] font-black font-manrope">
-                    {ASSET_SPEC.totalYieldPerUnit} Total Eggs
+                    {totalYieldPerUnit} Total Eggs
                   </span>
                 </div>
               </div>
@@ -436,7 +437,7 @@ export default function BuyAssetPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <i className="fa-solid fa-circle-check text-emerald-600"></i>
-                  <span>Guaranteed active contract for full 120 days</span>
+                  <span>Guaranteed active contract for full {contractTermDays} days</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <i className="fa-solid fa-circle-check text-emerald-600"></i>
@@ -656,7 +657,7 @@ export default function BuyAssetPage() {
 
                 <div className="text-center">
                   <span className="text-[7px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
-                    Full Term (120d)
+                    Full Term ({contractTermDays}d)
                   </span>
                   <strong className="font-manrope font-black text-sm text-[#28734a] block mt-1 leading-none">
                     +{projFullTerm}
