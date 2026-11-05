@@ -48,7 +48,15 @@ function playHenVoiceAudio() {
 }
 
 export default function BuyAssetPage() {
-  const { buyFarmAsset, navigateTo, showToast, platformSettings } = useFarm();
+  const {
+    buyFarmAsset,
+    submitDepositRequest,
+    navigateTo,
+    showToast,
+    platformSettings,
+    user,
+    getWhatsAppSupportUrl
+  } = useFarm();
 
   // Wizard state: Step 1 (Showcase), Step 2 (Multiplier), Step 3 (Payment)
   const [currentStep, setCurrentStep] = useState(1);
@@ -56,6 +64,14 @@ export default function BuyAssetPage() {
   const [selectedGatewayCode, setSelectedGatewayCode] = useState(PAYMENT_GATEWAYS[0]?.code || '1000');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  // Manual payment submission state
+  const [senderAccountTitle, setSenderAccountTitle] = useState('');
+  const [senderAccountNumber, setSenderAccountNumber] = useState('');
+  const [transactionId, setTransactionId] = useState('');
+  const [copiedField, setCopiedField] = useState(null);
+  const [depositSubmitted, setDepositSubmitted] = useState(false);
+  const [submittedDepositDetails, setSubmittedDepositDetails] = useState(null);
 
   // Dynamic economic calculations
   const unitPrice = Number(platformSettings?.henUnitPrice || ASSET_SPEC.unitPrice); // Dynamic Hen Price
@@ -98,7 +114,55 @@ export default function BuyAssetPage() {
     }, 1800);
   };
 
-  // Checkout submission
+  // Copy helper with feedback
+  const handleCopy = (text, fieldName) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+    }
+    setCopiedField(fieldName);
+    showToast('info', `${fieldName} copied to clipboard!`);
+    setTimeout(() => setCopiedField(null), 2500);
+  };
+
+  // Manual payment submission handler
+  const handleSubmitDeposit = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedGateway) {
+      showToast('error', 'Please select a valid payment gateway.');
+      return;
+    }
+    if (!transactionId || !transactionId.trim()) {
+      showToast('error', 'Please enter your Transaction ID (TID / Ref No).');
+      return;
+    }
+    if (!senderAccountNumber || !senderAccountNumber.trim()) {
+      showToast('error', 'Please enter your sender mobile / account number.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await submitDepositRequest({
+        units: Number(units),
+        gateway: selectedGateway.name,
+        methodCode: selectedGateway.code,
+        senderAccountTitle: senderAccountTitle.trim() || user?.name || user?.username || 'Farmer',
+        senderAccountNumber: senderAccountNumber.trim(),
+        transactionId: transactionId.trim()
+      });
+
+      setIsSubmitting(false);
+      if (res?.success) {
+        setSubmittedDepositDetails(res.deposit);
+        setDepositSubmitted(true);
+      }
+    } catch (err) {
+      setIsSubmitting(false);
+      showToast('error', err?.message || 'Failed to submit deposit request.');
+    }
+  };
+
+  // Instant direct purchase (Demo / Fallback / Tests)
   const handleConfirmPurchase = (e) => {
     e.preventDefault();
     if (!selectedGateway) {
@@ -797,21 +861,233 @@ export default function BuyAssetPage() {
               </div>
             </div>
 
-            {/* STEP 3 FINAL SUBMIT: ACTIVATE & PAY NOW */}
-            <button
-              type="button"
-              onClick={handleConfirmPurchase}
-              disabled={isSubmitting}
-              className="w-full relative overflow-hidden bg-gradient-to-r from-[#153d2b] via-[#28734a] to-[#153d2b] text-[#c9f36a] font-manrope font-black text-xs tracking-widest uppercase py-4 rounded-2xl shadow-xl shadow-emerald-950/20 active:scale-95 transition-all flex items-center justify-center gap-2 group shimmer-active disabled:opacity-70"
-            >
-              <i className="fa-solid fa-shield-halved text-sm group-hover:scale-110 transition-transform"></i>
-              <span>
-                {isSubmitting
-                  ? 'Activating Plan...'
-                  : `Activate & Pay Now (Rs. ${totalCost.toLocaleString()})`}
-              </span>
-              <i className="fa-solid fa-arrow-right text-xs"></i>
-            </button>
+            {/* If Deposit was Submitted: Display Confirmation Card */}
+            {depositSubmitted ? (
+              <div className="farm-card-3d p-4 bg-gradient-to-b from-[#f2f9f0] to-[#e4f2e1] border-2 border-emerald-500/40 text-center space-y-3">
+                <div className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xl mx-auto shadow-md animate-bounce">
+                  <i className="fa-solid fa-check"></i>
+                </div>
+                <div>
+                  <span className="text-[8px] font-black text-emerald-800 uppercase tracking-widest bg-emerald-100 px-2 py-0.5 rounded-full">
+                    Deposit Request Under Review
+                  </span>
+                  <h3 className="font-manrope font-black text-sm text-[#0d2c20] mt-1">
+                    Deposit Successfully Submitted!
+                  </h3>
+                  <p className="text-[10px] text-slate-600 mt-0.5 leading-snug">
+                    Admin is verifying your transaction. Your {units}x Hens will be activated on your farm as soon as verified.
+                  </p>
+                </div>
+
+                <div className="bg-white/80 border border-[#d2e4cf] rounded-xl p-2.5 text-left text-xs space-y-1">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500">Livestock Units:</span>
+                    <strong className="text-[#0d2c20] font-black">{units}x Hens</strong>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500">Amount Paid:</span>
+                    <strong className="text-emerald-700 font-black">Rs. {totalCost.toLocaleString()} PKR</strong>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500">Payment Gateway:</span>
+                    <span className="font-bold text-slate-700">{selectedGateway?.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500">Transaction ID (TID):</span>
+                    <code className="font-mono font-bold text-amber-700 bg-amber-50 px-1 rounded">{transactionId}</code>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500">Current Status:</span>
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-100 text-amber-800 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                      Pending Approval
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('/dashboard')}
+                    className="w-full py-3 bg-[#153d2b] hover:bg-[#1f553c] text-[#c9f36a] rounded-xl font-manrope font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2"
+                  >
+                    <i className="fa-solid fa-gauge-high"></i>
+                    <span>View in Dashboard</span>
+                  </button>
+
+                  <a
+                    href={`https://wa.me/923412017923?text=${encodeURIComponent(
+                      `Assalam-o-Alaikum Admin! Maine abhi AL Rehman Meta Eggs mein ${units} Hens ka deposit submit kiya hai (Rs. ${totalCost} via ${selectedGateway?.name}). Mera TID: ${transactionId}. Kindly verify ker k activate ker dein!`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-manrope font-bold text-[11px] uppercase tracking-wider transition-all shadow flex items-center justify-center gap-2"
+                  >
+                    <i className="fa-brands fa-whatsapp text-sm"></i>
+                    <span>Fast Approval via WhatsApp</span>
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Official Admin Payment Details Box */}
+                <div className="farm-card-3d p-3.5 bg-gradient-to-br from-[#fcfdfc] to-[#f2f8f0] border border-[#d6e8d2]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-[#28734a] bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                      Admin Payment Receiver
+                    </span>
+                    <span className="text-[8px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full">
+                      Verified Account
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    {/* Account Title */}
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#e2ede0]">
+                      <div>
+                        <span className="text-[8px] font-extrabold uppercase text-slate-400 block leading-tight">
+                          Account Title
+                        </span>
+                        <strong className="font-manrope font-black text-xs text-[#0d2c20]">
+                          AL Rehman Meta Eggs
+                        </strong>
+                      </div>
+                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg">
+                        {selectedGateway?.name}
+                      </span>
+                    </div>
+
+                    {/* Account Number with 1-Click Copy */}
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#e2ede0]">
+                      <div>
+                        <span className="text-[8px] font-extrabold uppercase text-slate-400 block leading-tight">
+                          {selectedGateway?.name} Number
+                        </span>
+                        <span className="font-mono font-black text-sm text-[#153d2b] tracking-wider">
+                          03412017923
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy('03412017923', 'Account Number')}
+                        className="px-2.5 py-1.5 bg-[#f0f7ee] hover:bg-[#e4f1e1] text-[#153d2b] text-[10px] font-black rounded-lg border border-[#cbe0c8] transition-all flex items-center gap-1 active:scale-95"
+                      >
+                        <i className={`fa-solid ${copiedField === 'Account Number' ? 'fa-check text-emerald-600' : 'fa-copy'}`}></i>
+                        <span>{copiedField === 'Account Number' ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                    </div>
+
+                    {/* Amount to Send with 1-Click Copy */}
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50/60 border border-amber-200">
+                      <div>
+                        <span className="text-[8px] font-extrabold uppercase text-amber-700 block leading-tight">
+                          Exact Amount to Transfer
+                        </span>
+                        <div className="font-manrope font-black text-base text-[#0d2c20]">
+                          Rs. {totalCost.toLocaleString()}{' '}
+                          <span className="text-[10px] font-bold text-slate-500">PKR</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(String(totalCost), 'Amount')}
+                        className="px-2.5 py-1.5 bg-white hover:bg-amber-100/50 text-amber-900 text-[10px] font-black rounded-lg border border-amber-300 transition-all flex items-center gap-1 active:scale-95"
+                      >
+                        <i className={`fa-solid ${copiedField === 'Amount' ? 'fa-check text-emerald-600' : 'fa-copy'}`}></i>
+                        <span>{copiedField === 'Amount' ? 'Copied!' : 'Copy Amount'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-[8.5px] text-slate-500 font-medium mt-2 leading-relaxed bg-[#f6faf5] p-2 rounded-lg border border-[#e4eee1]">
+                    <i className="fa-solid fa-circle-info text-emerald-600 mr-1"></i>
+                    Oper diye gaye number per <strong>Rs. {totalCost.toLocaleString()}</strong> transfer karein. Transfer ke baad SMS ya receipt se <strong>Transaction ID (TID)</strong> neechay enter ker k submit karein.
+                  </p>
+                </div>
+
+                {/* Sender Verification Input Fields */}
+                <div className="farm-card-3d p-3.5 space-y-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-3.5 bg-gradient-to-b from-[#153d2b] to-[#c9f36a] rounded-full"></span>
+                    <h3 className="font-manrope font-black text-xs text-[#0d2c20] uppercase tracking-wider">
+                      Payment Verification Details
+                    </h3>
+                  </div>
+
+                  {/* Sender Name */}
+                  <div>
+                    <label className="block text-[8.5px] font-extrabold uppercase text-slate-500 mb-1">
+                      Sender Account Name / Title
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Muhammad Ali"
+                      value={senderAccountTitle}
+                      onChange={(e) => setSenderAccountTitle(e.target.value)}
+                      className="w-full bg-[#f8faf7] border border-[#d6e5d3] focus:border-[#153d2b] rounded-xl px-3 py-2 text-xs font-bold text-[#0d2c20] outline-none transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Sender Mobile / Account Number */}
+                  <div>
+                    <label className="block text-[8.5px] font-extrabold uppercase text-slate-500 mb-1">
+                      Sender Mobile / Account Number <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 03412345678"
+                      value={senderAccountNumber}
+                      onChange={(e) => setSenderAccountNumber(e.target.value)}
+                      className="w-full bg-[#f8faf7] border border-[#d6e5d3] focus:border-[#153d2b] rounded-xl px-3 py-2 text-xs font-bold text-[#0d2c20] outline-none transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Transaction ID (TID) */}
+                  <div>
+                    <label className="block text-[8.5px] font-extrabold uppercase text-slate-500 mb-1">
+                      Transaction ID (TID / Ref No) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1029384756 or TRX-8829"
+                      value={transactionId}
+                      onChange={(e) => setTransactionId(e.target.value)}
+                      className="w-full bg-[#f8faf7] border border-[#d6e5d3] focus:border-[#153d2b] rounded-xl px-3 py-2 text-xs font-bold font-mono text-[#0d2c20] outline-none transition-all placeholder:text-slate-400"
+                    />
+                    <span className="text-[7.5px] text-slate-400 font-semibold block mt-0.5">
+                      Enter the 10-12 digit Transaction ID received in Easypisa / JazzCash SMS.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Primary Action: Submit Manual Deposit for Admin Review */}
+                <button
+                  type="button"
+                  onClick={handleSubmitDeposit}
+                  disabled={isSubmitting}
+                  className="w-full relative overflow-hidden bg-gradient-to-r from-[#153d2b] via-[#28734a] to-[#153d2b] text-[#c9f36a] font-manrope font-black text-xs tracking-widest uppercase py-4 rounded-2xl shadow-xl shadow-emerald-950/20 active:scale-95 transition-all flex items-center justify-center gap-2 group shimmer-active disabled:opacity-70 cursor-pointer"
+                >
+                  <i className="fa-solid fa-paper-plane text-xs group-hover:scale-110 transition-transform"></i>
+                  <span>
+                    {isSubmitting
+                      ? 'Submitting Deposit...'
+                      : `Submit Deposit for Approval (Rs. ${totalCost.toLocaleString()})`}
+                  </span>
+                  <i className="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+
+                {/* Instant Purchase Fallback / Demo Activation */}
+                <div className="pt-1 text-center">
+                  <button
+                    type="button"
+                    onClick={handleConfirmPurchase}
+                    className="text-[9px] font-extrabold text-slate-400 hover:text-emerald-700 uppercase tracking-wider underline transition-colors"
+                  >
+                    Instant Direct Purchase (Demo / Simulation)
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

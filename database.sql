@@ -165,6 +165,53 @@ CREATE TABLE IF NOT EXISTS `support_messages` (
   KEY `idx_support_messages_is_read` (`is_read`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------------------------
+-- 9. Table: payment_gateways (Deposit Payment Gateways)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `payment_gateways` (
+  `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(32) NOT NULL UNIQUE,
+  `name` VARCHAR(64) NOT NULL,
+  `account_title` VARCHAR(128) NOT NULL,
+  `account_number` VARCHAR(64) NOT NULL,
+  `instructions` TEXT DEFAULT NULL,
+  `qr_code_url` TEXT DEFAULT NULL,
+  `min_limit` DECIMAL(10, 2) NOT NULL DEFAULT 500.00,
+  `max_limit` DECIMAL(12, 2) NOT NULL DEFAULT 500000.00,
+  `fee_percentage` DECIMAL(5, 2) NOT NULL DEFAULT 0.00,
+  `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 10. Table: deposit_requests (Manual Payment Verification by Admin)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `deposit_requests` (
+  `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `request_id` VARCHAR(64) NOT NULL UNIQUE,
+  `user_id` VARCHAR(64) NOT NULL,
+  `username` VARCHAR(64) NOT NULL,
+  `gateway` VARCHAR(64) NOT NULL DEFAULT 'Easypisa',
+  `units` INT(11) NOT NULL DEFAULT 1,
+  `unit_price` DECIMAL(10, 2) NOT NULL DEFAULT 500.00,
+  `amount_pkr` DECIMAL(12, 2) NOT NULL,
+  `sender_account_title` VARCHAR(128) NOT NULL,
+  `sender_account_number` VARCHAR(64) NOT NULL,
+  `transaction_id` VARCHAR(128) NOT NULL,
+  `proof_screenshot` TEXT DEFAULT NULL,
+  `status` ENUM('Pending', 'Completed', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
+  `admin_notes` TEXT DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_deposit_requests_user_id` (`user_id`),
+  KEY `idx_deposit_requests_username` (`username`),
+  KEY `idx_deposit_requests_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ==============================================================================
 -- Seed Data Initialization
 -- ==============================================================================

@@ -20,6 +20,7 @@ export default function DashboardPage() {
     analytics,
     transactions,
     withdrawals,
+    depositRequests = [],
     showToast,
     VERIFIED_MERCHANTS,
     referralStats,
@@ -45,6 +46,17 @@ export default function DashboardPage() {
   const totalActiveUnits = useMemo(() => {
     return activeAssets.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
   }, [activeAssets]);
+
+  // Pending deposit / hen orders for current farmer
+  const userPendingDeposits = useMemo(() => {
+    if (!Array.isArray(depositRequests)) return [];
+    return depositRequests.filter(
+      (d) =>
+        d.status === 'Pending' &&
+        ((user?.id && d.userId === user.id) ||
+          (user?.username && String(d.username).toLowerCase() === String(user.username).toLowerCase()))
+    );
+  }, [depositRequests, user]);
 
   // Live countdown clock state for cooldown modal
   const [remainingTimeStr, setRemainingTimeStr] = useState('23:59:59');
@@ -685,6 +697,83 @@ export default function DashboardPage() {
 
       {/* Main Content Body */}
       <div className="px-4 space-y-5 pb-6">
+
+        {/* ==================================================== */}
+        {/* PENDING HEN PURCHASE & DEPOSIT ORDERS BANNER         */}
+        {/* ==================================================== */}
+        {userPendingDeposits.length > 0 && (
+          <div className="farm-card-3d p-3.5 bg-gradient-to-br from-amber-500/10 via-amber-50/80 to-emerald-500/10 border-2 border-amber-400/60 rounded-2xl relative z-10 shadow-md">
+            <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-amber-300/40">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                <h3 className="font-manrope font-black text-xs text-[#0d2c20] uppercase tracking-wider">
+                  Pending Hen Orders ({userPendingDeposits.length})
+                </h3>
+              </div>
+              <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 border border-amber-300">
+                Awaiting Verification
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {userPendingDeposits.map((dep) => (
+                <div
+                  key={dep.id}
+                  className="bg-white/90 border border-amber-200/80 rounded-xl p-2.5 shadow-sm space-y-1.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-black">
+                        🐔
+                      </span>
+                      <strong className="font-manrope font-black text-xs text-[#0d2c20]">
+                        {dep.units}x Hens ({dep.gateway})
+                      </strong>
+                    </div>
+                    <span className="font-manrope font-black text-xs text-emerald-800">
+                      Rs. {Number(dep.amountPkr || 0).toLocaleString()} PKR
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1 text-[9px] text-slate-600 bg-amber-50/50 p-1.5 rounded-lg border border-amber-100">
+                    <div>
+                      <span className="text-slate-400 font-bold block text-[7.5px] uppercase">Transaction ID:</span>
+                      <code className="font-mono font-bold text-amber-800">{dep.transactionId}</code>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold block text-[7.5px] uppercase">Sender Account:</span>
+                      <span className="font-bold text-slate-700 truncate block">
+                        {dep.senderAccountNumber || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-0.5">
+                    <span className="text-[8px] font-bold text-amber-700 flex items-center gap-1">
+                      <i className="fa-solid fa-clock-rotate-left"></i>
+                      Admin is verifying payment...
+                    </span>
+                    <a
+                      href={`https://wa.me/923412017923?text=${encodeURIComponent(
+                        `Assalam-o-Alaikum Admin! Maine AL Rehman Meta Eggs pe ${dep.units} Hens ka deposit submit kiya hai (Rs. ${dep.amountPkr}, TID: ${dep.transactionId}). Kindly isay jaldi approve ker k hens active ker dein.`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[9px] font-bold flex items-center gap-1 shadow-sm transition-all"
+                    >
+                      <i className="fa-brands fa-whatsapp"></i>
+                      <span>Fast Approval</span>
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-2 text-[8px] font-medium text-slate-500 text-center leading-tight">
+              💡 <span className="font-bold text-slate-700">Note:</span> Jaisay hi Admin payment verify karega, aap ki murgiyan foran farm mein add ho jayengi aur anday dena shuru ker dein gi.
+            </div>
+          </div>
+        )}
 
         {/* ==================================================== */}
         {/* 2. LIVE NOTICE MARQUEE TICKER                        */}

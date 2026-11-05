@@ -234,6 +234,7 @@ const DEFAULT_INITIAL_STATE = {
   platformSettings: DEFAULT_PLATFORM_SETTINGS,
   activityLogs: [],
   supportMessages: [],
+  depositRequests: [],
   lastHarvest: null,
   cooldownActive: false
 };
@@ -326,6 +327,19 @@ function loadInitialState() {
           }
         } catch (_) {}
 
+        let initialDepositReqs = [];
+        try {
+          if (Array.isArray(parsed.depositRequests)) {
+            initialDepositReqs = parsed.depositRequests;
+          } else {
+            const rawStoredDeps = window.localStorage.getItem('metaeggs_deposit_requests');
+            if (rawStoredDeps) {
+              const parsedDeps = JSON.parse(rawStoredDeps);
+              if (Array.isArray(parsedDeps)) initialDepositReqs = parsedDeps;
+            }
+          }
+        } catch (_) {}
+
         const sanitizedState = {
           user: loadedUser,
           credentials: parsed.credentials || DEFAULT_INITIAL_STATE.credentials,
@@ -341,6 +355,7 @@ function loadInitialState() {
             ? parsed.activityLogs.filter((l) => !String(l.id || '').startsWith('LOG-INIT-'))
             : [],
           supportMessages: initialSupportMsgs,
+          depositRequests: initialDepositReqs,
           lastHarvest: parsed.lastHarvest || null,
           cooldownActive: parsed.cooldownActive !== undefined ? Boolean(parsed.cooldownActive) : false
         };
@@ -377,6 +392,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   const [platformSettings, setPlatformSettings] = useState(initial.platformSettings || DEFAULT_PLATFORM_SETTINGS);
   const [activityLogs, setActivityLogs] = useState(initial.activityLogs || DEFAULT_ACTIVITY_LOGS);
   const [supportMessages, setSupportMessages] = useState(initial.supportMessages || []);
+  const [depositRequests, setDepositRequests] = useState(initial.depositRequests || []);
   const [lastHarvest, setLastHarvest] = useState(initial.lastHarvest);
   const [cooldownActive, setCooldownActive] = useState(initial.cooldownActive);
   const [toasts, setToasts] = useState([]);
@@ -398,6 +414,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         platformSettings: patch.platformSettings !== undefined ? patch.platformSettings : platformSettings,
         activityLogs: patch.activityLogs !== undefined ? patch.activityLogs : activityLogs,
         supportMessages: patch.supportMessages !== undefined ? patch.supportMessages : supportMessages,
+        depositRequests: patch.depositRequests !== undefined ? patch.depositRequests : depositRequests,
         lastHarvest: patch.lastHarvest !== undefined ? patch.lastHarvest : lastHarvest,
         cooldownActive: patch.cooldownActive !== undefined ? patch.cooldownActive : cooldownActive
       };
@@ -410,10 +427,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       window.localStorage.setItem('farm_platform_settings', JSON.stringify(snapshot.platformSettings));
       window.localStorage.setItem('farm_activity_logs', JSON.stringify(snapshot.activityLogs));
       window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(snapshot.supportMessages || []));
+      window.localStorage.setItem('metaeggs_deposit_requests', JSON.stringify(snapshot.depositRequests || []));
     } catch (err) {
       console.warn('Error saving state to localStorage:', err);
     }
-  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, users, platformSettings, activityLogs, supportMessages, lastHarvest, cooldownActive]);
+  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, users, platformSettings, activityLogs, supportMessages, depositRequests, lastHarvest, cooldownActive]);
 
   // Initial sync check on mount
   useEffect(() => {
@@ -599,6 +617,41 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         } catch (msgErr) {
           console.info('Supabase support_messages note:', msgErr?.message || msgErr);
         }
+
+        // 5. Fetch live deposit requests from Supabase (safe fallback)
+        try {
+          const { data: dbDeposits } = await supabase
+            .from('deposit_requests')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (Array.isArray(dbDeposits) && dbDeposits.length > 0 && isMounted) {
+            const formattedDeps = dbDeposits.map((d) => ({
+              id: String(d.request_id || d.id),
+              dbId: d.id,
+              userId: String(d.user_id),
+              username: d.username,
+              gateway: d.gateway,
+              units: Number(d.units || 1),
+              unitPrice: Number(d.unit_price || 500),
+              amountPkr: Number(d.amount_pkr),
+              senderAccountTitle: d.sender_account_title,
+              senderAccountNumber: d.sender_account_number,
+              transactionId: d.transaction_id,
+              proofScreenshot: d.proof_screenshot,
+              status: d.status || 'Pending',
+              adminNotes: d.admin_notes,
+              createdAt: d.created_at,
+              updatedAt: d.updated_at
+            }));
+            setDepositRequests(formattedDeps);
+            try {
+              window.localStorage.setItem('metaeggs_deposit_requests', JSON.stringify(formattedDeps));
+            } catch (_) {}
+          }
+        } catch (depErr) {
+          console.info('Supabase deposit_requests note:', depErr?.message || depErr);
+        }
       } catch (err) {
         console.info('Supabase initial hydration note:', err?.message || err);
       }
@@ -685,6 +738,84 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       if (channel) {
         supabase.removeChannel(channel);
       }
+    };
+  }, []);
+
+  // Realtime Live Subscription for Deposit Requests (Manual Payment Sync)
+  useEffect(() => {
+    let depChannel = null;
+    try {
+      depChannel = supabase
+        .channel('deposit_requests_live_channel')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'deposit_requests' },
+          (payload) => {
+            if (payload.eventType === 'INSERT' && payload.new) {
+              const row = payload.new;
+              const formatted = {
+                id: String(row.request_id || row.id),
+                dbId: row.id,
+                userId: String(row.user_id),
+                username: row.username,
+                gateway: row.gateway,
+                units: Number(row.units || 1),
+                unitPrice: Number(row.unit_price || 500),
+                amountPkr: Number(row.amount_pkr),
+                senderAccountTitle: row.sender_account_title,
+                senderAccountNumber: row.sender_account_number,
+                transactionId: row.transaction_id,
+                proofScreenshot: row.proof_screenshot,
+                status: row.status || 'Pending',
+                adminNotes: row.admin_notes,
+                createdAt: row.created_at,
+                updatedAt: row.updated_at
+              };
+              setDepositRequests((prev) => {
+                if (prev.some((d) => String(d.id) === String(formatted.id))) return prev;
+                const next = [formatted, ...prev];
+                try {
+                  window.localStorage.setItem('metaeggs_deposit_requests', JSON.stringify(next));
+                } catch (_) {}
+                return next;
+              });
+            } else if (payload.eventType === 'UPDATE' && payload.new) {
+              const row = payload.new;
+              setDepositRequests((prev) => {
+                const next = prev.map((d) =>
+                  String(d.id) === String(row.request_id) || String(d.dbId) === String(row.id)
+                    ? {
+                        ...d,
+                        status: row.status,
+                        adminNotes: row.admin_notes,
+                        updatedAt: row.updated_at
+                      }
+                    : d
+                );
+                try {
+                  window.localStorage.setItem('metaeggs_deposit_requests', JSON.stringify(next));
+                } catch (_) {}
+                return next;
+              });
+            } else if (payload.eventType === 'DELETE' && payload.old) {
+              const row = payload.old;
+              setDepositRequests((prev) => {
+                const next = prev.filter((d) => String(d.dbId) !== String(row.id) && String(d.id) !== String(row.request_id));
+                try {
+                  window.localStorage.setItem('metaeggs_deposit_requests', JSON.stringify(next));
+                } catch (_) {}
+                return next;
+              });
+            }
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.info('Supabase deposit_requests realtime notice:', e);
+    }
+
+    return () => {
+      if (depChannel) supabase.removeChannel(depChannel);
     };
   }, []);
 
@@ -2582,6 +2713,328 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     } catch (_) {}
   }, []);
 
+  // ============================================================================
+  // Manual Payment Deposit Verification Engine (Farmer Submission <-> Admin Approval)
+  // ============================================================================
+
+  // Farmer Action: Submit Manual Payment Deposit Request
+  const submitDepositRequest = useCallback(async ({
+    units,
+    gateway,
+    methodCode,
+    senderAccountTitle,
+    senderAccountNumber,
+    transactionId,
+    proofScreenshot = null
+  }) => {
+    if (user?.status === 'Blocked') {
+      const msg = 'Account is blocked. Please contact customer support.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const qty = Number(units);
+    if (!Number.isInteger(qty) || qty <= 0) {
+      const msg = 'Units must be a positive integer.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const sTitle = (senderAccountTitle || '').trim();
+    const sNumber = (senderAccountNumber || '').trim();
+    const tid = (transactionId || '').trim();
+
+    if (!sTitle) {
+      const msg = 'Please enter sender account title (name).';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    if (!sNumber) {
+      const msg = 'Please enter sender account/phone number.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    if (!tid) {
+      const msg = 'Please enter payment Transaction ID (TID / Ref No).';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const validGateway = PAYMENT_GATEWAYS.find(
+      (g) =>
+        g.code === String(methodCode) ||
+        (gateway && g.name.toLowerCase() === String(gateway).toLowerCase()) ||
+        (gateway && String(gateway).toLowerCase().replace(/\s+/g, '') === g.name.toLowerCase().replace(/\s+/g, ''))
+    ) || PAYMENT_GATEWAYS[0];
+
+    const henPrice = Number(platformSettings?.henUnitPrice || ASSET_SPEC.unitPrice);
+    const cost = qty * henPrice;
+    const reqId = `DEP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const newDeposit = {
+      id: reqId,
+      userId: String(user?.accountId || user?.username || '1197'),
+      username: user?.username || 'mrsaqib242',
+      gateway: validGateway.name,
+      units: qty,
+      unitPrice: henPrice,
+      amountPkr: cost,
+      senderAccountTitle: sTitle,
+      senderAccountNumber: sNumber,
+      transactionId: tid,
+      proofScreenshot: proofScreenshot || null,
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const newTrx = {
+      id: `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'BUY',
+      description: `Hen Purchase Pending (${qty}x Livestock Units via ${validGateway.name} - TID: #${tid})`,
+      amount: cost,
+      unit: 'PKR',
+      date: new Date().toISOString(),
+      status: 'Pending',
+      gateway: validGateway.name,
+      depositId: reqId
+    };
+
+    const updatedDeposits = [newDeposit, ...depositRequests];
+    const updatedTransactions = [newTrx, ...transactions];
+
+    setDepositRequests(updatedDeposits);
+    setTransactions(updatedTransactions);
+    persistState({ depositRequests: updatedDeposits, transactions: updatedTransactions });
+
+    // Sync to Supabase deposit_requests table
+    try {
+      await supabase.from('deposit_requests').insert({
+        request_id: newDeposit.id,
+        user_id: newDeposit.userId,
+        username: newDeposit.username,
+        gateway: newDeposit.gateway,
+        units: newDeposit.units,
+        unit_price: newDeposit.unitPrice,
+        amount_pkr: newDeposit.amountPkr,
+        sender_account_title: newDeposit.senderAccountTitle,
+        sender_account_number: newDeposit.senderAccountNumber,
+        transaction_id: newDeposit.transactionId,
+        proof_screenshot: newDeposit.proofScreenshot,
+        status: 'Pending'
+      });
+    } catch (e) {
+      console.info('Supabase deposit_requests insert fallback:', e?.message || e);
+    }
+
+    logActivity({
+      action: 'SUBMIT_DEPOSIT',
+      category: 'PAYMENT',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: `Submitted manual deposit: ${qty}x Hens (Rs. ${cost}) via ${validGateway.name} (TID: ${tid})`,
+      status: 'PENDING'
+    });
+
+    const successMsg = `Deposit request submitted! Admin will verify your payment TID #${tid} and activate your hens.`;
+    showToast('success', successMsg);
+    return { success: true, message: successMsg, deposit: newDeposit };
+  }, [user, platformSettings, depositRequests, transactions, persistState, showToast, logActivity]);
+
+  // Admin Action: Approve Manual Deposit Request & Credit Livestock
+  const approveDepositRequest = useCallback(async ({ depositId }) => {
+    let index = depositRequests.findIndex((d) => d.id === depositId || String(d.dbId) === String(depositId));
+    if (index === -1) {
+      const msg = 'Deposit request not found.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const targetDep = depositRequests[index];
+    if (targetDep.status === 'Completed' || targetDep.status === 'Approved') {
+      const msg = 'Deposit request is already approved.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const qty = Number(targetDep.units || 1);
+    const henPrice = Number(targetDep.unitPrice || platformSettings?.henUnitPrice || 500);
+    const dailyYield = qty * Number(platformSettings?.dailyEggYield || 1);
+    const termDays = Number(platformSettings?.contractDurationDays || 120);
+
+    // Create Active Livestock Contract
+    const newAsset = {
+      id: `ASSET-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      name: ASSET_SPEC.name,
+      units: qty,
+      unitCost: henPrice,
+      totalCost: targetDep.amountPkr,
+      dailyYield: dailyYield,
+      termDays: termDays,
+      daysRemaining: termDays,
+      purchaseDate: new Date().toISOString(),
+      gateway: targetDep.gateway
+    };
+
+    const updatedDep = {
+      ...targetDep,
+      status: 'Completed',
+      approvedAt: new Date().toISOString()
+    };
+
+    const nextDeposits = [...depositRequests];
+    nextDeposits[index] = updatedDep;
+
+    // Update transactions list
+    const nextTransactions = transactions.map((t) => {
+      if (t.depositId === targetDep.id || (t.type === 'BUY' && t.status === 'Pending' && t.amount === targetDep.amountPkr)) {
+        return {
+          ...t,
+          status: 'Completed',
+          description: `Purchased ${qty}x ${ASSET_SPEC.name} Units (Approved by Admin)`
+        };
+      }
+      return t;
+    });
+
+    const isCurrentFarmer =
+      user &&
+      (user.id === targetDep.userId ||
+        String(user.username || '').toLowerCase() === String(targetDep.username || '').toLowerCase());
+
+    const patchToPersist = {
+      depositRequests: nextDeposits,
+      transactions: nextTransactions
+    };
+
+    if (isCurrentFarmer) {
+      const nextAssets = [...activeAssets, newAsset];
+      setActiveAssets(nextAssets);
+      patchToPersist.activeAssets = nextAssets;
+    }
+
+    // Update target farmer's activeHens in users list
+    const targetUserIdx = users.findIndex(
+      (u) =>
+        (targetDep.userId && u.id === targetDep.userId) ||
+        (targetDep.username && String(u.username).toLowerCase() === String(targetDep.username).toLowerCase())
+    );
+
+    if (targetUserIdx !== -1) {
+      const targetUser = users[targetUserIdx];
+      const updatedUser = {
+        ...targetUser,
+        activeHens: (Number(targetUser.activeHens) || 0) + qty
+      };
+      const nextUsers = [...users];
+      nextUsers[targetUserIdx] = updatedUser;
+      setUsers(nextUsers);
+      patchToPersist.users = nextUsers;
+    }
+
+    setDepositRequests(nextDeposits);
+    setTransactions(nextTransactions);
+    persistState(patchToPersist);
+
+    // Replicate to Supabase
+    try {
+      await supabase
+        .from('deposit_requests')
+        .update({ status: 'Completed', updated_at: new Date().toISOString() })
+        .eq('request_id', targetDep.id);
+
+      await supabase.from('farm_assets').insert({
+        username: targetDep.username,
+        asset_name: newAsset.name,
+        units: newAsset.units,
+        unit_cost: newAsset.unitCost,
+        daily_yield_per_unit: platformSettings?.dailyEggYield || 1,
+        term_days: newAsset.termDays,
+        total_return_eggs: newAsset.units * (platformSettings?.dailyEggYield || 1) * newAsset.termDays,
+        gateway: targetDep.gateway,
+        status: 'active',
+        expires_at: new Date(Date.now() + newAsset.termDays * 24 * 60 * 60 * 1000).toISOString()
+      });
+    } catch (e) {
+      console.info('Supabase deposit approve sync note:', e?.message || e);
+    }
+
+    logActivity({
+      action: 'APPROVE_DEPOSIT',
+      category: 'ADMIN',
+      userId: targetDep.userId,
+      username: targetDep.username,
+      details: `Approved deposit #${targetDep.id}: Credited ${qty}x Hens (Rs. ${targetDep.amountPkr}) to @${targetDep.username}`,
+      status: 'SUCCESS'
+    });
+
+    const successMsg = `Deposit approved! ${qty}x Hens successfully activated for @${targetDep.username}.`;
+    showToast('success', successMsg);
+    return { success: true, message: successMsg };
+  }, [depositRequests, transactions, user, activeAssets, users, platformSettings, persistState, showToast, logActivity]);
+
+  // Admin Action: Reject Manual Deposit Request
+  const rejectDepositRequest = useCallback(async ({ depositId, reason }) => {
+    let index = depositRequests.findIndex((d) => d.id === depositId || String(d.dbId) === String(depositId));
+    if (index === -1) {
+      const msg = 'Deposit request not found.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const targetDep = depositRequests[index];
+    const rejReason = reason || 'Payment TID could not be verified.';
+
+    const updatedDep = {
+      ...targetDep,
+      status: 'Rejected',
+      adminNotes: rejReason,
+      rejectedAt: new Date().toISOString()
+    };
+
+    const nextDeposits = [...depositRequests];
+    nextDeposits[index] = updatedDep;
+
+    const nextTransactions = transactions.map((t) => {
+      if (t.depositId === targetDep.id || (t.type === 'BUY' && t.status === 'Pending' && t.amount === targetDep.amountPkr)) {
+        return {
+          ...t,
+          status: 'Rejected',
+          description: `Hen Purchase Rejected: ${rejReason}`
+        };
+      }
+      return t;
+    });
+
+    setDepositRequests(nextDeposits);
+    setTransactions(nextTransactions);
+    persistState({ depositRequests: nextDeposits, transactions: nextTransactions });
+
+    try {
+      await supabase
+        .from('deposit_requests')
+        .update({ status: 'Rejected', admin_notes: rejReason, updated_at: new Date().toISOString() })
+        .eq('request_id', targetDep.id);
+    } catch (e) {
+      console.info('Supabase deposit reject sync note:', e?.message || e);
+    }
+
+    logActivity({
+      action: 'REJECT_DEPOSIT',
+      category: 'ADMIN',
+      userId: targetDep.userId,
+      username: targetDep.username,
+      details: `Rejected deposit #${targetDep.id} for @${targetDep.username}. Reason: ${rejReason}`,
+      status: 'REJECTED'
+    });
+
+    const msg = `Deposit request #${targetDep.id} rejected.`;
+    showToast('info', msg);
+    return { success: true, message: msg };
+  }, [depositRequests, transactions, persistState, showToast, logActivity]);
+
   // Routing Helper & State (Hash + Path support for SPA zero-config routing)
   const getInitialRoute = () => {
     if (typeof window === 'undefined') return '/';
@@ -2697,6 +3150,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     updateUserBalances,
     approveWithdrawal,
     rejectWithdrawal,
+    depositRequests,
+    setDepositRequests,
+    submitDepositRequest,
+    approveDepositRequest,
+    rejectDepositRequest,
     updatePlatformSettings,
     getAdminKPIs,
     logActivity,
@@ -2761,6 +3219,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     updateUserBalances,
     approveWithdrawal,
     rejectWithdrawal,
+    depositRequests,
+    setDepositRequests,
+    submitDepositRequest,
+    approveDepositRequest,
+    rejectDepositRequest,
     updatePlatformSettings,
     getAdminKPIs,
     logActivity,
