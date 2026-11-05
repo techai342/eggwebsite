@@ -610,6 +610,84 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     };
   }, [user?.username]);
 
+  // Realtime Live Subscription for Support Messages (Instant Farmer <-> Admin Push)
+  useEffect(() => {
+    let channel = null;
+    try {
+      channel = supabase
+        .channel('support_messages_live_channel')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'support_messages' },
+          (payload) => {
+            if (payload.eventType === 'INSERT' && payload.new) {
+              const row = payload.new;
+              const formatted = {
+                id: String(row.id),
+                userId: String(row.user_id),
+                username: row.sender_name || 'Farmer',
+                senderRole: row.sender_role || 'farmer',
+                senderName: row.sender_name || 'Farmer',
+                senderEmail: row.sender_email,
+                message: row.message,
+                isRead: Boolean(row.is_read),
+                isEdited: Boolean(row.is_edited),
+                createdAt: row.created_at,
+                updatedAt: row.updated_at
+              };
+              setSupportMessages((prev) => {
+                if (prev.some((m) => String(m.id) === String(formatted.id))) {
+                  return prev;
+                }
+                const next = [...prev, formatted];
+                try {
+                  window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(next));
+                } catch (_) {}
+                return next;
+              });
+            } else if (payload.eventType === 'UPDATE' && payload.new) {
+              const row = payload.new;
+              setSupportMessages((prev) => {
+                const next = prev.map((m) =>
+                  String(m.id) === String(row.id)
+                    ? {
+                        ...m,
+                        message: row.message,
+                        isRead: Boolean(row.is_read),
+                        isEdited: Boolean(row.is_edited),
+                        updatedAt: row.updated_at
+                      }
+                    : m
+                );
+                try {
+                  window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(next));
+                } catch (_) {}
+                return next;
+              });
+            } else if (payload.eventType === 'DELETE' && payload.old) {
+              const row = payload.old;
+              setSupportMessages((prev) => {
+                const next = prev.filter((m) => String(m.id) !== String(row.id));
+                try {
+                  window.localStorage.setItem('metaeggs_support_messages', JSON.stringify(next));
+                } catch (_) {}
+                return next;
+              });
+            }
+          }
+        )
+        .subscribe();
+    } catch (subErr) {
+      console.info('Supabase realtime support subscription note:', subErr);
+    }
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, []);
+
   // Toast notification management
   const showToast = useCallback((type, message, duration = 3000) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;

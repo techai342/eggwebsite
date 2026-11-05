@@ -642,6 +642,21 @@ export function AppShell({
 
         {showNav && <AppBottomNav currentRoute={currentRoute} />}
 
+        {/* Floating Quick Support Desk Action Beacon */}
+        <button
+          type="button"
+          onClick={() => setIsSupportOpen(true)}
+          className="fixed bottom-20 right-4 sm:right-6 z-40 w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 via-[#16a34a] to-[#15803d] text-white shadow-[0_4px_20px_rgba(22,163,74,0.5)] border-2 border-[#c9f36a] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+          title="24/7 Official Live Support Desk"
+          aria-label="Open Live Support Desk"
+        >
+          <i className="fa-solid fa-headset text-lg group-hover:rotate-12 transition-transform"></i>
+          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9f36a] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#c9f36a] border-2 border-[#082013]"></span>
+          </span>
+        </button>
+
         <SupportChatModal
           isOpen={isSupportOpen}
           onClose={() => setIsSupportOpen(false)}

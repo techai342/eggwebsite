@@ -236,6 +236,15 @@ export default function SupportChatModal({ isOpen, onClose }) {
                             ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                             : ''}
                         </span>
+                        {isMyFarmerMsg && (
+                          <span className="ml-1 inline-flex items-center">
+                            {msg.isRead ? (
+                              <i className="fa-solid fa-check-double text-emerald-400 text-[9px]" title="Read by Admin"></i>
+                            ) : (
+                              <i className="fa-solid fa-check text-slate-400 text-[9px]" title="Delivered"></i>
+                            )}
+                          </span>
+                        )}
                         {msg.isEdited && (
                           <span className="text-[8px] text-amber-400/80 italic">(edited)</span>
                         )}
@@ -312,8 +321,28 @@ export default function SupportChatModal({ isOpen, onClose }) {
               )}
             </div>
 
+            {/* Quick Inquiry FAQ Chips */}
+            <div className="px-3 py-1.5 bg-black/40 border-t border-emerald-500/20 flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 whitespace-nowrap">FAQ:</span>
+              {[
+                "How to buy hens with Easypisa/JazzCash?",
+                "When will my withdrawal arrive?",
+                "What is today's egg rate?",
+                "How does referral bonus work?"
+              ].map((q, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setInputMessage(q)}
+                  className="px-2 py-0.5 rounded-full bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/30 text-[9.5px] text-emerald-300 whitespace-nowrap cursor-pointer transition-all active:scale-95"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
             {/* Input Form */}
-            <form onSubmit={handleSend} className="p-2.5 bg-black/40 border-t border-emerald-500/20 flex items-center gap-2">
+            <form onSubmit={handleSend} className="p-2.5 bg-black/50 border-t border-emerald-500/20 flex items-center gap-2">
               <input
                 type="text"
                 value={inputMessage}
