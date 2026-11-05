@@ -666,6 +666,129 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     return { success: false, message: msg };
   }, [credentials, user, users, persistState, showToast, logActivity]);
 
+  // Farmer Registration Action
+  const registerUser = useCallback(({ username, emailOrPhone, password, name, referralCode }) => {
+    const cleanUsername = String(username || '').trim().replace(/^@/, '');
+    const cleanEmailOrPhone = String(emailOrPhone || '').trim();
+    const cleanPassword = String(password || '');
+
+    if (!cleanUsername || cleanUsername.length < 3) {
+      const msg = 'Username must be at least 3 characters.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    if (!cleanEmailOrPhone) {
+      const msg = 'Email address or mobile phone number is required.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    if (!cleanPassword || cleanPassword.length < 6) {
+      const msg = 'Password must be at least 6 characters.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    // Check for existing account
+    const existing = users.find((u) => {
+      const uName = String(u.username || '').toLowerCase();
+      const uEmail = String(u.email || '').toLowerCase();
+      const uPhone = String(u.phone || '').trim();
+      const input = cleanEmailOrPhone.toLowerCase();
+      return uName === cleanUsername.toLowerCase() || uEmail === input || (uPhone && uPhone === cleanEmailOrPhone);
+    });
+
+    if (existing) {
+      const msg = 'An account with this username or email/phone already exists.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const isEmail = cleanEmailOrPhone.includes('@');
+    const newUserId = `usr_${Date.now()}`;
+    const newAccountId = `#${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newUserRecord = {
+      id: newUserId,
+      accountId: newAccountId,
+      username: cleanUsername,
+      name: name?.trim() || cleanUsername,
+      email: isEmail ? cleanEmailOrPhone : `${cleanUsername}@alrehman.farm`,
+      phone: isEmail ? '' : cleanEmailOrPhone,
+      password: cleanPassword,
+      role: 'farmer',
+      status: 'Active',
+      balance: 0,
+      eggVault: 0,
+      activeHens: 0,
+      upliner: referralCode?.trim() || 'SYSTEM',
+      referralCode: cleanUsername,
+      createdAt: new Date().toISOString()
+    };
+
+    // If a referral code was passed, add downline tracking
+    if (referralCode?.trim()) {
+      const uplinerUser = users.find(
+        (u) =>
+          u.username.toLowerCase() === referralCode.trim().toLowerCase() ||
+          (u.referralCode && u.referralCode.toLowerCase() === referralCode.trim().toLowerCase())
+      );
+      if (uplinerUser) {
+        setTeamMembers((prev) => [
+          ...prev,
+          {
+            id: `tm_${Date.now()}`,
+            username: cleanUsername,
+            tierLevel: 1,
+            upliner: uplinerUser.username,
+            joinDate: new Date().toISOString().split('T')[0],
+            assetsPurchased: 0,
+            totalSpentPkr: 0,
+            commissionEarnedPkr: 0
+          }
+        ]);
+      }
+    }
+
+    const updatedUsers = [...users, newUserRecord];
+    setUsers(updatedUsers);
+
+    // Auto login
+    const activeSession = {
+      id: newUserRecord.id,
+      username: newUserRecord.username,
+      email: newUserRecord.email,
+      name: newUserRecord.name,
+      accountId: newUserRecord.accountId,
+      upliner: newUserRecord.upliner,
+      referralCode: newUserRecord.referralCode,
+      role: newUserRecord.role,
+      status: newUserRecord.status,
+      isLoggedIn: true,
+      token: `jwt_session_${Date.now()}`
+    };
+
+    setUser(activeSession);
+    persistState({
+      user: activeSession,
+      users: updatedUsers
+    });
+
+    logActivity({
+      action: 'USER_REGISTERED',
+      category: 'AUTH',
+      userId: newUserRecord.id,
+      username: newUserRecord.username,
+      details: `New farmer registered: @${newUserRecord.username} (${cleanEmailOrPhone})`,
+      status: 'SUCCESS'
+    });
+
+    const msg = `Welcome to AL Rehman Meta Eggs, @${cleanUsername}! Account created.`;
+    showToast('success', msg);
+    return { success: true, message: msg, user: activeSession };
+  }, [users, persistState, showToast, logActivity]);
+
   const logout = useCallback(() => {
     logActivity({
       action: 'LOGOUT',
@@ -1807,6 +1930,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     showToast,
     removeToast,
     login,
+    registerUser,
     logout,
     changePassword,
     buyFarmAsset,
@@ -1856,6 +1980,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     showToast,
     removeToast,
     login,
+    registerUser,
     logout,
     changePassword,
     buyFarmAsset,

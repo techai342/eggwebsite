@@ -39,12 +39,12 @@ export default function Navbar() {
             Login
           </a>
           <a
-            href="#/login"
+            href="#/register"
             className="btn btn-lime nav-register"
             onClick={(e) => {
               e.preventDefault();
               if (typeof window !== 'undefined') {
-                window.location.hash = '#/login';
+                window.location.hash = '#/register';
               }
             }}
           >

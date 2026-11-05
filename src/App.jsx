@@ -7,12 +7,14 @@ import BuyAssetPage from './pages/BuyAssetPage';
 import SellEggPage from './pages/SellEggPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import TeamPage from './pages/TeamPage';
+import RegisterPage from './pages/RegisterPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import './rawafiles.css';
 
 // Export route page components for downstream milestone imports
-export { LandingPage, LoginPage, DashboardPage, BuyAssetPage, SellEggPage, ChangePasswordPage };
-export { TeamPage, AdminDashboardPage };
+export { LandingPage, LoginPage, RegisterPage, DashboardPage, BuyAssetPage, SellEggPage, ChangePasswordPage };
+export { TeamPage };
+export { AdminDashboardPage };
 export const WithdrawPage = SellEggPage; // Alias as per PROJECT.md and DISPATCH.md
 
 /**
@@ -33,6 +35,8 @@ export default function App() {
   switch (normalizedRoute) {
     case '/login':
       return <LoginPage />;
+    case '/register':
+      return <RegisterPage />;
     case '/dashboard':
       return <DashboardPage />;
     case '/buy-asset':

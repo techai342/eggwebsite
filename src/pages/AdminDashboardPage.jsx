@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useFarm, COMMISSION_RATES, ASSET_SPEC, VERIFIED_MERCHANTS, DEFAULT_PLATFORM_SETTINGS } from '../context/FarmContext';
-import { AppShell } from '../components/AppNavigation';
 import easypisaImg from '../assets/easypisa.png';
 import jazzcashImg from '../assets/jazzcash.png';
 import henImg from '../assets/hen.png';
@@ -14,64 +13,62 @@ import '../rawafiles.css';
  */
 function AdminAccessDeniedGuard({ user, onReturn, onLogin }) {
   return (
-    <AppShell currentRoute="/admin" title="SECURITY RESTRICTION">
-      <div className="px-4 py-8 max-w-lg mx-auto">
-        <div className="card-farm-3d rounded-2xl p-6 text-center border-2 border-rose-500/40 bg-gradient-to-b from-[#180a0a] via-[#120808] to-[#0d2c20] shadow-[0_10px_35px_rgba(225,29,72,0.25)] relative overflow-hidden">
-          {/* Top ambient aura */}
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="min-h-screen bg-gradient-to-br from-[#04120a] via-[#071c11] to-[#030d07] text-white flex flex-col justify-center items-center p-4 selection:bg-amber-400 selection:text-black">
+      <div className="w-full max-w-lg rounded-2xl p-6 sm:p-8 text-center border-2 border-rose-500/40 bg-gradient-to-b from-[#180a0a] via-[#120808] to-[#0d2c20] shadow-[0_15px_40px_rgba(225,29,72,0.3)] relative overflow-hidden">
+        {/* Top ambient aura */}
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-          {/* Locked Shield / Padlock Badge */}
-          <div className="relative mx-auto w-20 h-20 rounded-full bg-rose-500/10 border-2 border-rose-500/40 flex items-center justify-center text-rose-500 text-3xl shadow-[0_0_25px_rgba(244,63,94,0.35)] animate-pulse mb-4">
-            <i className="fa-solid fa-lock"></i>
-            <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-400 text-[#082013] text-[11px] flex items-center justify-center font-black border border-white">
-              <i className="fa-solid fa-shield"></i>
-            </span>
-          </div>
-
-          <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-500/20 text-rose-400 border border-rose-500/30 mb-2">
-            Super Admin Clearance Required
+        {/* Locked Shield / Padlock Badge */}
+        <div className="relative mx-auto w-20 h-20 rounded-full bg-rose-500/10 border-2 border-rose-500/40 flex items-center justify-center text-rose-500 text-3xl shadow-[0_0_25px_rgba(244,63,94,0.35)] animate-pulse mb-4">
+          <i className="fa-solid fa-lock"></i>
+          <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-400 text-[#082013] text-[11px] flex items-center justify-center font-black border border-white">
+            <i className="fa-solid fa-shield"></i>
           </span>
+        </div>
 
-          <h2 className="text-xl sm:text-2xl font-black text-white font-manrope uppercase tracking-tight mb-2">
-            Access Restricted
-          </h2>
+        <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-500/20 text-rose-400 border border-rose-500/30 mb-2">
+          Super Admin Clearance Required
+        </span>
 
-          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6">
-            The active session <span className="font-bold text-amber-300">@{user?.username || 'Guest'}</span> lacks root administrative clearance. This area is reserved exclusively for platform operators and auditors.
-          </p>
+        <h2 className="text-xl sm:text-2xl font-black text-white font-manrope uppercase tracking-tight mb-2">
+          Access Restricted
+        </h2>
 
-          {/* Operator Hint Pill */}
-          <div className="bg-black/40 border border-amber-500/25 rounded-xl p-3 mb-6 text-left flex items-start gap-2.5">
-            <i className="fa-solid fa-circle-info text-amber-400 text-sm mt-0.5"></i>
-            <div className="text-[11px] text-slate-300">
-              <span className="font-bold text-amber-300 block">Operator Credential Hint:</span>
-              <span>Default Super Admin: <code className="bg-black/60 px-1.5 py-0.5 rounded text-amber-200">admin@gmail.com</code> / <code className="bg-black/60 px-1.5 py-0.5 rounded text-amber-200">password123</code></span>
-            </div>
-          </div>
+        <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6">
+          The active session <span className="font-bold text-amber-300">@{user?.username || 'Guest'}</span> lacks root administrative clearance. This area is reserved exclusively for platform operators and auditors.
+        </p>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              onClick={onReturn}
-              className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
-            >
-              <i className="fa-solid fa-arrow-left"></i>
-              <span>Return to Dashboard</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onLogin}
-              className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
-            >
-              <i className="fa-solid fa-arrow-right-to-bracket"></i>
-              <span>Sign in as Admin</span>
-            </button>
+        {/* Operator Hint Pill */}
+        <div className="bg-black/40 border border-amber-500/25 rounded-xl p-3 mb-6 text-left flex items-start gap-2.5">
+          <i className="fa-solid fa-circle-info text-amber-400 text-sm mt-0.5"></i>
+          <div className="text-[11px] text-slate-300">
+            <span className="font-bold text-amber-300 block">Operator Credential Hint:</span>
+            <span>Default Super Admin: <code className="bg-black/60 px-1.5 py-0.5 rounded text-amber-200">admin@gmail.com</code> / <code className="bg-black/60 px-1.5 py-0.5 rounded text-amber-200">password123</code></span>
           </div>
         </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={onReturn}
+            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <i className="fa-solid fa-arrow-left"></i>
+            <span>Return to Dashboard</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onLogin}
+            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <i className="fa-solid fa-arrow-right-to-bracket"></i>
+            <span>Sign in as Admin</span>
+          </button>
+        </div>
       </div>
-    </AppShell>
+    </div>
   );
 }
 
@@ -101,7 +98,7 @@ function UserBalanceModal({ targetUser, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="card-farm-3d rounded-2xl w-full max-w-md bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#081a10] border border-amber-400/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative overflow-hidden">
+      <div className="rounded-2xl w-full max-w-md bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#081a10] border border-amber-400/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative overflow-hidden text-white">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-amber-400/20 pb-3 mb-4">
           <div className="flex items-center gap-2.5">
@@ -253,7 +250,7 @@ function RejectWithdrawalModal({ withdrawal, onClose, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="card-farm-3d rounded-2xl w-full max-w-md bg-gradient-to-b from-[#180a0a] via-[#100808] to-[#0d2c20] border border-rose-500/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(225,29,72,0.3)] relative overflow-hidden">
+      <div className="rounded-2xl w-full max-w-md bg-gradient-to-b from-[#180a0a] via-[#100808] to-[#0d2c20] border border-rose-500/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(225,29,72,0.3)] relative overflow-hidden text-white">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-rose-500/20 pb-3 mb-4">
           <div className="flex items-center gap-2.5">
@@ -384,7 +381,8 @@ export default function AdminDashboardPage() {
     rejectWithdrawal,
     updatePlatformSettings,
     showToast,
-    navigateTo
+    navigateTo,
+    logout
   } = useFarm();
 
   // Route security clearance
@@ -665,169 +663,240 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <AppShell currentRoute="/admin" title="PLATFORM CONTROL CENTER">
-      <div className="px-3 sm:px-4 py-4 space-y-5">
-        {/* Canopy Admin Command HUD Header */}
-        <div className="card-farm-3d rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-[#082013] via-[#0d2c20] to-[#153d2b] border border-amber-400/35 relative overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="min-h-screen bg-gradient-to-b from-[#030d07] via-[#06180f] to-[#020804] text-slate-100 flex flex-col font-sans selection:bg-amber-400 selection:text-black">
+      {/* 1. Executive Top Sticky Admin Header */}
+      <header className="sticky top-0 z-40 bg-[#06180f]/95 backdrop-blur-md border-b border-amber-400/20 shadow-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+          {/* Left Brand Identity */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 p-0.5 shadow-md flex items-center justify-center flex-shrink-0">
+              <div className="w-full h-full rounded-[10px] bg-[#071c11] flex items-center justify-center text-amber-300">
+                <i className="fa-solid fa-crown text-lg"></i>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-manrope font-black text-sm sm:text-base text-white uppercase tracking-tight">
+                  AL Rehman Meta Eggs
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400 text-[#071c11] shadow-sm">
+                  Super Admin Cockpit
+                </span>
+                <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  ROOT CLEARANCE
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-200/70 hidden sm:block">
+                Agribusiness Governance, P2P Liquidity &amp; Platform Yield Engine
+              </p>
+            </div>
+          </div>
 
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 p-0.5 shadow-md flex items-center justify-center">
+          {/* Right Action Controls */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Live Indicator */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 border border-emerald-500/40 text-[11px] font-bold text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="hidden md:inline">SYSTEM</span>
+              <span>LIVE</span>
+            </div>
+
+            {/* Switch to Farmer App */}
+            <button
+              type="button"
+              onClick={() => navigateTo('/dashboard')}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white font-bold text-xs uppercase tracking-wider shadow-md transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+              title="Open Farmer Dashboard"
+            >
+              <i className="fa-solid fa-house-chimney text-xs"></i>
+              <span className="hidden sm:inline">Farmer App</span>
+            </button>
+
+            {/* Logout Admin */}
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigateTo('/login');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-black/60 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500 text-slate-300 hover:text-rose-300 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+              title="Logout from Admin"
+            >
+              <i className="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* 2. Main Executive Desktop/Laptop Workspace */}
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+        {/* Canopy Admin Command HUD Header Banner */}
+        <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-r from-[#082013] via-[#0d2c20] to-[#153d2b] border border-amber-400/35 relative overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 p-0.5 shadow-lg flex items-center justify-center flex-shrink-0">
                 <div className="w-full h-full rounded-[14px] bg-[#082013] flex items-center justify-center text-amber-300">
-                  <i className="fa-solid fa-crown text-xl"></i>
+                  <i className="fa-solid fa-crown text-2xl"></i>
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="font-manrope font-black text-lg sm:text-xl text-white uppercase tracking-tight">
+                  <h1 className="font-manrope font-black text-xl sm:text-2xl text-white uppercase tracking-tight">
                     Super Admin Cockpit
                   </h1>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400 text-[#082013] shadow-sm">
-                    Root
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400 text-[#082013] shadow-sm">
+                    Root Governance
                   </span>
                 </div>
-                <p className="text-xs text-amber-200/80">
-                  AL Rehman Meta Eggs Agribusiness Governance &amp; P2P Yield Matrix
+                <p className="text-xs sm:text-sm text-amber-200/90 mt-0.5">
+                  AL Rehman Meta Eggs Agribusiness Governance, Real-Time P2P Liquidity &amp; Yield Matrix
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-emerald-500/40 text-[10.5px] font-bold text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>SYSTEM LIVE</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigateTo('/dashboard')}
-                className="px-3 py-1.5 rounded-xl bg-black/50 border border-amber-400/40 text-amber-300 hover:text-white hover:bg-black/80 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
-              >
-                <i className="fa-solid fa-house-chimney text-[11px]"></i>
-                <span>Farmer App</span>
-              </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-3 py-1.5 rounded-xl bg-black/45 border border-amber-400/30 text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                <i className="fa-solid fa-users text-xs"></i>
+                <span>{kpis.totalUsers} Farmers Registered</span>
+              </span>
+              <span className="px-3 py-1.5 rounded-xl bg-black/45 border border-emerald-500/40 text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <i className="fa-solid fa-sack-dollar text-xs"></i>
+                <span>Rs. {kpis.totalLiquidatedPkr.toLocaleString()} Liquidated</span>
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Top 5 Platform KPI Overview Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
-          {/* 1. Total Registered Users */}
-          <div className="card-farm-3d rounded-xl p-3 sm:p-3.5 bg-gradient-to-b from-[#0a2216] to-[#071910] border border-emerald-500/30 shadow-md">
-            <div className="flex items-center justify-between text-slate-400 text-[10.5px] font-bold uppercase tracking-wider mb-1">
+        {/* 3. Top 5 Platform KPI Overview Cards (Full desktop 5-col grid, no text truncation!) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+          {/* Card 1: Total Registered Users */}
+          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#0a2216] to-[#071910] border border-emerald-500/30 shadow-lg hover:border-emerald-400/50 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">
               <span>Total Farmers</span>
-              <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                 <i className="fa-solid fa-users text-xs"></i>
               </div>
             </div>
-            <div className="font-manrope font-black text-xl sm:text-2xl text-white">
-              {kpis.totalUsers}
-            </div>
-            <div className="text-[10px] text-emerald-400/90 font-medium mt-1 truncate">
-              {kpis.activeUsers} Active • {kpis.blockedUsers} Blocked
+            <div>
+              <div className="font-manrope font-black text-2xl sm:text-3xl text-white">
+                {kpis.totalUsers}
+              </div>
+              <div className="text-xs text-emerald-400 font-semibold mt-1">
+                {kpis.activeUsers} Active • {kpis.blockedUsers} Blocked
+              </div>
             </div>
           </div>
 
-          {/* 2. Total Active Hens */}
-          <div className="card-farm-3d rounded-xl p-3 sm:p-3.5 bg-gradient-to-b from-[#181a0a] to-[#0f1408] border border-amber-500/30 shadow-md">
-            <div className="flex items-center justify-between text-slate-400 text-[10.5px] font-bold uppercase tracking-wider mb-1">
+          {/* Card 2: Total Active Hens */}
+          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#181a0a] to-[#0f1408] border border-amber-500/30 shadow-lg hover:border-amber-400/50 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">
               <span>Active Flock</span>
-              <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
                 <i className="fa-solid fa-crow text-xs"></i>
               </div>
             </div>
-            <div className="font-manrope font-black text-xl sm:text-2xl text-amber-300">
-              {kpis.totalActiveHens} <span className="text-xs text-amber-400 font-bold">Hens</span>
-            </div>
-            <div className="text-[10px] text-amber-300/80 font-medium mt-1 truncate">
-              +{kpis.totalActiveHens} Eggs / 24h Yield
+            <div>
+              <div className="font-manrope font-black text-2xl sm:text-3xl text-amber-300">
+                {kpis.totalActiveHens} <span className="text-sm text-amber-400 font-bold">Hens</span>
+              </div>
+              <div className="text-xs text-amber-300 font-semibold mt-1">
+                +{kpis.totalActiveHens} Eggs / 24h Yield
+              </div>
             </div>
           </div>
 
-          {/* 3. Total Eggs Produced */}
-          <div className="card-farm-3d rounded-xl p-3 sm:p-3.5 bg-gradient-to-b from-[#19190a] to-[#121208] border border-yellow-500/30 shadow-md">
-            <div className="flex items-center justify-between text-slate-400 text-[10.5px] font-bold uppercase tracking-wider mb-1">
+          {/* Card 3: Total Eggs Produced */}
+          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#19190a] to-[#121208] border border-yellow-500/30 shadow-lg hover:border-yellow-400/50 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">
               <span>Eggs Produced</span>
-              <div className="w-6 h-6 rounded-lg bg-yellow-500/20 text-yellow-300 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-yellow-500/20 text-yellow-300 flex items-center justify-center">
                 <i className="fa-solid fa-egg text-xs"></i>
               </div>
             </div>
-            <div className="font-manrope font-black text-xl sm:text-2xl text-yellow-300">
-              {kpis.totalEggsProduced}
-            </div>
-            <div className="text-[10px] text-yellow-400/80 font-medium mt-1 truncate">
-              ~Rs. {(kpis.totalEggsProduced * 32).toLocaleString()} PKR Est.
+            <div>
+              <div className="font-manrope font-black text-2xl sm:text-3xl text-yellow-300">
+                {kpis.totalEggsProduced}
+              </div>
+              <div className="text-xs text-yellow-300 font-semibold mt-1">
+                ~Rs. {(kpis.totalEggsProduced * 32).toLocaleString()} PKR Est.
+              </div>
             </div>
           </div>
 
-          {/* 4. Total Liquidated PKR */}
-          <div className="card-farm-3d rounded-xl p-3 sm:p-3.5 bg-gradient-to-b from-[#0a2216] to-[#071910] border border-emerald-500/30 shadow-md">
-            <div className="flex items-center justify-between text-slate-400 text-[10.5px] font-bold uppercase tracking-wider mb-1">
+          {/* Card 4: Total Liquidated PKR */}
+          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#0a2216] to-[#071910] border border-emerald-500/30 shadow-lg hover:border-emerald-400/50 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">
               <span>Liquidated PKR</span>
-              <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                 <i className="fa-solid fa-sack-dollar text-xs"></i>
               </div>
             </div>
-            <div className="font-manrope font-black text-lg sm:text-xl text-emerald-400 truncate">
-              Rs. {kpis.totalLiquidatedPkr.toLocaleString()}
-            </div>
-            <div className="text-[10px] text-emerald-400/80 font-medium mt-1 truncate">
-              {kpis.completedWdCount} Cashouts Disbursed
+            <div>
+              <div className="font-manrope font-black text-xl sm:text-2xl text-emerald-400">
+                Rs. {kpis.totalLiquidatedPkr.toLocaleString()}
+              </div>
+              <div className="text-xs text-emerald-400 font-semibold mt-1">
+                {kpis.completedWdCount} Cashouts Disbursed
+              </div>
             </div>
           </div>
 
-          {/* 5. Pending Cashouts Queue */}
-          <div className="col-span-2 sm:col-span-1 card-farm-3d rounded-xl p-3 sm:p-3.5 bg-gradient-to-b from-[#220a0a] to-[#140808] border border-rose-500/40 shadow-md relative overflow-hidden">
+          {/* Card 5: Pending Cashouts Queue */}
+          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#220a0a] to-[#140808] border border-rose-500/40 shadow-lg hover:border-rose-400/60 transition-all relative overflow-hidden flex flex-col justify-between">
             {kpis.pendingCount > 0 && (
-              <span className="absolute top-2 right-2 flex h-2 w-2">
+              <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
               </span>
             )}
-            <div className="flex items-center justify-between text-slate-400 text-[10.5px] font-bold uppercase tracking-wider mb-1">
+            <div className="flex items-center justify-between text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">
               <span>Pending Queue</span>
-              <div className="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center">
                 <i className="fa-solid fa-hourglass-half text-xs"></i>
               </div>
             </div>
-            <div className="font-manrope font-black text-xl sm:text-2xl text-rose-400">
-              {kpis.pendingCount}
-            </div>
-            <div className="text-[10px] text-rose-300 font-medium mt-1 truncate">
-              Rs. {kpis.pendingVolumePkr.toLocaleString()} PKR Queue
+            <div>
+              <div className="font-manrope font-black text-2xl sm:text-3xl text-rose-400">
+                {kpis.pendingCount}
+              </div>
+              <div className="text-xs text-rose-300 font-semibold mt-1">
+                Rs. {kpis.pendingVolumePkr.toLocaleString()} PKR Queue
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 5 Main Operational Tabs Bar */}
-        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-black/45 border border-amber-400/25 overflow-x-auto no-scrollbar shadow-inner">
+        {/* 4. 5 Main Operational Tabs Bar */}
+        <div className="flex items-center gap-2 p-2 rounded-2xl bg-black/50 border border-amber-400/25 overflow-x-auto no-scrollbar shadow-lg">
           <button
             type="button"
             onClick={() => setActiveTab('USERS')}
-            className={`flex-1 min-w-[105px] py-2.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none ${
+            className={`flex-1 min-w-[125px] py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none cursor-pointer ${
               activeTab === 'USERS'
                 ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-[#082013] font-black shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
           >
-            <i className="fa-solid fa-users-gear text-xs"></i>
-            <span>Users</span>
+            <i className="fa-solid fa-users-gear text-sm"></i>
+            <span>Users &amp; Farmers</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('WITHDRAWALS')}
-            className={`flex-1 min-w-[125px] py-2.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none relative ${
+            className={`flex-1 min-w-[145px] py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none relative cursor-pointer ${
               activeTab === 'WITHDRAWALS'
                 ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-[#082013] font-black shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
           >
-            <i className="fa-solid fa-money-bill-transfer text-xs"></i>
-            <span>Withdrawals</span>
+            <i className="fa-solid fa-money-bill-transfer text-sm"></i>
+            <span>Cashout Desk</span>
             {kpis.pendingCount > 0 && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                 activeTab === 'WITHDRAWALS' ? 'bg-rose-600 text-white' : 'bg-rose-500 text-white animate-pulse'
               }`}>
                 {kpis.pendingCount}
@@ -838,40 +907,40 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={() => setActiveTab('AFFILIATES')}
-            className={`flex-1 min-w-[110px] py-2.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none ${
+            className={`flex-1 min-w-[125px] py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none cursor-pointer ${
               activeTab === 'AFFILIATES'
                 ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-[#082013] font-black shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
           >
-            <i className="fa-solid fa-sitemap text-xs"></i>
+            <i className="fa-solid fa-sitemap text-sm"></i>
             <span>Downlines</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('GATEWAYS')}
-            className={`flex-1 min-w-[110px] py-2.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none ${
+            className={`flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none cursor-pointer ${
               activeTab === 'GATEWAYS'
                 ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-[#082013] font-black shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
           >
-            <i className="fa-solid fa-qrcode text-xs"></i>
-            <span>Gateways</span>
+            <i className="fa-solid fa-qrcode text-sm"></i>
+            <span>Gateways &amp; QR</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('SETTINGS')}
-            className={`flex-1 min-w-[105px] py-2.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none ${
+            className={`flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 select-none cursor-pointer ${
               activeTab === 'SETTINGS'
                 ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-[#082013] font-black shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
           >
-            <i className="fa-solid fa-sliders text-xs"></i>
-            <span>Settings</span>
+            <i className="fa-solid fa-sliders text-sm"></i>
+            <span>Platform Settings</span>
           </button>
         </div>
 
@@ -881,7 +950,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'USERS' && (
           <div className="space-y-4">
             {/* Search and Status Filter Bar */}
-            <div className="card-farm-3d rounded-xl p-3 bg-black/40 border border-emerald-500/30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="rounded-2xl p-4 bg-black/40 border border-emerald-500/30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-md">
               <div className="relative flex-1">
                 <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                 <input
@@ -933,7 +1002,7 @@ export default function AdminDashboardPage() {
             {/* Users Ledger Cards */}
             <div className="space-y-3">
               {filteredUsers.length === 0 ? (
-                <div className="card-farm-3d rounded-xl p-8 text-center text-slate-400 bg-black/30 border border-slate-800">
+                <div className="rounded-2xl p-8 text-center text-slate-400 bg-black/30 border border-slate-800">
                   <i className="fa-solid fa-user-slash text-2xl text-slate-500 mb-2"></i>
                   <p className="text-sm">No users matched your search criteria.</p>
                 </div>
@@ -945,7 +1014,7 @@ export default function AdminDashboardPage() {
                   return (
                     <div
                       key={u.id || u.username}
-                      className={`card-farm-3d rounded-xl p-3.5 sm:p-4 bg-gradient-to-r from-[#0a2216] via-[#0d2c20] to-[#071910] border transition-all ${
+                      className={`rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-[#0a2216] via-[#0d2c20] to-[#071910] border transition-all shadow-md ${
                         isBlocked ? 'border-rose-500/40 bg-rose-950/10' : 'border-amber-400/20'
                       }`}
                     >
@@ -1068,7 +1137,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Session Activity Logs Stream */}
-            <div className="card-farm-3d rounded-xl p-4 bg-black/40 border border-slate-800 space-y-3">
+            <div className="rounded-2xl p-4 sm:p-5 bg-black/40 border border-slate-800 space-y-3 shadow-md">
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div className="flex items-center gap-2">
                   <i className="fa-solid fa-timeline text-amber-400 text-xs"></i>
@@ -1121,7 +1190,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'WITHDRAWALS' && (
           <div className="space-y-4">
             {/* Queue Filter Tabs */}
-            <div className="card-farm-3d rounded-xl p-3 bg-black/40 border border-amber-400/20 flex flex-wrap items-center justify-between gap-2">
+            <div className="rounded-2xl p-3.5 bg-black/40 border border-amber-400/20 flex flex-wrap items-center justify-between gap-2 shadow-md">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   type="button"
@@ -1180,7 +1249,7 @@ export default function AdminDashboardPage() {
             {/* Withdrawals List */}
             <div className="space-y-3">
               {filteredWithdrawals.length === 0 ? (
-                <div className="card-farm-3d rounded-xl p-8 text-center text-slate-400 bg-black/30 border border-slate-800">
+                <div className="rounded-2xl p-8 text-center text-slate-400 bg-black/30 border border-slate-800">
                   <i className="fa-solid fa-circle-check text-2xl text-emerald-500 mb-2"></i>
                   <p className="text-sm">No cashout requests found in "{withdrawalFilter}" status.</p>
                 </div>
@@ -1193,7 +1262,7 @@ export default function AdminDashboardPage() {
                   return (
                     <div
                       key={w.id}
-                      className={`card-farm-3d rounded-xl p-4 bg-gradient-to-r from-[#0a2216] via-[#0d2c20] to-[#071910] border transition-all ${
+                      className={`rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-[#0a2216] via-[#0d2c20] to-[#071910] border transition-all shadow-md ${
                         isPending
                           ? 'border-amber-400/40 shadow-[0_4px_20px_rgba(245,158,11,0.15)]'
                           : isCompleted
@@ -1330,7 +1399,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'AFFILIATES' && (
           <div className="space-y-4">
             {/* User Genealogist Selector */}
-            <div className="card-farm-3d rounded-xl p-3.5 bg-black/40 border border-amber-400/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="rounded-2xl p-4 bg-black/40 border border-amber-400/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
               <div>
                 <h3 className="font-manrope font-black text-sm text-white uppercase tracking-tight flex items-center gap-2">
                   <i className="fa-solid fa-network-wired text-amber-400"></i>
@@ -1362,7 +1431,7 @@ export default function AdminDashboardPage() {
             {/* Selected User Summary Cards */}
             {affiliateGenealogy.root && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                <div className="card-farm-3d rounded-xl p-3 bg-black/40 border border-emerald-500/30">
+                <div className="rounded-2xl p-4 bg-black/40 border border-emerald-500/30 shadow-md">
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Downlines</span>
                   <span className="font-manrope font-black text-xl text-white">
                     {affiliateGenealogy.totalInvited}
@@ -1372,7 +1441,7 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
 
-                <div className="card-farm-3d rounded-xl p-3 bg-black/40 border border-amber-500/30">
+                <div className="rounded-2xl p-4 bg-black/40 border border-amber-500/30 shadow-md">
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Level 1 Direct (2%)</span>
                   <span className="font-manrope font-black text-xl text-amber-300">
                     {affiliateGenealogy.level1Count}
@@ -1382,7 +1451,7 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
 
-                <div className="card-farm-3d rounded-xl p-3 bg-black/40 border border-yellow-500/30">
+                <div className="rounded-2xl p-4 bg-black/40 border border-yellow-500/30 shadow-md">
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Level 2 Indirect (1%)</span>
                   <span className="font-manrope font-black text-xl text-yellow-300">
                     {affiliateGenealogy.level2Count}
@@ -1392,7 +1461,7 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
 
-                <div className="card-farm-3d rounded-xl p-3 bg-black/40 border border-emerald-500/30">
+                <div className="rounded-2xl p-4 bg-black/40 border border-emerald-500/30 shadow-md">
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Lifetime Commission</span>
                   <span className="font-manrope font-black text-lg text-emerald-400 truncate block">
                     Rs. {affiliateGenealogy.totalCommission.toFixed(2)}
@@ -1405,7 +1474,7 @@ export default function AdminDashboardPage() {
             )}
 
             {/* Visual 2-Tier Genealogy Tree */}
-            <div className="card-farm-3d rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-4">
+            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-5 shadow-xl">
               <div className="flex items-center justify-between border-b border-amber-400/20 pb-2">
                 <span className="font-manrope font-black text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
                   <i className="fa-solid fa-tree text-emerald-400"></i>
@@ -1418,7 +1487,7 @@ export default function AdminDashboardPage() {
 
               {/* Root Sponsor Card */}
               <div className="flex flex-col items-center">
-                <div className="card-farm-3d rounded-2xl p-3 bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-500/20 border-2 border-amber-400 text-center max-w-xs w-full shadow-lg">
+                <div className="rounded-2xl p-4 bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-500/20 border-2 border-amber-400 text-center max-w-sm w-full shadow-lg">
                   <div className="w-10 h-10 rounded-full bg-amber-400 text-[#082013] font-black text-sm flex items-center justify-center mx-auto mb-1.5 shadow-md">
                     <i className="fa-solid fa-crown"></i>
                   </div>
@@ -1458,7 +1527,7 @@ export default function AdminDashboardPage() {
                       return (
                         <div
                           key={m.id || m.username}
-                          className="card-farm-3d rounded-xl p-2.5 bg-black/45 border border-emerald-500/30 text-xs space-y-1"
+                          className="rounded-xl p-3 bg-black/50 border border-emerald-500/30 text-xs space-y-1 shadow-sm"
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-white">@{m.username}</span>
@@ -1502,7 +1571,7 @@ export default function AdminDashboardPage() {
                       return (
                         <div
                           key={m.id || m.username}
-                          className="card-farm-3d rounded-xl p-2.5 bg-black/45 border border-yellow-500/30 text-xs space-y-1"
+                          className="rounded-xl p-3 bg-black/50 border border-yellow-500/30 text-xs space-y-1 shadow-sm"
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-white">@{m.username}</span>
@@ -1562,7 +1631,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Gateway Form */}
-            <form onSubmit={handleSaveGateways} className="card-farm-3d rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-4">
+            <form onSubmit={handleSaveGateways} className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-5 shadow-xl">
               <div className="flex items-center justify-between border-b border-amber-400/20 pb-3">
                 <div className="flex items-center gap-2">
                   <i className="fa-solid fa-qrcode text-amber-400 text-base"></i>
@@ -1728,7 +1797,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'SETTINGS' && (
           <form onSubmit={handleSaveSettings} className="space-y-4">
             {/* Community Links & Popups */}
-            <div className="card-farm-3d rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-4">
+            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-5 shadow-xl">
               <div className="flex items-center gap-2 border-b border-amber-400/20 pb-3">
                 <i className="fa-brands fa-whatsapp text-emerald-400 text-lg"></i>
                 <div>
@@ -1800,7 +1869,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Dynamic Market Rates Manager */}
-            <div className="card-farm-3d rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-4">
+            <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#071910] border border-amber-400/30 space-y-5 shadow-xl">
               <div className="flex items-center gap-2 border-b border-amber-400/20 pb-3">
                 <i className="fa-solid fa-chart-line text-amber-400 text-lg"></i>
                 <div>
@@ -1896,7 +1965,7 @@ export default function AdminDashboardPage() {
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <i className="fa-solid fa-floppy-disk"></i>
                 <span>Save Platform Settings</span>
@@ -1904,7 +1973,38 @@ export default function AdminDashboardPage() {
             </div>
           </form>
         )}
-      </div>
+      </main>
+
+      {/* Executive Admin Footer */}
+      <footer className="w-full border-t border-amber-400/10 py-6 mt-12 bg-black/40 text-slate-400 text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <i className="fa-solid fa-shield-halved text-amber-400"></i>
+            <span className="font-semibold text-white">AL Rehman Meta Eggs</span>
+            <span>• Super Admin Cockpit v2.4.0</span>
+          </div>
+          <div className="flex items-center gap-4 text-[11px]">
+            <button
+              type="button"
+              onClick={() => navigateTo('/dashboard')}
+              className="hover:text-amber-300 transition-colors cursor-pointer"
+            >
+              Farmer Portal
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo('/team')}
+              className="hover:text-amber-300 transition-colors cursor-pointer"
+            >
+              Team Hub
+            </button>
+            <span className="text-emerald-400 flex items-center gap-1.5 font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              All Systems Operational
+            </span>
+          </div>
+        </div>
+      </footer>
 
       {/* Manual Balance Adjust Dialog Modal */}
       {balanceModalUser && (
@@ -1923,6 +2023,6 @@ export default function AdminDashboardPage() {
           onConfirm={(id, reason, refund) => rejectWithdrawal(id, reason, refund)}
         />
       )}
-    </AppShell>
+    </div>
   );
 }

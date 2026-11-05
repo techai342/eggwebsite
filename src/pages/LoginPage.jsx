@@ -303,7 +303,7 @@ export default function LoginPage() {
               </div>
               <button
                 type="button"
-                onClick={handleRegisterNotice}
+                onClick={() => navigateTo('/register')}
                 className="reg-link-pill"
               >
                 <span>Register</span>
