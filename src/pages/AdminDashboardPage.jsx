@@ -376,6 +376,7 @@ export default function AdminDashboardPage() {
     teamMembers = [],
     blockUser,
     unblockUser,
+    setUserRole,
     updateUserBalances,
     approveWithdrawal,
     rejectWithdrawal,
@@ -594,6 +595,19 @@ export default function AdminDashboardPage() {
     } else {
       unblockUser(u.id);
     }
+  };
+
+  // 1-Click Promote to Admin or Demote to Farmer handler
+  const handleToggleRole = (u) => {
+    if (!u) return;
+    const isRoot = u.id === 'usr_admin' || u.username === 'admin' || u.email === 'admin@gmail.com';
+    if (isRoot) {
+      showToast('error', 'Primary Root Super Admin account cannot be modified.');
+      return;
+    }
+    const currentRole = u.role || 'farmer';
+    const nextRole = currentRole === 'admin' ? 'farmer' : 'admin';
+    setUserRole(u.id, nextRole);
   };
 
   // 1-Click Approve Withdrawal
@@ -1008,7 +1022,8 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 filteredUsers.map((u) => {
-                  const isUserAdmin = u.role === 'admin' || u.id === 'usr_admin' || u.username === 'admin' || u.email === 'admin@gmail.com';
+                  const isRootAdmin = u.id === 'usr_admin' || u.username === 'admin' || u.email === 'admin@gmail.com';
+                  const isUserAdmin = u.role === 'admin' || isRootAdmin;
                   const isBlocked = u.status === 'Blocked';
 
                   return (
@@ -1099,7 +1114,7 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {/* Admin Action Buttons */}
-                        <div className="flex items-center gap-2 self-end md:self-center">
+                        <div className="flex items-center gap-2 self-end md:self-center flex-wrap">
                           <button
                             type="button"
                             onClick={() => setBalanceModalUser(u)}
@@ -1110,7 +1125,35 @@ export default function AdminDashboardPage() {
                             <span>Adjust</span>
                           </button>
 
-                          {isUserAdmin ? (
+                          {/* Role Action: Make Admin or Demote */}
+                          {isRootAdmin ? (
+                            <span className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-400/30 text-xs font-black flex items-center gap-1 select-none" title="Root Super Admin">
+                              <i className="fa-solid fa-shield text-[10px]"></i>
+                              <span>Root</span>
+                            </span>
+                          ) : isUserAdmin ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleRole(u)}
+                              className="px-2.5 py-1.5 rounded-lg bg-purple-900/40 border border-purple-400/60 hover:bg-purple-800 text-purple-200 font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                              title="Demote to regular farmer"
+                            >
+                              <i className="fa-solid fa-user-minus text-[11px]"></i>
+                              <span>Demote</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleRole(u)}
+                              className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400/50 hover:border-amber-400 hover:from-amber-500 hover:to-yellow-500 hover:text-slate-950 text-amber-300 font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                              title="Promote this user to Admin"
+                            >
+                              <i className="fa-solid fa-crown text-[11px] text-amber-400"></i>
+                              <span>Make Admin</span>
+                            </button>
+                          )}
+
+                          {isRootAdmin ? (
                             <span className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-500 text-xs font-bold cursor-not-allowed select-none">
                               Protected
                             </span>

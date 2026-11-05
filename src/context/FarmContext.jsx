@@ -1427,6 +1427,61 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     return { success: true, user: updatedTarget, message: msg };
   }, [users, user, persistState, showToast, logActivity]);
 
+  // Admin Action: Make Admin / Set User Role (Farmer <-> Admin)
+  const setUserRole = useCallback((userId, newRole) => {
+    const target = users.find(
+      (u) => u.id === userId || String(u.username || '').toLowerCase() === String(userId || '').toLowerCase()
+    );
+    if (!target) {
+      const msg = 'User not found.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    // Root super admin cannot be demoted from admin
+    const isRootAdmin =
+      target.id === 'usr_admin' ||
+      String(target.username || '').toLowerCase() === 'admin' ||
+      String(target.email || '').toLowerCase() === 'admin@gmail.com';
+    if (isRootAdmin && newRole !== 'admin') {
+      const msg = 'Primary Root Super Admin account cannot be demoted.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const assignedRole = newRole === 'admin' ? 'admin' : 'farmer';
+    const updatedTarget = { ...target, role: assignedRole };
+    const updatedUsers = users.map((u) => (u.id === target.id ? updatedTarget : u));
+    setUsers(updatedUsers);
+
+    if (
+      user &&
+      (user.id === target.id || String(user.username || '').toLowerCase() === String(target.username || '').toLowerCase())
+    ) {
+      const updatedActive = { ...user, role: assignedRole };
+      setUser(updatedActive);
+      persistState({ users: updatedUsers, user: updatedActive });
+    } else {
+      persistState({ users: updatedUsers });
+    }
+
+    logActivity({
+      action: assignedRole === 'admin' ? 'PROMOTE_ADMIN' : 'DEMOTE_FARMER',
+      category: 'ROLE',
+      userId: target.id,
+      username: target.username,
+      details: `User @${target.username} role changed to ${assignedRole.toUpperCase()}`,
+      status: 'SUCCESS'
+    });
+
+    const msg =
+      assignedRole === 'admin'
+        ? `Success! @${target.username} has been promoted to Admin!`
+        : `@${target.username} has been demoted to Farmer role.`;
+    showToast('success', msg);
+    return { success: true, user: updatedTarget, message: msg };
+  }, [users, user, persistState, showToast, logActivity]);
+
   // Admin Action: Update User Balances
   const updateUserBalances = useCallback((userId, { balance: newBal, eggVault: newVault, hens: newHens }) => {
     const targetIndex = users.findIndex(
@@ -1867,6 +1922,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     resetToFreshState,
     blockUser,
     unblockUser,
+    setUserRole,
     updateUserBalances,
     approveWithdrawal,
     rejectWithdrawal,
@@ -1917,6 +1973,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     resetToFreshState,
     blockUser,
     unblockUser,
+    setUserRole,
     updateUserBalances,
     approveWithdrawal,
     rejectWithdrawal,
