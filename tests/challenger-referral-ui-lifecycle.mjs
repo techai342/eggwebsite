@@ -28,39 +28,17 @@ await describeAsync('Suite 1: Route Dispatching & Deep Linking Adversarial Chall
   expect(fs.existsSync(appPath)).toBe(true);
   const appCode = fs.readFileSync(appPath, 'utf-8');
 
-  // Evaluator implementing the exact route normalization logic present in App.jsx:
-  // const normalizedRoute = currentRoute.split('#')[0].replace(/\/$/, '') || '/';
+  // Dynamically extract the normalization logic directly present in App.jsx:
+  const normMatch = appCode.match(/let cleanRoute = [^;]+;[\s\S]+?const normalizedRoute = [^;]+;/);
+  if (!normMatch) {
+    throw new Error('Failed to extract normalization logic from App.jsx');
+  }
+  const normalizeRouteFromApp = new Function('currentRoute', `${normMatch[0]}; return normalizedRoute;`);
+
   function evaluateAppRouting(currentRoute) {
     if (!currentRoute || typeof currentRoute !== 'string') return 'LandingPage';
-    const normalizedRoute = currentRoute.split('#')[0].replace(/\/$/, '') || '/';
+    const normalizedRoute = normalizeRouteFromApp(currentRoute);
     switch (normalizedRoute) {
-      case '/login':
-        return 'LoginPage';
-      case '/dashboard':
-        return 'DashboardPage';
-      case '/buy-asset':
-        return 'BuyAssetPage';
-      case '/sell-egg':
-      case '/withdraw':
-        return 'SellEggPage';
-      case '/change-password':
-        return 'ChangePasswordPage';
-      case '/team':
-        return 'TeamPage';
-      case '/':
-      default:
-        return 'LandingPage';
-    }
-  }
-
-  // Robust normalizer specification that properly handles hash-routes and query params
-  function evaluateRobustRouting(currentRoute) {
-    if (!currentRoute || typeof currentRoute !== 'string') return 'LandingPage';
-    let clean = currentRoute.split('?')[0];
-    clean = clean.replace(/^\/?#\/?/, '/');
-    clean = clean.split('#')[0];
-    const normalized = clean.replace(/\/$/, '') || '/';
-    switch (normalized) {
       case '/login':
         return 'LoginPage';
       case '/dashboard':
@@ -92,8 +70,7 @@ await describeAsync('Suite 1: Route Dispatching & Deep Linking Adversarial Chall
         currentRoute = path;
       }
     }
-    const normalizedRoute = currentRoute.split('#')[0].replace(/\/$/, '') || '/';
-    return evaluateAppRouting(normalizedRoute);
+    return evaluateAppRouting(currentRoute);
   }
 
   await itAsync('TC-CHALLENGE-ROUTE-01: Direct path /team and /team/ resolve to TeamPage', async () => {
@@ -111,7 +88,6 @@ await describeAsync('Suite 1: Route Dispatching & Deep Linking Adversarial Chall
     const integratedResult = simulateIntegratedRouting('#/team?ref=mrsaqib242', '/');
     if (integratedResult !== 'TeamPage') {
       console.log(`    \x1b[31m[CRITICAL DEFECT DETECTED]\x1b[0m Deep link '#/team?ref=mrsaqib242' resolved to '${integratedResult}' instead of 'TeamPage'!`);
-      console.log(`    \x1b[90mRoot Cause: App.jsx does not strip query string '?ref=...' before route switch evaluation.\x1b[0m`);
     }
     // Strict assertion: hash-based deep link with query parameters MUST resolve to TeamPage
     expect(integratedResult).toBe('TeamPage');
@@ -119,10 +95,8 @@ await describeAsync('Suite 1: Route Dispatching & Deep Linking Adversarial Chall
 
   await itAsync('TC-CHALLENGE-ROUTE-04: Standalone App.jsx route normalizer handling of raw hash strings', async () => {
     const rawHashResult = evaluateAppRouting('#/team');
-    if (rawHashResult !== 'TeamPage') {
-      console.log(`    \x1b[33m[DEFECT CONFIRMED]\x1b[0m App.jsx standalone normalizer resolves '#/team' to '${rawHashResult}' (expected 'TeamPage')`);
-    }
-    expect(rawHashResult).toBe('LandingPage'); // Current buggy behavior reproduced
+    // Raw hash string #/team must now resolve to TeamPage post-remediation
+    expect(rawHashResult).toBe('TeamPage');
   });
 
   await itAsync('TC-CHALLENGE-ROUTE-05: Sub-fragment hash anchors (/team#simulate) resolve to TeamPage', async () => {

@@ -16,7 +16,7 @@ export function AppHeader({
   onChatClick,
   variant = 'canopy'
 }) {
-  const { navigateTo } = useFarm();
+  const { navigateTo, user } = useFarm();
 
   const handleBack = () => {
     if (onBack) {
@@ -73,6 +73,19 @@ export function AppHeader({
             </div>
           </a>
         </div>
+
+        {user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com') && (
+          <button
+            type="button"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 text-[#082013] font-black text-[10px] uppercase shadow-sm border border-amber-200 active:scale-95 transition-all"
+            onClick={() => navigateTo('/admin')}
+            title="Super Admin Panel"
+            aria-label="Admin Panel"
+          >
+            <i className="fa-solid fa-crown text-[10px]"></i>
+            <span>Admin</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -135,8 +148,22 @@ export function AppHeader({
           </div>
         </div>
 
-        {/* Right Section: FARM CLOUD status badge & Live Chat Trigger */}
+        {/* Right Section: Admin Launcher, FARM CLOUD status badge & Live Chat Trigger */}
         <div className="flex items-center gap-2">
+          {/* Golden Crown Super Admin Launcher Button */}
+          {user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com') && (
+            <button
+              type="button"
+              onClick={() => navigateTo('/admin')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-[#082013] font-black text-[9.5px] uppercase tracking-wider shadow-[0_2px_10px_rgba(245,158,11,0.35)] hover:brightness-110 active:scale-95 transition-all border border-amber-200"
+              title="Super Admin Cockpit"
+              aria-label="Admin Panel"
+            >
+              <i className="fa-solid fa-crown text-[10px] text-[#082013]"></i>
+              <span className="hidden xs:inline">Admin Panel</span>
+            </button>
+          )}
+
           {/* Live Farm Cloud Status Beacon */}
           <div className="hidden xs:flex items-center gap-1.5 bg-gradient-to-r from-[#c9f36a]/20 to-emerald-500/15 border border-[#c9f36a]/40 px-2.5 py-1 rounded-full shadow-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -216,9 +243,15 @@ export function AppSidebar({ isOpen, onClose }) {
               <div className="tc-profile-avatar">
                 <i className="fa-solid fa-user-astronaut"></i>
               </div>
-              <span className="tc-profile-crown">
-                <i className="fa-solid fa-crown"></i> VIP
-              </span>
+              {user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com') ? (
+                <span className="tc-profile-crown bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-[#082013] font-black border border-amber-200 shadow-md">
+                  <i className="fa-solid fa-crown text-[10px]"></i> Super Admin
+                </span>
+              ) : (
+                <span className="tc-profile-crown">
+                  <i className="fa-solid fa-crown"></i> VIP
+                </span>
+              )}
             </div>
 
             <div className="tc-profile-details">
@@ -228,9 +261,15 @@ export function AppSidebar({ isOpen, onClose }) {
               </h4>
               <div className="tc-profile-badge-row">
                 <span className="tc-id-pill">ID: {user?.accountId || '#1197'}</span>
-                <span className="tc-active-dot-pill">
-                  <span className="tc-active-dot-pip"></span> Active Farmer
-                </span>
+                {user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com') ? (
+                  <span className="tc-active-dot-pill bg-amber-100 text-amber-900 border-amber-300">
+                    <i className="fa-solid fa-shield text-[10px] text-amber-600 mr-1"></i> Root Operator
+                  </span>
+                ) : (
+                  <span className="tc-active-dot-pill">
+                    <span className="tc-active-dot-pip"></span> Active Farmer
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -267,6 +306,35 @@ export function AppSidebar({ isOpen, onClose }) {
 
         {/* Menu Items List */}
         <ul className="tc-menu-list">
+          {/* Golden Super Admin Panel Item for Admin Users */}
+          {user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com') && (
+            <li className="tc-menu-item">
+              <a
+                href="#/admin"
+                onClick={(e) => { e.preventDefault(); handleNav('/admin'); }}
+                className="tc-menu-link"
+                style={{
+                  background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.16), rgba(234, 179, 8, 0.06))',
+                  borderLeft: '3px solid #f59e0b',
+                  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.12)'
+                }}
+              >
+                <div className="tc-menu-link-left">
+                  <div className="tc-menu-icon-box" style={{ background: '#fef3c7', color: '#b45309' }}>
+                    <i className="fa-solid fa-crown text-[13px]"></i>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-extrabold text-amber-950 text-[13px]">Super Admin Panel</span>
+                    <span className="text-[10px] text-amber-700/80 font-medium">Control Center &amp; Gateways</span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 text-[#082013] shadow-sm">
+                  Root
+                </span>
+              </a>
+            </li>
+          )}
+
           <li className="tc-menu-item">
             <a
               href="#/dashboard"

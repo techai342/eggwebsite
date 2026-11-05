@@ -40,15 +40,261 @@ export const COMMISSION_RATES = {
   LEVEL_2: 0.01
 };
 
+// Initial Multi-User Accounts Registry
+export const DEFAULT_USERS = [
+  {
+    id: 'usr_admin',
+    username: 'admin',
+    email: 'admin@gmail.com',
+    password: 'password123',
+    name: 'Super Admin',
+    role: 'admin',
+    status: 'Active',
+    balance: 25000,
+    eggVault: 500,
+    activeHens: 10,
+    upliner: 'N/A',
+    joinDate: '2026-10-01',
+    accountId: '#0001',
+    referralCode: 'admin'
+  },
+  {
+    id: 'usr_saqib',
+    username: 'mrsaqib242',
+    email: 'saqib@farm.pk',
+    password: 'password123',
+    name: 'Farmer Saqib',
+    role: 'farmer',
+    status: 'Active',
+    balance: 4500,
+    eggVault: 180,
+    activeHens: 5,
+    upliner: 'N/A',
+    joinDate: '2026-10-15',
+    accountId: '#1197',
+    referralCode: 'mrsaqib242'
+  },
+  {
+    id: 'usr_zohaib',
+    username: 'zohaib_egg',
+    email: 'zohaib@farm.pk',
+    password: 'password123',
+    name: 'Zohaib Poultry',
+    role: 'farmer',
+    status: 'Active',
+    balance: 1200,
+    eggVault: 45,
+    activeHens: 2,
+    upliner: 'mrsaqib242',
+    joinDate: '2026-10-25',
+    accountId: '#1198',
+    referralCode: 'zohaib_egg'
+  },
+  {
+    id: 'usr_hamza',
+    username: 'hamza_farmer',
+    email: 'hamza@farm.pk',
+    password: 'password123',
+    name: 'Hamza Eggs',
+    role: 'farmer',
+    status: 'Active',
+    balance: 850,
+    eggVault: 20,
+    activeHens: 1,
+    upliner: 'zohaib_egg',
+    joinDate: '2026-11-01',
+    accountId: '#1199',
+    referralCode: 'hamza_farmer'
+  },
+  {
+    id: 'usr_malik',
+    username: 'malik_blocked',
+    email: 'malik@farm.pk',
+    password: 'password123',
+    name: 'Malik Suspended',
+    role: 'farmer',
+    status: 'Blocked',
+    balance: 0,
+    eggVault: 0,
+    activeHens: 0,
+    upliner: 'mrsaqib242',
+    joinDate: '2026-10-20',
+    accountId: '#1200',
+    referralCode: 'malik_blocked'
+  },
+  {
+    id: 'usr_ayesha',
+    username: 'ayesha_hen',
+    email: 'ayesha@farm.pk',
+    password: 'password123',
+    name: 'Ayesha Layers',
+    role: 'farmer',
+    status: 'Active',
+    balance: 7800,
+    eggVault: 320,
+    activeHens: 8,
+    upliner: 'mrsaqib242',
+    joinDate: '2026-10-18',
+    accountId: '#1201',
+    referralCode: 'ayesha_hen'
+  }
+];
+
+// Configurable Platform Settings
+export const DEFAULT_PLATFORM_SETTINGS = {
+  depositGateways: {
+    easypisa: {
+      accountTitle: 'AL REHMAN META EGGS OFFICIAL',
+      accountNumber: '03412017923',
+      qrCodeUrl: '/src/assets/easypisa.png',
+      instructions: 'Deposit to EasyPaisa Title AL REHMAN META EGGS and upload screenshot.'
+    },
+    jazzcash: {
+      accountTitle: 'AL REHMAN ENTERPRISES',
+      accountNumber: '03001234567',
+      qrCodeUrl: '/src/assets/jazzcash.png',
+      instructions: 'Transfer to JazzCash official account.'
+    }
+  },
+  communityLinks: {
+    whatsappGroup: 'https://chat.whatsapp.com/alrehman-meta-eggs-official',
+    whatsappGroupUrl: 'https://chat.whatsapp.com/alrehman-meta-eggs-official',
+    whatsappChannel: 'https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j',
+    whatsappChannelUrl: 'https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j',
+    supportPhone: '+923412017923',
+    popupEnabled: true,
+    communityPopupEnabled: true
+  },
+  marketRates: {
+    henUnitPrice: 500,
+    stores: [
+      { id: 'sonica', name: 'Sonica Egg Trade', rate: 32 },
+      { id: 'usmaina', name: 'Usmaina Mart', rate: 30 },
+      { id: 'syed', name: 'Syed Traders', rate: 33 }
+    ],
+    eggRates: {
+      sonica: 32,
+      usmaina: 30,
+      syed: 33
+    }
+  }
+};
+
+// Activity Audit Event Logs
+export const DEFAULT_ACTIVITY_LOGS = [
+  {
+    id: 'LOG-INIT-1',
+    timestamp: '2026-11-05T04:00:00.000Z',
+    userId: 'usr_admin',
+    username: 'admin',
+    action: 'LOGIN',
+    category: 'AUTH',
+    details: 'Super Admin logged in to Platform Control Center',
+    status: 'SUCCESS'
+  },
+  {
+    id: 'LOG-INIT-2',
+    timestamp: '2026-11-05T03:30:00.000Z',
+    userId: 'usr_saqib',
+    username: 'mrsaqib242',
+    action: 'LOGIN',
+    category: 'AUTH',
+    details: 'Farmer Saqib entered farm coop',
+    status: 'SUCCESS'
+  },
+  {
+    id: 'LOG-INIT-3',
+    timestamp: '2026-11-04T18:15:00.000Z',
+    userId: 'usr_zohaib',
+    username: 'zohaib_egg',
+    action: 'BUY_ASSET',
+    category: 'TRANSACTION',
+    details: 'Acquired 2x AL Rehman Meta Eggs Units via Jazz cash (Rs. 1,000 PKR)',
+    status: 'SUCCESS'
+  },
+  {
+    id: 'LOG-INIT-4',
+    timestamp: '2026-11-03T09:00:00.000Z',
+    userId: 'usr_saqib',
+    username: 'mrsaqib242',
+    action: 'HARVEST',
+    category: 'TRANSACTION',
+    details: 'Collected 24h daily harvest from active hens',
+    status: 'SUCCESS'
+  },
+  {
+    id: 'LOG-INIT-5',
+    timestamp: '2026-10-29T10:05:00.000Z',
+    userId: 'usr_malik',
+    username: 'malik_blocked',
+    action: 'BLOCK_USER',
+    category: 'ADMIN',
+    details: 'Super Admin placed account on suspension',
+    status: 'WARNING'
+  }
+];
+
+// Seeded Withdrawals with Pending Cashout Queue
+export const DEFAULT_INITIAL_WITHDRAWALS = [
+  {
+    id: 'WD-PEND-1',
+    store: 'Usmaina Poltry Farm',
+    eggs: 50,
+    rate: 30,
+    amountPkr: 1500,
+    method: 'Jazzcash',
+    accountTitle: 'Hamza Tariq',
+    accountNumber: '03001234567',
+    bankName: null,
+    date: '2026-11-04T16:20:00.000Z',
+    status: 'Pending',
+    username: 'hamza_farmer',
+    userId: 'usr_hamza'
+  },
+  {
+    id: 'WD-PEND-2',
+    store: 'Sonica FORM STORE',
+    eggs: 25,
+    rate: 32,
+    amountPkr: 800,
+    method: 'EasyPaisa',
+    accountTitle: 'Zohaib Khan',
+    accountNumber: '03459876543',
+    bankName: null,
+    date: '2026-11-04T18:45:00.000Z',
+    status: 'Pending',
+    username: 'zohaib_egg',
+    userId: 'usr_zohaib'
+  },
+  {
+    id: 'WD-INIT-1',
+    store: 'Sonica FORM STORE',
+    eggs: 10,
+    rate: 32,
+    amountPkr: 320,
+    method: 'EasyPaisa',
+    accountTitle: 'Saqib Ali',
+    accountNumber: '03001234567',
+    bankName: null,
+    date: '2026-11-01T14:30:00.000Z',
+    status: 'Completed',
+    username: 'mrsaqib242',
+    userId: 'usr_saqib'
+  }
+];
+
 // Default Initial State if no persistence exists in storage
 const DEFAULT_INITIAL_STATE = {
   user: {
+    id: 'usr_saqib',
     username: 'mrsaqib242',
     email: 'admin@gmail.com',
     name: 'Farmer Saqib',
     accountId: '#1197',
     upliner: 'N/A',
     referralCode: 'mrsaqib242',
+    role: 'farmer',
+    status: 'Active',
     isLoggedIn: true,
     password: 'password123',
     token: 'jwt_seed_session_1197'
@@ -95,22 +341,11 @@ const DEFAULT_INITIAL_STATE = {
       status: 'Completed'
     }
   ],
-  withdrawals: [
-    {
-      id: 'WD-INIT-1',
-      store: 'Sonica FORM STORE',
-      eggs: 10,
-      rate: 32,
-      amountPkr: 320,
-      method: 'EasyPaisa',
-      accountTitle: 'Saqib Ali',
-      accountNumber: '03001234567',
-      bankName: null,
-      date: '2026-11-01T14:30:00.000Z',
-      status: 'Completed'
-    }
-  ],
+  withdrawals: DEFAULT_INITIAL_WITHDRAWALS,
   teamMembers: [],
+  users: DEFAULT_USERS,
+  platformSettings: DEFAULT_PLATFORM_SETTINGS,
+  activityLogs: DEFAULT_ACTIVITY_LOGS,
   // 25 hours ago allows immediate harvest on first user action
   lastHarvest: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
   cooldownActive: false
@@ -130,6 +365,32 @@ function loadInitialState() {
         if (!loadedUser.referralCode) {
           loadedUser.referralCode = loadedUser.username || 'mrsaqib242';
         }
+        if (!loadedUser.role) {
+          loadedUser.role = (loadedUser.username === 'admin' || loadedUser.email === 'admin@gmail.com') ? 'admin' : 'farmer';
+        }
+        if (!loadedUser.status) {
+          loadedUser.status = 'Active';
+        }
+
+        const loadedSettings = parsed.platformSettings
+          ? {
+              ...DEFAULT_PLATFORM_SETTINGS,
+              ...parsed.platformSettings,
+              depositGateways: {
+                ...DEFAULT_PLATFORM_SETTINGS.depositGateways,
+                ...(parsed.platformSettings.depositGateways || {})
+              },
+              communityLinks: {
+                ...DEFAULT_PLATFORM_SETTINGS.communityLinks,
+                ...(parsed.platformSettings.communityLinks || {})
+              },
+              marketRates: {
+                ...DEFAULT_PLATFORM_SETTINGS.marketRates,
+                ...(parsed.platformSettings.marketRates || {})
+              }
+            }
+          : DEFAULT_PLATFORM_SETTINGS;
+
         return {
           user: loadedUser,
           credentials: parsed.credentials || DEFAULT_INITIAL_STATE.credentials,
@@ -137,8 +398,11 @@ function loadInitialState() {
           eggVault: typeof parsed.eggVault === 'number' ? parsed.eggVault : DEFAULT_INITIAL_STATE.eggVault,
           activeAssets: Array.isArray(parsed.activeAssets) ? parsed.activeAssets : DEFAULT_INITIAL_STATE.activeAssets,
           transactions: Array.isArray(parsed.transactions) ? parsed.transactions : DEFAULT_INITIAL_STATE.transactions,
-          withdrawals: Array.isArray(parsed.withdrawals) ? parsed.withdrawals : DEFAULT_INITIAL_STATE.withdrawals,
+          withdrawals: Array.isArray(parsed.withdrawals) && parsed.withdrawals.length > 0 ? parsed.withdrawals : DEFAULT_INITIAL_WITHDRAWALS,
           teamMembers: Array.isArray(parsed.teamMembers) ? parsed.teamMembers : DEFAULT_INITIAL_STATE.teamMembers,
+          users: Array.isArray(parsed.users) && parsed.users.length > 0 ? parsed.users : DEFAULT_USERS,
+          platformSettings: loadedSettings,
+          activityLogs: Array.isArray(parsed.activityLogs) && parsed.activityLogs.length > 0 ? parsed.activityLogs : DEFAULT_ACTIVITY_LOGS,
           lastHarvest: parsed.lastHarvest || DEFAULT_INITIAL_STATE.lastHarvest,
           cooldownActive: parsed.cooldownActive !== undefined ? Boolean(parsed.cooldownActive) : DEFAULT_INITIAL_STATE.cooldownActive
         };
@@ -163,6 +427,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   const [transactions, setTransactions] = useState(initial.transactions);
   const [withdrawals, setWithdrawals] = useState(initial.withdrawals);
   const [teamMembers, setTeamMembers] = useState(initial.teamMembers || []);
+  const [users, setUsers] = useState(initial.users || DEFAULT_USERS);
+  const [platformSettings, setPlatformSettings] = useState(initial.platformSettings || DEFAULT_PLATFORM_SETTINGS);
+  const [activityLogs, setActivityLogs] = useState(initial.activityLogs || DEFAULT_ACTIVITY_LOGS);
   const [lastHarvest, setLastHarvest] = useState(initial.lastHarvest);
   const [cooldownActive, setCooldownActive] = useState(initial.cooldownActive);
   const [toasts, setToasts] = useState([]);
@@ -180,16 +447,24 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         transactions: patch.transactions !== undefined ? patch.transactions : transactions,
         withdrawals: patch.withdrawals !== undefined ? patch.withdrawals : withdrawals,
         teamMembers: patch.teamMembers !== undefined ? patch.teamMembers : teamMembers,
+        users: patch.users !== undefined ? patch.users : users,
+        platformSettings: patch.platformSettings !== undefined ? patch.platformSettings : platformSettings,
+        activityLogs: patch.activityLogs !== undefined ? patch.activityLogs : activityLogs,
         lastHarvest: patch.lastHarvest !== undefined ? patch.lastHarvest : lastHarvest,
         cooldownActive: patch.cooldownActive !== undefined ? patch.cooldownActive : cooldownActive
       };
       const raw = JSON.stringify(snapshot);
       window.localStorage.setItem(STORAGE_KEY_PRIMARY, raw);
       window.localStorage.setItem(STORAGE_KEY_SECONDARY, raw);
+      window.localStorage.setItem('farm_user', JSON.stringify(snapshot.user));
+      window.localStorage.setItem('farm_balance', String(snapshot.balance));
+      window.localStorage.setItem('farm_users', JSON.stringify(snapshot.users));
+      window.localStorage.setItem('farm_platform_settings', JSON.stringify(snapshot.platformSettings));
+      window.localStorage.setItem('farm_activity_logs', JSON.stringify(snapshot.activityLogs));
     } catch (err) {
       console.warn('Error saving state to localStorage:', err);
     }
-  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, lastHarvest, cooldownActive]);
+  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, users, platformSettings, activityLogs, lastHarvest, cooldownActive]);
 
   // Initial sync check on mount
   useEffect(() => {
@@ -219,6 +494,31 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // Activity logger helper
+  const logActivity = useCallback(({ action, category = 'GENERAL', userId, username, details, status = 'SUCCESS' }) => {
+    const newLog = {
+      id: `LOG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: new Date().toISOString(),
+      userId: userId || user?.id || user?.accountId || 'system',
+      username: username || user?.username || 'system',
+      action,
+      category,
+      details: details || '',
+      status
+    };
+    setActivityLogs((prev) => {
+      const list = Array.isArray(prev) ? prev : [];
+      const updated = [newLog, ...list];
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem('farm_activity_logs', JSON.stringify(updated));
+        } catch (_) {}
+      }
+      return updated;
+    });
+    return newLog;
+  }, [user]);
+
   // Cooldown calculation helper
   const cooldownHoursRemaining = useMemo(() => {
     if (!cooldownActive || !lastHarvest) return 0;
@@ -231,44 +531,151 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     return 0;
   }, [cooldownActive, lastHarvest]);
 
-  // Farmer Authentication
+  // Farmer & Super Admin Authentication
   const login = useCallback((usernameOrEmail, password) => {
-    if (!usernameOrEmail || !password) {
+    const trimmedInput = String(usernameOrEmail || '').trim().toLowerCase();
+    if (!trimmedInput || !password) {
       const msg = 'Username/Email and password are required.';
       showToast('error', msg);
       return { success: false, message: msg };
     }
 
-    const trimmedInput = String(usernameOrEmail).trim().toLowerCase();
+    // 1. Check in registered users list
+    const registeredUser = users.find(
+      (u) =>
+        String(u.username || '').toLowerCase() === trimmedInput ||
+        String(u.email || '').toLowerCase() === trimmedInput
+    );
+
+    if (registeredUser) {
+      // Enforce Hard Blocking
+      if (registeredUser.status === 'Blocked') {
+        logActivity({
+          action: 'FAILED_LOGIN',
+          category: 'AUTH',
+          userId: registeredUser.id,
+          username: registeredUser.username,
+          details: `Blocked account login rejected for ${registeredUser.username}`,
+          status: 'FAILED'
+        });
+        const msg = 'Account is blocked. Please contact customer support.';
+        showToast('error', msg);
+        return { success: false, message: msg };
+      }
+
+      const passwordMatches = password === registeredUser.password || password === credentials.password;
+      if (!passwordMatches) {
+        logActivity({
+          action: 'FAILED_LOGIN',
+          category: 'AUTH',
+          userId: registeredUser.id,
+          username: registeredUser.username,
+          details: `Incorrect password attempt for ${registeredUser.username}`,
+          status: 'FAILED'
+        });
+        const msg = 'Invalid credentials. Please verify username and secret password.';
+        showToast('error', msg);
+        return { success: false, message: msg };
+      }
+
+      const isAdmin =
+        registeredUser.role === 'admin' ||
+        trimmedInput === 'admin@gmail.com' ||
+        trimmedInput === 'admin' ||
+        registeredUser.username === 'admin';
+      const assignedRole = isAdmin ? 'admin' : (registeredUser.role || 'farmer');
+
+      const activeSession = {
+        id: registeredUser.id,
+        username: registeredUser.username,
+        email: registeredUser.email,
+        name: registeredUser.name,
+        accountId: registeredUser.accountId || (isAdmin ? '#0001' : '#1197'),
+        upliner: registeredUser.upliner || 'N/A',
+        referralCode: registeredUser.referralCode || registeredUser.username,
+        role: assignedRole,
+        status: registeredUser.status || 'Active',
+        isLoggedIn: true,
+        token: `jwt_session_${Date.now()}`
+      };
+
+      setUser(activeSession);
+      persistState({ user: activeSession });
+
+      logActivity({
+        action: 'LOGIN',
+        category: 'AUTH',
+        userId: activeSession.id,
+        username: activeSession.username,
+        details: `User ${activeSession.username} logged in (${activeSession.role})`,
+        status: 'SUCCESS'
+      });
+
+      const msg = 'Login successful. Entering farm coop...';
+      showToast('success', msg);
+      return { success: true, message: msg, user: activeSession };
+    }
+
+    // 2. Fallback to legacy credentials for backwards compatibility
     const matchesUsername = trimmedInput === String(credentials.username).toLowerCase();
     const matchesEmail = trimmedInput === String(credentials.email).toLowerCase();
     const matchesPassword = password === credentials.password;
 
     if ((matchesUsername || matchesEmail) && matchesPassword) {
-      const updatedUser = {
-        ...user,
+      const isAdmin = trimmedInput === 'admin@gmail.com' || trimmedInput === 'admin';
+      const legacySession = {
+        id: isAdmin ? 'usr_admin' : (user.id || 'usr_saqib'),
         username: credentials.username,
         email: credentials.email,
-        name: user.name || 'Farmer Saqib',
-        accountId: user.accountId || '#1197',
+        name: isAdmin ? 'Super Admin' : (user.name || 'Farmer Saqib'),
+        accountId: isAdmin ? '#0001' : (user.accountId || '#1197'),
         upliner: user.upliner || 'N/A',
         referralCode: user.referralCode || credentials.username || 'mrsaqib242',
+        role: isAdmin ? 'admin' : (user.role || 'farmer'),
+        status: user.status || 'Active',
         isLoggedIn: true,
         token: `jwt_session_${Date.now()}`
       };
-      setUser(updatedUser);
-      persistState({ user: updatedUser });
+      setUser(legacySession);
+      persistState({ user: legacySession });
+
+      logActivity({
+        action: 'LOGIN',
+        category: 'AUTH',
+        userId: legacySession.id,
+        username: legacySession.username,
+        details: `User ${legacySession.username} logged in (${legacySession.role})`,
+        status: 'SUCCESS'
+      });
+
       const msg = 'Login successful. Entering farm coop...';
       showToast('success', msg);
-      return { success: true, message: msg };
+      return { success: true, message: msg, user: legacySession };
     }
 
+    logActivity({
+      action: 'FAILED_LOGIN',
+      category: 'AUTH',
+      userId: 'unknown',
+      username: trimmedInput,
+      details: `Failed login attempt for unknown user: ${trimmedInput}`,
+      status: 'FAILED'
+    });
     const msg = 'Invalid credentials. Please verify username and secret password.';
     showToast('error', msg);
     return { success: false, message: msg };
-  }, [credentials, user, persistState, showToast]);
+  }, [credentials, user, users, persistState, showToast, logActivity]);
 
   const logout = useCallback(() => {
+    logActivity({
+      action: 'LOGOUT',
+      category: 'AUTH',
+      userId: user?.id || user?.accountId || 'system',
+      username: user?.username || 'system',
+      details: `User ${user?.username || 'anonymous'} logged out`,
+      status: 'SUCCESS'
+    });
+
     const updatedUser = {
       ...user,
       isLoggedIn: false,
@@ -279,10 +686,16 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const msg = 'You have been logged out successfully.';
     showToast('info', msg);
     return { success: true, message: msg };
-  }, [user, persistState, showToast]);
+  }, [user, persistState, showToast, logActivity]);
 
   // Security Credentials Management
   const changePassword = useCallback((currentPassword, newPassword, confirmPassword) => {
+    if (user?.status === 'Blocked') {
+      const msg = 'Account is blocked. Please contact customer support.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
     if (!currentPassword || !newPassword) {
       const msg = 'All password fields are required.';
       showToast('error', msg);
@@ -316,17 +729,46 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const updatedCreds = { ...credentials, password: newPassword };
     const updatedUser = { ...user, password: newPassword };
 
+    // Also update in users list
+    const updatedUsers = users.map((u) => {
+      if (
+        (user?.id && u.id === user.id) ||
+        (user?.username && String(u.username).toLowerCase() === String(user.username).toLowerCase()) ||
+        (user?.email && String(u.email).toLowerCase() === String(user.email).toLowerCase()) ||
+        String(u.username).toLowerCase() === String(credentials.username).toLowerCase()
+      ) {
+        return { ...u, password: newPassword };
+      }
+      return u;
+    });
+
     setCredentials(updatedCreds);
     setUser(updatedUser);
-    persistState({ credentials: updatedCreds, user: updatedUser });
+    setUsers(updatedUsers);
+    persistState({ credentials: updatedCreds, user: updatedUser, users: updatedUsers });
+
+    logActivity({
+      action: 'CHANGE_PASSWORD',
+      category: 'AUTH',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: 'Password updated successfully',
+      status: 'SUCCESS'
+    });
 
     const msg = 'Password updated successfully. Protected by 256-bit SSL.';
     showToast('success', msg);
     return { success: true, message: msg };
-  }, [credentials, user, persistState, showToast]);
+  }, [credentials, user, users, persistState, showToast, logActivity]);
 
   // VIP Farm Asset Acquisition
   const buyFarmAsset = useCallback(({ units, gateway, methodCode }) => {
+    if (user?.status === 'Blocked') {
+      const msg = 'Account is blocked. Please contact customer support.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
     const qty = Number(units);
     if (!Number.isInteger(qty) || qty <= 0) {
       const msg = 'Units must be a positive integer.';
@@ -388,6 +830,15 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setTransactions(updatedTransactions);
     persistState({ activeAssets: updatedAssets, transactions: updatedTransactions });
 
+    logActivity({
+      action: 'BUY_ASSET',
+      category: 'TRANSACTION',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: `Acquired ${qty}x ${ASSET_SPEC.name} Units via ${validGateway.name} (Rs. ${cost} PKR)`,
+      status: 'SUCCESS'
+    });
+
     const msg = `Successfully acquired ${qty} VIP Farm Units via ${validGateway.name}!`;
     showToast('success', msg);
     return {
@@ -398,10 +849,20 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       fullTermEggs,
       message: msg
     };
-  }, [activeAssets, transactions, persistState, showToast]);
+  }, [user, activeAssets, transactions, persistState, showToast, logActivity]);
 
   // 24-Hour Egg Harvest Engine
   const harvestEggs = useCallback((currentTime = new Date()) => {
+    if (user?.status === 'Blocked') {
+      const msg = 'Account is blocked. Please contact customer support.';
+      showToast('error', msg);
+      return {
+        success: false,
+        eggsCollected: 0,
+        message: msg
+      };
+    }
+
     const current = new Date(currentTime);
 
     if (cooldownActive && lastHarvest) {
@@ -459,6 +920,15 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       transactions: updatedTransactions
     });
 
+    logActivity({
+      action: 'HARVEST',
+      category: 'TRANSACTION',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: `Collected 24h daily harvest of ${eggsYield} fresh eggs`,
+      status: 'SUCCESS'
+    });
+
     const msg = `Harvested ${eggsYield} fresh eggs into your vault!`;
     showToast('success', msg);
     return {
@@ -467,7 +937,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       eggVault: newVault,
       message: msg
     };
-  }, [activeAssets, cooldownActive, lastHarvest, eggVault, transactions, persistState, showToast]);
+  }, [user, activeAssets, cooldownActive, lastHarvest, eggVault, transactions, persistState, showToast, logActivity]);
 
   const resetCooldown = useCallback(() => {
     setCooldownActive(false);
@@ -476,6 +946,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
   // Egg Liquidation & P2P Cashout
   const sellEggs = useCallback(({ storeId, storeName, rate, eggs, method, accountTitle, accountNumber, bankName }) => {
+    if (user?.status === 'Blocked') {
+      const msg = 'Account is blocked. Please contact customer support.';
+      showToast('error', msg);
+      return { success: false, pkrAmount: 0, message: msg };
+    }
+
     const qty = Number(eggs);
     if (!Number.isFinite(qty) || qty <= 0) {
       const msg = 'Egg amount must be a positive number.';
@@ -548,7 +1024,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       accountNumber,
       bankName: bankName || null,
       date: new Date().toISOString(),
-      status: 'Completed'
+      status: 'Completed',
+      username: user?.username || 'mrsaqib242',
+      userId: user?.id || 'usr_saqib'
     };
 
     const newTrx = {
@@ -576,6 +1054,15 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       transactions: updatedTransactions
     });
 
+    logActivity({
+      action: 'SELL_EGGS',
+      category: 'TRANSACTION',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: `Sold ${qty} eggs to ${merchant.name} for Rs. ${pkrNet} PKR via ${payoutMethod.name}`,
+      status: 'SUCCESS'
+    });
+
     const msg = `Successfully sold ${qty} eggs for Rs. ${pkrNet.toFixed(2)} PKR!`;
     showToast('success', msg);
     return {
@@ -588,7 +1075,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       withdrawal: withdrawalRecord,
       message: msg
     };
-  }, [eggVault, balance, withdrawals, transactions, persistState, showToast]);
+  }, [user, eggVault, balance, withdrawals, transactions, persistState, showToast, logActivity]);
 
   // Production Simulation Helper
   const simulateDays = useCallback((daysCount) => {
@@ -672,6 +1159,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
   // Downline Registration Action
   const registerDownline = useCallback(({ username, tierLevel = 1, upliner, joinDate }) => {
+    if (user?.status === 'Blocked') {
+      const msg = 'Account is blocked. Please contact customer support.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
     const cleanUsername = String(username || '').trim();
     if (!cleanUsername) {
       const msg = 'Downline farmer username is required.';
@@ -712,6 +1205,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
   // Downline Purchase Simulation Action
   const simulateDownlinePurchase = useCallback(({ memberId, username, units = 1 }) => {
+    if (user?.status === 'Blocked') {
+      const msg = 'Account is blocked. Please contact customer support.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
     const qty = Number(units);
     if (!Number.isInteger(qty) || qty <= 0) {
       const msg = 'Hen purchase units must be a positive integer.';
@@ -787,7 +1286,379 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       transaction: commissionTrx,
       message: msg
     };
-  }, [teamMembers, balance, transactions, persistState, showToast]);
+  }, [teamMembers, balance, transactions, user, persistState, showToast]);
+
+  // Admin Action: Block User
+  const blockUser = useCallback((userId) => {
+    const target = users.find(
+      (u) => u.id === userId || String(u.username || '').toLowerCase() === String(userId || '').toLowerCase()
+    );
+    if (!target) {
+      const msg = 'User not found.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    if (
+      target.role === 'admin' ||
+      target.id === 'usr_admin' ||
+      String(target.username || '').toLowerCase() === 'admin' ||
+      String(target.email || '').toLowerCase() === 'admin@gmail.com'
+    ) {
+      const msg = 'Super Admin accounts cannot be blocked.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const updatedTarget = { ...target, status: 'Blocked' };
+    const updatedUsers = users.map((u) => (u.id === target.id ? updatedTarget : u));
+    setUsers(updatedUsers);
+
+    if (
+      user &&
+      (user.id === target.id || String(user.username || '').toLowerCase() === String(target.username || '').toLowerCase())
+    ) {
+      const updatedActive = { ...user, status: 'Blocked' };
+      setUser(updatedActive);
+      persistState({ users: updatedUsers, user: updatedActive });
+    } else {
+      persistState({ users: updatedUsers });
+    }
+
+    logActivity({
+      action: 'BLOCK_USER',
+      category: 'ADMIN',
+      userId: target.id,
+      username: target.username,
+      details: `User ${target.username} has been blocked by Super Admin`,
+      status: 'WARNING'
+    });
+
+    const msg = `User ${target.username} has been blocked.`;
+    showToast('warning', msg);
+    return { success: true, user: updatedTarget, message: msg };
+  }, [users, user, persistState, showToast, logActivity]);
+
+  // Admin Action: Unblock User
+  const unblockUser = useCallback((userId) => {
+    const target = users.find(
+      (u) => u.id === userId || String(u.username || '').toLowerCase() === String(userId || '').toLowerCase()
+    );
+    if (!target) {
+      const msg = 'User not found.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const updatedTarget = { ...target, status: 'Active' };
+    const updatedUsers = users.map((u) => (u.id === target.id ? updatedTarget : u));
+    setUsers(updatedUsers);
+
+    if (
+      user &&
+      (user.id === target.id || String(user.username || '').toLowerCase() === String(target.username || '').toLowerCase())
+    ) {
+      const updatedActive = { ...user, status: 'Active' };
+      setUser(updatedActive);
+      persistState({ users: updatedUsers, user: updatedActive });
+    } else {
+      persistState({ users: updatedUsers });
+    }
+
+    logActivity({
+      action: 'UNBLOCK_USER',
+      category: 'ADMIN',
+      userId: target.id,
+      username: target.username,
+      details: `User ${target.username} has been unblocked by Super Admin`,
+      status: 'SUCCESS'
+    });
+
+    const msg = `User ${target.username} has been unblocked.`;
+    showToast('success', msg);
+    return { success: true, user: updatedTarget, message: msg };
+  }, [users, user, persistState, showToast, logActivity]);
+
+  // Admin Action: Update User Balances
+  const updateUserBalances = useCallback((userId, { balance: newBal, eggVault: newVault, hens: newHens }) => {
+    const targetIndex = users.findIndex(
+      (u) => u.id === userId || String(u.username || '').toLowerCase() === String(userId || '').toLowerCase()
+    );
+    if (targetIndex === -1) {
+      const msg = 'User not found.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const target = users[targetIndex];
+    const updatedTarget = {
+      ...target,
+      balance: newBal !== undefined ? Math.max(0, Number(newBal)) : target.balance,
+      eggVault: newVault !== undefined ? Math.max(0, Number(newVault)) : target.eggVault,
+      activeHens: newHens !== undefined ? Math.max(0, Number(newHens)) : (target.activeHens || 0)
+    };
+
+    const updatedUsers = [...users];
+    updatedUsers[targetIndex] = updatedTarget;
+    setUsers(updatedUsers);
+
+    const isCurrent =
+      user &&
+      (user.id === target.id || String(user.username || '').toLowerCase() === String(target.username || '').toLowerCase());
+    const patchToPersist = { users: updatedUsers };
+
+    if (isCurrent) {
+      if (newBal !== undefined) {
+        setBalance(updatedTarget.balance);
+        patchToPersist.balance = updatedTarget.balance;
+      }
+      if (newVault !== undefined) {
+        setEggVault(updatedTarget.eggVault);
+        patchToPersist.eggVault = updatedTarget.eggVault;
+      }
+      if (newHens !== undefined) {
+        const adjustedAssets =
+          activeAssets.length > 0
+            ? [{ ...activeAssets[0], units: updatedTarget.activeHens, totalCost: updatedTarget.activeHens * 500, dailyYield: updatedTarget.activeHens }]
+            : [
+                {
+                  id: 'ASSET-MOD-1',
+                  name: 'AL Rehman Meta Eggs',
+                  units: updatedTarget.activeHens,
+                  unitCost: 500,
+                  totalCost: updatedTarget.activeHens * 500,
+                  dailyYield: updatedTarget.activeHens,
+                  termDays: 120,
+                  daysRemaining: 120,
+                  purchaseDate: new Date().toISOString(),
+                  gateway: 'Admin Adjust'
+                }
+              ];
+        setActiveAssets(adjustedAssets);
+        patchToPersist.activeAssets = adjustedAssets;
+      }
+    }
+
+    persistState(patchToPersist);
+
+    logActivity({
+      action: 'UPDATE_BALANCE',
+      category: 'ADMIN',
+      userId: target.id,
+      username: target.username,
+      details: `Updated balances for ${target.username}: Balance=${updatedTarget.balance}, Vault=${updatedTarget.eggVault}, Hens=${updatedTarget.activeHens}`,
+      status: 'SUCCESS'
+    });
+
+    const msg = 'User balances updated successfully.';
+    showToast('success', msg);
+    return { success: true, user: updatedTarget, message: msg };
+  }, [users, user, activeAssets, persistState, showToast, logActivity]);
+
+  // Admin Action: Approve Withdrawal
+  const approveWithdrawal = useCallback((withdrawalId, txHash) => {
+    let index = withdrawals.findIndex((w) => w.id === withdrawalId);
+    let currentList = withdrawals;
+
+    if (index === -1) {
+      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find((w) => w.id === withdrawalId);
+      if (defWd) {
+        currentList = [defWd, ...withdrawals];
+        index = 0;
+      } else {
+        const msg = 'Withdrawal record not found.';
+        showToast('error', msg);
+        return { success: false, message: msg };
+      }
+    }
+
+    const targetWd = currentList[index];
+    if (targetWd.status === 'Completed') {
+      const msg = 'Withdrawal is already completed.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const hash =
+      txHash ||
+      'TX-ADM-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+    const updatedWd = {
+      ...targetWd,
+      status: 'Completed',
+      txHash: hash,
+      processedAt: new Date().toISOString()
+    };
+
+    const updatedWithdrawals = [...currentList];
+    updatedWithdrawals[index] = updatedWd;
+
+    setWithdrawals(updatedWithdrawals);
+    persistState({ withdrawals: updatedWithdrawals });
+
+    logActivity({
+      action: 'APPROVE_WITHDRAWAL',
+      category: 'ADMIN',
+      userId: updatedWd.userId || updatedWd.accountNumber,
+      username: updatedWd.username || updatedWd.accountTitle,
+      details: `Approved cashout ${updatedWd.id} of Rs. ${updatedWd.amountPkr} (Tx: ${hash})`,
+      status: 'SUCCESS'
+    });
+
+    const msg = 'Withdrawal approved successfully.';
+    showToast('success', msg);
+    return { success: true, withdrawal: updatedWd, txHash: hash, message: msg };
+  }, [withdrawals, persistState, showToast, logActivity]);
+
+  // Admin Action: Reject Withdrawal
+  const rejectWithdrawal = useCallback((withdrawalId, reason, refundBalance = true) => {
+    let index = withdrawals.findIndex((w) => w.id === withdrawalId);
+    let currentList = withdrawals;
+
+    if (index === -1) {
+      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find((w) => w.id === withdrawalId);
+      if (defWd) {
+        currentList = [defWd, ...withdrawals];
+        index = 0;
+      } else {
+        const msg = 'Withdrawal record not found.';
+        showToast('error', msg);
+        return { success: false, message: msg };
+      }
+    }
+
+    const targetWd = currentList[index];
+    if (targetWd.status === 'Completed') {
+      const msg = 'Cannot reject an already completed withdrawal.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const updatedWd = {
+      ...targetWd,
+      status: 'Rejected',
+      rejectReason: reason || 'Cashout request rejected by administrator.',
+      rejectedAt: new Date().toISOString()
+    };
+
+    const updatedWithdrawals = [...currentList];
+    updatedWithdrawals[index] = updatedWd;
+
+    const patchToPersist = { withdrawals: updatedWithdrawals };
+
+    if (refundBalance === true) {
+      const refundPkr = Number(targetWd.amountPkr) || 0;
+      const targetUserIndex = users.findIndex(
+        (u) =>
+          (targetWd.userId && u.id === targetWd.userId) ||
+          (targetWd.username && String(u.username).toLowerCase() === String(targetWd.username).toLowerCase())
+      );
+      if (targetUserIndex !== -1) {
+        const updatedTargetUser = {
+          ...users[targetUserIndex],
+          balance: Number(((Number(users[targetUserIndex].balance) || 0) + refundPkr).toFixed(2))
+        };
+        const updatedUsers = [...users];
+        updatedUsers[targetUserIndex] = updatedTargetUser;
+        setUsers(updatedUsers);
+        patchToPersist.users = updatedUsers;
+      }
+
+      if (
+        user &&
+        ((targetWd.userId && user.id === targetWd.userId) ||
+          (targetWd.username && String(user.username).toLowerCase() === String(targetWd.username).toLowerCase()))
+      ) {
+        setBalance((prev) => {
+          const newBal = Number(((Number(prev) || 0) + refundPkr).toFixed(2));
+          patchToPersist.balance = newBal;
+          return newBal;
+        });
+      }
+    }
+
+    setWithdrawals(updatedWithdrawals);
+    persistState(patchToPersist);
+
+    logActivity({
+      action: 'REJECT_WITHDRAWAL',
+      category: 'ADMIN',
+      userId: updatedWd.userId || updatedWd.accountNumber,
+      username: updatedWd.username || updatedWd.accountTitle,
+      details: `Rejected cashout ${updatedWd.id} of Rs. ${updatedWd.amountPkr}. Reason: ${updatedWd.rejectReason}`,
+      status: 'WARNING'
+    });
+
+    const msg = 'Withdrawal rejected successfully.';
+    showToast('info', msg);
+    return { success: true, withdrawal: updatedWd, message: msg };
+  }, [withdrawals, users, user, persistState, showToast, logActivity]);
+
+  // Admin Action: Update Platform Settings
+  const updatePlatformSettings = useCallback((newSettings) => {
+    const deepMerge = (target, source) => {
+      if (!source || typeof source !== 'object') return target;
+      const output = { ...target };
+      for (const key of Object.keys(source)) {
+        if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          output[key] = deepMerge(target[key] || {}, source[key]);
+        } else {
+          output[key] = source[key];
+        }
+      }
+      return output;
+    };
+
+    const merged = deepMerge(platformSettings, newSettings);
+    setPlatformSettings(merged);
+    persistState({ platformSettings: merged });
+
+    logActivity({
+      action: 'UPDATE_SETTINGS',
+      category: 'ADMIN',
+      details: 'Platform settings updated by Super Admin',
+      status: 'SUCCESS'
+    });
+
+    const msg = 'Platform settings updated successfully.';
+    showToast('success', msg);
+    return { success: true, settings: merged, message: msg };
+  }, [platformSettings, persistState, showToast, logActivity]);
+
+  // Admin KPIs Aggregator
+  const getAdminKPIs = useCallback(() => {
+    const usersList = Array.isArray(users) ? users : [];
+    const withdrawalsList = Array.isArray(withdrawals) ? withdrawals : [];
+
+    const totalUsers = usersList.length;
+    const totalActiveHens = usersList.reduce((sum, u) => sum + (Number(u.activeHens) || 0), 0);
+    const totalEggsInVaults = usersList.reduce((sum, u) => sum + (Number(u.eggVault) || 0), 0);
+    const totalEggsLiquidated = withdrawalsList.reduce((sum, w) => sum + (Number(w.eggs) || 0), 0);
+    const totalEggsProduced = totalEggsInVaults + totalEggsLiquidated;
+
+    const totalLiquidatedPkr = Number(
+      withdrawalsList
+        .filter((w) => w.status === 'Completed')
+        .reduce((sum, w) => sum + (Number(w.amountPkr) || 0), 0)
+        .toFixed(2)
+    );
+
+    const pendingList = withdrawalsList.filter((w) => w.status === 'Pending');
+    const pendingWithdrawalsCount = pendingList.length;
+    const pendingWithdrawalsVolume = Number(
+      pendingList
+        .reduce((sum, w) => sum + (Number(w.amountPkr) || 0), 0)
+        .toFixed(2)
+    );
+
+    return {
+      totalUsers,
+      totalActiveHens,
+      totalEggsProduced,
+      totalLiquidatedPkr,
+      pendingWithdrawalsCount,
+      pendingWithdrawalsVolume
+    };
+  }, [users, withdrawals]);
 
   // 1-Click Fresh State Reset Action
   const resetToFreshState = useCallback(() => {
@@ -798,8 +1669,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       eggVault: DEFAULT_INITIAL_STATE.eggVault,
       activeAssets: [...DEFAULT_INITIAL_STATE.activeAssets],
       transactions: [...DEFAULT_INITIAL_STATE.transactions],
-      withdrawals: [...DEFAULT_INITIAL_STATE.withdrawals],
+      withdrawals: [...DEFAULT_INITIAL_WITHDRAWALS],
       teamMembers: [],
+      users: [...DEFAULT_USERS],
+      platformSettings: { ...DEFAULT_PLATFORM_SETTINGS },
+      activityLogs: [...DEFAULT_ACTIVITY_LOGS],
       lastHarvest: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
       cooldownActive: false
     };
@@ -812,6 +1686,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setTransactions(fresh.transactions);
     setWithdrawals(fresh.withdrawals);
     setTeamMembers(fresh.teamMembers);
+    setUsers(fresh.users);
+    setPlatformSettings(fresh.platformSettings);
+    setActivityLogs(fresh.activityLogs);
     setLastHarvest(fresh.lastHarvest);
     setCooldownActive(fresh.cooldownActive);
 
@@ -819,6 +1696,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       const raw = JSON.stringify(fresh);
       window.localStorage.setItem(STORAGE_KEY_PRIMARY, raw);
       window.localStorage.setItem(STORAGE_KEY_SECONDARY, raw);
+      window.localStorage.setItem('farm_user', JSON.stringify(fresh.user));
+      window.localStorage.setItem('farm_balance', String(fresh.balance));
+      window.localStorage.setItem('farm_users', JSON.stringify(fresh.users));
+      window.localStorage.setItem('farm_platform_settings', JSON.stringify(fresh.platformSettings));
+      window.localStorage.setItem('farm_activity_logs', JSON.stringify(fresh.activityLogs));
     }
 
     const msg = 'Farm state reset to clean initial baseline. Dummy entries purged.';
@@ -904,6 +1786,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setWithdrawals,
     teamMembers,
     setTeamMembers,
+    users,
+    setUsers,
+    platformSettings,
+    setPlatformSettings,
+    activityLogs,
+    setActivityLogs,
     referralCode,
     referralLink,
     referralStats,
@@ -928,6 +1816,14 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     registerDownline,
     simulateDownlinePurchase,
     resetToFreshState,
+    blockUser,
+    unblockUser,
+    updateUserBalances,
+    approveWithdrawal,
+    rejectWithdrawal,
+    updatePlatformSettings,
+    getAdminKPIs,
+    logActivity,
     simulateDays,
     getAnalytics,
     analytics,
@@ -945,6 +1841,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     transactions,
     withdrawals,
     teamMembers,
+    users,
+    platformSettings,
+    activityLogs,
     referralCode,
     referralLink,
     referralStats,
@@ -966,6 +1865,14 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     registerDownline,
     simulateDownlinePurchase,
     resetToFreshState,
+    blockUser,
+    unblockUser,
+    updateUserBalances,
+    approveWithdrawal,
+    rejectWithdrawal,
+    updatePlatformSettings,
+    getAdminKPIs,
+    logActivity,
     simulateDays,
     getAnalytics,
     analytics

@@ -31,9 +31,253 @@ export const COMMISSION_RATES = {
   LEVEL_2: 0.01
 };
 
+// Initial Multi-User Accounts Registry
+export const DEFAULT_USERS = [
+  {
+    id: 'usr_admin',
+    username: 'admin',
+    email: 'admin@gmail.com',
+    password: 'password123',
+    name: 'Super Admin',
+    role: 'admin',
+    status: 'Active',
+    balance: 25000,
+    eggVault: 500,
+    activeHens: 10,
+    upliner: 'N/A',
+    joinDate: '2026-10-01',
+    accountId: '#0001',
+    referralCode: 'admin'
+  },
+  {
+    id: 'usr_saqib',
+    username: 'mrsaqib242',
+    email: 'saqib@farm.pk',
+    password: 'password123',
+    name: 'Farmer Saqib',
+    role: 'farmer',
+    status: 'Active',
+    balance: 4500,
+    eggVault: 180,
+    activeHens: 5,
+    upliner: 'N/A',
+    joinDate: '2026-10-15',
+    accountId: '#1197',
+    referralCode: 'mrsaqib242'
+  },
+  {
+    id: 'usr_zohaib',
+    username: 'zohaib_egg',
+    email: 'zohaib@farm.pk',
+    password: 'password123',
+    name: 'Zohaib Poultry',
+    role: 'farmer',
+    status: 'Active',
+    balance: 1200,
+    eggVault: 45,
+    activeHens: 2,
+    upliner: 'mrsaqib242',
+    joinDate: '2026-10-25',
+    accountId: '#1198',
+    referralCode: 'zohaib_egg'
+  },
+  {
+    id: 'usr_hamza',
+    username: 'hamza_farmer',
+    email: 'hamza@farm.pk',
+    password: 'password123',
+    name: 'Hamza Eggs',
+    role: 'farmer',
+    status: 'Active',
+    balance: 850,
+    eggVault: 20,
+    activeHens: 1,
+    upliner: 'zohaib_egg',
+    joinDate: '2026-11-01',
+    accountId: '#1199',
+    referralCode: 'hamza_farmer'
+  },
+  {
+    id: 'usr_malik',
+    username: 'malik_blocked',
+    email: 'malik@farm.pk',
+    password: 'password123',
+    name: 'Malik Suspended',
+    role: 'farmer',
+    status: 'Blocked',
+    balance: 0,
+    eggVault: 0,
+    activeHens: 0,
+    upliner: 'mrsaqib242',
+    joinDate: '2026-10-20',
+    accountId: '#1200',
+    referralCode: 'malik_blocked'
+  },
+  {
+    id: 'usr_ayesha',
+    username: 'ayesha_hen',
+    email: 'ayesha@farm.pk',
+    password: 'password123',
+    name: 'Ayesha Layers',
+    role: 'farmer',
+    status: 'Active',
+    balance: 7800,
+    eggVault: 320,
+    activeHens: 8,
+    upliner: 'mrsaqib242',
+    joinDate: '2026-10-18',
+    accountId: '#1201',
+    referralCode: 'ayesha_hen'
+  }
+];
+
+// Configurable Platform Settings
+export const DEFAULT_PLATFORM_SETTINGS = {
+  depositGateways: {
+    easypisa: {
+      accountTitle: 'AL REHMAN META EGGS OFFICIAL',
+      accountNumber: '03412017923',
+      qrCodeUrl: '/src/assets/easypisa.png',
+      instructions: 'Deposit to EasyPaisa Title AL REHMAN META EGGS and upload screenshot.'
+    },
+    jazzcash: {
+      accountTitle: 'AL REHMAN ENTERPRISES',
+      accountNumber: '03001234567',
+      qrCodeUrl: '/src/assets/jazzcash.png',
+      instructions: 'Transfer to JazzCash official account.'
+    }
+  },
+  communityLinks: {
+    whatsappGroup: 'https://chat.whatsapp.com/alrehman-meta-eggs-official',
+    whatsappGroupUrl: 'https://chat.whatsapp.com/alrehman-meta-eggs-official',
+    whatsappChannel: 'https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j',
+    whatsappChannelUrl: 'https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j',
+    supportPhone: '+923412017923',
+    popupEnabled: true,
+    communityPopupEnabled: true
+  },
+  marketRates: {
+    henUnitPrice: 500,
+    stores: [
+      { id: 'sonica', name: 'Sonica Egg Trade', rate: 32 },
+      { id: 'usmaina', name: 'Usmaina Mart', rate: 30 },
+      { id: 'syed', name: 'Syed Traders', rate: 33 }
+    ],
+    eggRates: {
+      sonica: 32,
+      usmaina: 30,
+      syed: 33
+    }
+  }
+};
+
+// Activity Audit Event Logs
+export const DEFAULT_ACTIVITY_LOGS = [
+  {
+    id: 'LOG-INIT-1',
+    timestamp: '2026-11-05T04:00:00.000Z',
+    userId: 'usr_admin',
+    username: 'admin',
+    action: 'LOGIN',
+    category: 'AUTH',
+    details: 'Super Admin logged in to Platform Control Center',
+    status: 'SUCCESS'
+  },
+  {
+    id: 'LOG-INIT-2',
+    timestamp: '2026-11-05T03:30:00.000Z',
+    userId: 'usr_saqib',
+    username: 'mrsaqib242',
+    action: 'LOGIN',
+    category: 'AUTH',
+    details: 'Farmer Saqib entered farm coop',
+    status: 'SUCCESS'
+  },
+  {
+    id: 'LOG-INIT-3',
+    timestamp: '2026-11-04T18:15:00.000Z',
+    userId: 'usr_zohaib',
+    username: 'zohaib_egg',
+    action: 'BUY_ASSET',
+    category: 'TRANSACTION',
+    details: 'Acquired 2x AL Rehman Meta Eggs Units via Jazz cash (Rs. 1,000 PKR)',
+    status: 'SUCCESS'
+  },
+  {
+    id: 'LOG-INIT-4',
+    timestamp: '2026-11-03T09:00:00.000Z',
+    userId: 'usr_saqib',
+    username: 'mrsaqib242',
+    action: 'HARVEST',
+    category: 'TRANSACTION',
+    details: 'Collected 24h daily harvest from active hens',
+    status: 'SUCCESS'
+  },
+  {
+    id: 'LOG-INIT-5',
+    timestamp: '2026-10-29T10:05:00.000Z',
+    userId: 'usr_malik',
+    username: 'malik_blocked',
+    action: 'BLOCK_USER',
+    category: 'ADMIN',
+    details: 'Super Admin placed account on suspension',
+    status: 'WARNING'
+  }
+];
+
+// Seeded Withdrawals with Pending Cashout Queue
+export const DEFAULT_INITIAL_WITHDRAWALS = [
+  {
+    id: 'WD-PEND-1',
+    store: 'Usmaina Poltry Farm',
+    eggs: 50,
+    rate: 30,
+    amountPkr: 1500,
+    method: 'Jazzcash',
+    accountTitle: 'Hamza Tariq',
+    accountNumber: '03001234567',
+    bankName: null,
+    date: '2026-11-04T16:20:00.000Z',
+    status: 'Pending',
+    username: 'hamza_farmer',
+    userId: 'usr_hamza'
+  },
+  {
+    id: 'WD-PEND-2',
+    store: 'Sonica FORM STORE',
+    eggs: 25,
+    rate: 32,
+    amountPkr: 800,
+    method: 'EasyPaisa',
+    accountTitle: 'Zohaib Khan',
+    accountNumber: '03459876543',
+    bankName: null,
+    date: '2026-11-04T18:45:00.000Z',
+    status: 'Pending',
+    username: 'zohaib_egg',
+    userId: 'usr_zohaib'
+  },
+  {
+    id: 'WD-INIT-1',
+    store: 'Sonica FORM STORE',
+    eggs: 10,
+    rate: 32,
+    amountPkr: 320,
+    method: 'EasyPaisa',
+    accountTitle: 'Saqib Ali',
+    accountNumber: '03001234567',
+    bankName: null,
+    date: '2026-11-01T14:30:00.000Z',
+    status: 'Completed',
+    username: 'mrsaqib242',
+    userId: 'usr_saqib'
+  }
+];
+
 export class FarmEngine {
   constructor(storage, options = {}) {
     this.storage = storage;
+    this.options = options;
     this.storageKey = options.storageKey || 'alrehman_meta_eggs_state';
     this.loadState();
   }
@@ -47,12 +291,21 @@ export class FarmEngine {
         if (!this.user.referralCode) {
           this.user.referralCode = this.user.username || 'mrsaqib242';
         }
+        if (!this.user.role) {
+          this.user.role = (this.user.username === 'admin' || this.user.email === 'admin@gmail.com') ? 'admin' : 'farmer';
+        }
+        if (!this.user.status) {
+          this.user.status = 'Active';
+        }
         this.balance = typeof parsed.balance === 'number' ? parsed.balance : 0;
         this.eggVault = typeof parsed.eggVault === 'number' ? parsed.eggVault : 0;
         this.activeAssets = Array.isArray(parsed.activeAssets) ? parsed.activeAssets : [];
         this.transactions = Array.isArray(parsed.transactions) ? parsed.transactions : [];
         this.withdrawals = Array.isArray(parsed.withdrawals) ? parsed.withdrawals : [];
         this.teamMembers = Array.isArray(parsed.teamMembers) ? parsed.teamMembers : [];
+        this.users = Array.isArray(parsed.users) ? parsed.users : this.getDefaultUsers();
+        this.platformSettings = parsed.platformSettings || this.getDefaultPlatformSettings();
+        this.activityLogs = Array.isArray(parsed.activityLogs) ? parsed.activityLogs : this.getDefaultActivityLogs();
         this.lastHarvest = parsed.lastHarvest || null;
         this.cooldownActive = Boolean(parsed.cooldownActive);
         this.credentials = parsed.credentials || {
@@ -71,8 +324,11 @@ export class FarmEngine {
     this.eggVault = 0;
     this.activeAssets = [];
     this.transactions = [];
-    this.withdrawals = [];
+    this.withdrawals = this.options?.seedWithdrawals ? [...DEFAULT_INITIAL_WITHDRAWALS] : [];
     this.teamMembers = [];
+    this.users = this.getDefaultUsers();
+    this.platformSettings = this.getDefaultPlatformSettings();
+    this.activityLogs = this.getDefaultActivityLogs();
     this.lastHarvest = null;
     this.cooldownActive = false;
     this.credentials = {
@@ -92,6 +348,9 @@ export class FarmEngine {
       transactions: this.transactions,
       withdrawals: this.withdrawals,
       teamMembers: this.teamMembers,
+      users: this.users,
+      platformSettings: this.platformSettings,
+      activityLogs: this.activityLogs,
       lastHarvest: this.lastHarvest,
       cooldownActive: this.cooldownActive,
       credentials: this.credentials
@@ -101,14 +360,46 @@ export class FarmEngine {
 
   getDefaultUser() {
     return {
+      id: 'usr_saqib',
       username: 'mrsaqib242',
+      email: 'saqib@farm.pk',
       name: 'Farmer Saqib',
       accountId: '#1197',
       upliner: 'N/A',
       referralCode: 'mrsaqib242',
+      role: 'farmer',
+      status: 'Active',
       isLoggedIn: false,
       token: null
     };
+  }
+
+  getDefaultUsers() {
+    return JSON.parse(JSON.stringify(DEFAULT_USERS));
+  }
+
+  getDefaultPlatformSettings() {
+    return JSON.parse(JSON.stringify(DEFAULT_PLATFORM_SETTINGS));
+  }
+
+  getDefaultActivityLogs() {
+    return JSON.parse(JSON.stringify(DEFAULT_ACTIVITY_LOGS));
+  }
+
+  logActivity({ action, category = 'GENERAL', userId, username, details, status = 'SUCCESS' }) {
+    const newLog = {
+      id: `LOG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: new Date().toISOString(),
+      userId: userId || this.user?.id || this.user?.accountId || 'system',
+      username: username || this.user?.username || 'system',
+      action,
+      category,
+      details: details || '',
+      status
+    };
+    this.activityLogs = [newLog, ...(Array.isArray(this.activityLogs) ? this.activityLogs : [])];
+    this.saveState();
+    return newLog;
   }
 
   get referralCode() {
@@ -127,45 +418,111 @@ export class FarmEngine {
   }
 
   login(usernameOrEmail, password) {
-    if (!usernameOrEmail || !password) {
+    const cleanInput = String(usernameOrEmail || '').trim();
+    if (!cleanInput || !password) {
       return { success: false, message: 'Username/Email and password are required.' };
     }
 
-    const matchesUsername = usernameOrEmail === this.credentials.username;
-    const matchesEmail = usernameOrEmail === this.credentials.email;
-    const matchesPassword = password === this.credentials.password;
+    const cleanLower = cleanInput.toLowerCase();
 
-    if ((matchesUsername || matchesEmail) && matchesPassword) {
+    // Find in multi-user accounts list if available
+    const matchedUser = Array.isArray(this.users)
+      ? this.users.find(
+          (u) =>
+            (u.username && u.username.toLowerCase() === cleanLower) ||
+            (u.email && u.email.toLowerCase() === cleanLower)
+        )
+      : null;
+
+    // Check if matched user is blocked
+    if (matchedUser && matchedUser.status === 'Blocked') {
+      this.logActivity({
+        action: 'FAILED_LOGIN',
+        category: 'AUTH',
+        userId: matchedUser.id,
+        username: matchedUser.username,
+        details: 'Login rejected: account is blocked',
+        status: 'WARNING'
+      });
+      return { success: false, message: 'Account is blocked. Please contact customer support.' };
+    }
+
+    // Validate against legacy credentials or multi-user entry
+    const isLegacyUser = cleanLower === 'mrsaqib242' || cleanLower === 'admin@gmail.com' || cleanLower === 'admin';
+    const isLegacyValid = isLegacyUser && password === this.credentials.password;
+    const isUserValid = matchedUser && (matchedUser.password === password || (isLegacyUser && password === this.credentials.password));
+
+    if (isUserValid || isLegacyValid) {
+      const role = matchedUser?.role || ((cleanLower === 'admin@gmail.com' || cleanLower === 'admin') ? 'admin' : 'farmer');
       this.user = {
-        username: this.credentials.username,
-        name: 'Farmer Saqib',
-        accountId: '#1197',
-        upliner: 'N/A',
-        referralCode: this.user?.referralCode || this.credentials.username || 'mrsaqib242',
+        id: matchedUser?.id || (role === 'admin' ? 'usr_admin' : 'usr_saqib'),
+        username: matchedUser?.username || (cleanLower === 'admin' ? 'admin' : (cleanLower === 'admin@gmail.com' ? 'admin' : this.credentials.username)),
+        email: matchedUser?.email || (role === 'admin' ? 'admin@gmail.com' : this.credentials.email),
+        name: matchedUser?.name || (role === 'admin' ? 'Super Admin' : 'Farmer Saqib'),
+        accountId: matchedUser?.accountId || '#1197',
+        upliner: matchedUser?.upliner || 'N/A',
+        referralCode: matchedUser?.referralCode || this.user?.referralCode || this.credentials.username || 'mrsaqib242',
+        role,
+        status: matchedUser?.status || 'Active',
         isLoggedIn: true,
         token: `jwt_session_${Date.now()}`
       };
+
+      this.logActivity({
+        action: 'LOGIN',
+        category: 'AUTH',
+        userId: this.user.id,
+        username: this.user.username,
+        details: `User logged in with role ${this.user.role}`,
+        status: 'SUCCESS'
+      });
+
       this.saveState();
-      return { success: true, message: 'Login successful. Entering farm coop...' };
+      return { success: true, message: 'Login successful. Entering farm coop...', user: this.user };
     }
+
+    this.logActivity({
+      action: 'FAILED_LOGIN',
+      category: 'AUTH',
+      userId: matchedUser?.id || 'unknown',
+      username: usernameOrEmail,
+      details: 'Invalid credentials provided',
+      status: 'FAILED'
+    });
 
     return { success: false, message: 'Invalid credentials. Please verify username and secret password.' };
   }
 
   logout() {
+    const loggedOutUsername = this.user?.username || 'user';
+    const loggedOutId = this.user?.id || 'unknown';
     this.user = {
       username: '',
       name: '',
       accountId: '',
       upliner: '',
+      role: 'farmer',
+      status: 'Active',
       isLoggedIn: false,
       token: null
     };
+    this.logActivity({
+      action: 'LOGOUT',
+      category: 'AUTH',
+      userId: loggedOutId,
+      username: loggedOutUsername,
+      details: 'User logged out',
+      status: 'SUCCESS'
+    });
     this.saveState();
     return { success: true, message: 'You have been logged out successfully.' };
   }
 
   changePassword(currentPassword, newPassword, confirmPassword) {
+    if (this.user?.status === 'Blocked') {
+      return { success: false, message: 'Account is blocked. Action prohibited.' };
+    }
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       return { success: false, message: 'All password fields are required.' };
     }
@@ -183,11 +540,36 @@ export class FarmEngine {
     }
 
     this.credentials.password = newPassword;
+    if (this.user) {
+      this.user.password = newPassword;
+    }
+    if (Array.isArray(this.users)) {
+      const targetUsername = this.user?.username || 'mrsaqib242';
+      const targetId = this.user?.id || 'usr_saqib';
+      const uIdx = this.users.findIndex(u => u.username === targetUsername || u.id === targetId);
+      if (uIdx !== -1) {
+        this.users[uIdx].password = newPassword;
+      }
+    }
+
+    this.logActivity({
+      action: 'CHANGE_PASSWORD',
+      category: 'SECURITY',
+      userId: this.user?.id,
+      username: this.user?.username,
+      details: 'Password updated successfully',
+      status: 'SUCCESS'
+    });
+
     this.saveState();
     return { success: true, message: 'Password updated successfully. Protected by 256-bit SSL.' };
   }
 
   buyFarmAsset({ units, gateway, methodCode }) {
+    if (this.user?.status === 'Blocked') {
+      return { success: false, message: 'Account is blocked. Cannot purchase assets.' };
+    }
+
     const qty = Number(units);
     if (!Number.isInteger(qty) || qty <= 0) {
       return { success: false, message: 'Units must be a positive integer.' };
@@ -244,6 +626,10 @@ export class FarmEngine {
   }
 
   harvestEggs(currentTime = new Date()) {
+    if (this.user?.status === 'Blocked') {
+      return { success: false, eggsCollected: 0, message: 'Account is blocked. Cannot harvest eggs.' };
+    }
+
     if (this.cooldownActive && this.lastHarvest) {
       const last = new Date(this.lastHarvest).getTime();
       const current = new Date(currentTime).getTime();
@@ -297,6 +683,10 @@ export class FarmEngine {
   }
 
   sellEggs({ storeId, storeName, rate, eggs, method, accountTitle, accountNumber, bankName }) {
+    if (this.user?.status === 'Blocked') {
+      return { success: false, pkrAmount: 0, message: 'Account is blocked. Cannot trade eggs.' };
+    }
+
     const qty = Number(eggs);
     if (!Number.isFinite(qty) || qty <= 0) {
       return { success: false, pkrAmount: 0, message: 'Egg amount must be a positive number.' };
@@ -353,7 +743,9 @@ export class FarmEngine {
       accountNumber,
       bankName: bankName || null,
       date: new Date().toISOString(),
-      status: 'Completed'
+      status: 'Completed',
+      username: this.user?.username || 'mrsaqib242',
+      userId: this.user?.id || 'usr_saqib'
     };
 
     this.withdrawals.push(withdrawalRecord);
@@ -444,6 +836,10 @@ export class FarmEngine {
   }
 
   registerDownline({ username, tierLevel = 1, upliner, joinDate }) {
+    if (this.user?.status === 'Blocked') {
+      return { success: false, message: 'Account is blocked. Cannot register downline.' };
+    }
+
     const cleanUsername = String(username || '').trim();
     if (!cleanUsername) {
       return { success: false, message: 'Downline farmer username is required.' };
@@ -480,6 +876,10 @@ export class FarmEngine {
   }
 
   simulateDownlinePurchase({ memberId, username, units = 1 }) {
+    if (this.user?.status === 'Blocked') {
+      return { success: false, message: 'Account is blocked. Cannot process team purchase.' };
+    }
+
     const qty = Number(units);
     if (!Number.isInteger(qty) || qty <= 0) {
       return { success: false, message: 'Hen purchase units must be a positive integer.' };
@@ -535,6 +935,210 @@ export class FarmEngine {
     };
   }
 
+  // Admin Actions
+  blockUser(userId) {
+    const userIdx = this.users.findIndex(u => u.id === userId || u.username === userId);
+    if (userIdx === -1) {
+      return { success: false, message: `User ${userId} not found.` };
+    }
+    this.users[userIdx].status = 'Blocked';
+    if (this.user && (this.user.id === userId || this.user.username === userId)) {
+      this.user.status = 'Blocked';
+    }
+    this.logActivity({
+      action: 'BLOCK_USER',
+      category: 'ADMIN',
+      userId: this.user?.id || 'usr_admin',
+      username: this.user?.username || 'admin',
+      details: `Blocked user ${this.users[userIdx].username} (${userId})`,
+      status: 'WARNING'
+    });
+    this.saveState();
+    return { success: true, user: this.users[userIdx], message: `User ${this.users[userIdx].username} has been blocked.` };
+  }
+
+  unblockUser(userId) {
+    const userIdx = this.users.findIndex(u => u.id === userId || u.username === userId);
+    if (userIdx === -1) {
+      return { success: false, message: `User ${userId} not found.` };
+    }
+    this.users[userIdx].status = 'Active';
+    if (this.user && (this.user.id === userId || this.user.username === userId)) {
+      this.user.status = 'Active';
+    }
+    this.logActivity({
+      action: 'UNBLOCK_USER',
+      category: 'ADMIN',
+      userId: this.user?.id || 'usr_admin',
+      username: this.user?.username || 'admin',
+      details: `Unblocked user ${this.users[userIdx].username} (${userId})`,
+      status: 'SUCCESS'
+    });
+    this.saveState();
+    return { success: true, user: this.users[userIdx], message: `User ${this.users[userIdx].username} has been unblocked.` };
+  }
+
+  updateUserBalances(userId, { balance, eggVault, hens }) {
+    const userIdx = this.users.findIndex(u => u.id === userId || u.username === userId);
+    if (userIdx === -1) {
+      return { success: false, message: `User ${userId} not found.` };
+    }
+    const target = this.users[userIdx];
+    if (typeof balance === 'number') target.balance = balance;
+    if (typeof eggVault === 'number') target.eggVault = eggVault;
+    if (typeof hens === 'number') target.activeHens = hens;
+
+    if (this.user && (this.user.id === userId || this.user.username === userId)) {
+      if (typeof balance === 'number') this.balance = balance;
+      if (typeof eggVault === 'number') this.eggVault = eggVault;
+    }
+    this.logActivity({
+      action: 'UPDATE_USER_BALANCES',
+      category: 'ADMIN',
+      userId: this.user?.id || 'usr_admin',
+      username: this.user?.username || 'admin',
+      details: `Updated balances for ${target.username}: Balance=${target.balance}, Eggs=${target.eggVault}, Hens=${target.activeHens}`,
+      status: 'SUCCESS'
+    });
+    this.saveState();
+    return { success: true, user: target, message: `Balances updated for ${target.username}.` };
+  }
+
+  approveWithdrawal(withdrawalId, txHash) {
+    let wIdx = this.withdrawals.findIndex(w => w.id === withdrawalId);
+    if (wIdx === -1) {
+      const seedW = DEFAULT_INITIAL_WITHDRAWALS.find(w => w.id === withdrawalId);
+      if (seedW) {
+        this.withdrawals.unshift({ ...seedW });
+        wIdx = 0;
+      } else {
+        return { success: false, message: `Withdrawal ${withdrawalId} not found.` };
+      }
+    }
+    const finalTxHash = txHash || `TX-ADM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    this.withdrawals[wIdx].status = 'Completed';
+    this.withdrawals[wIdx].txHash = finalTxHash;
+    this.withdrawals[wIdx].approvedAt = new Date().toISOString();
+
+    this.logActivity({
+      action: 'APPROVE_WITHDRAWAL',
+      category: 'ADMIN',
+      userId: this.user?.id || 'usr_admin',
+      username: this.user?.username || 'admin',
+      details: `Approved withdrawal ${withdrawalId} (Rs. ${this.withdrawals[wIdx].amountPkr}) with hash ${finalTxHash}`,
+      status: 'SUCCESS'
+    });
+    this.saveState();
+    return { success: true, withdrawal: this.withdrawals[wIdx], message: `Withdrawal ${withdrawalId} approved.` };
+  }
+
+  rejectWithdrawal(withdrawalId, reason, refundBalance = true) {
+    let wIdx = this.withdrawals.findIndex(w => w.id === withdrawalId);
+    if (wIdx === -1) {
+      const seedW = DEFAULT_INITIAL_WITHDRAWALS.find(w => w.id === withdrawalId);
+      if (seedW) {
+        this.withdrawals.unshift({ ...seedW });
+        wIdx = 0;
+      } else {
+        return { success: false, message: `Withdrawal ${withdrawalId} not found.` };
+      }
+    }
+    const w = this.withdrawals[wIdx];
+    w.status = 'Rejected';
+    w.rejectReason = reason || 'Admin rejected request';
+    w.rejectedAt = new Date().toISOString();
+
+    if (refundBalance) {
+      if (this.user && (this.user.id === w.userId || this.user.username === w.username)) {
+        this.balance += w.amountPkr;
+      }
+      const uIdx = this.users.findIndex(u => u.id === w.userId || u.username === w.username);
+      if (uIdx !== -1) {
+        this.users[uIdx].balance = (this.users[uIdx].balance || 0) + w.amountPkr;
+      }
+    }
+
+    this.logActivity({
+      action: 'REJECT_WITHDRAWAL',
+      category: 'ADMIN',
+      userId: this.user?.id || 'usr_admin',
+      username: this.user?.username || 'admin',
+      details: `Rejected withdrawal ${withdrawalId}: ${w.rejectReason}${refundBalance ? ' (Refunded)' : ''}`,
+      status: 'WARNING'
+    });
+    this.saveState();
+    return { success: true, withdrawal: w, message: `Withdrawal ${withdrawalId} rejected.` };
+  }
+
+  updatePlatformSettings(newSettings = {}) {
+    this.platformSettings = {
+      ...this.platformSettings,
+      ...newSettings,
+      depositGateways: {
+        ...(this.platformSettings?.depositGateways || {}),
+        ...(newSettings.depositGateways || {})
+      },
+      communityLinks: {
+        ...(this.platformSettings?.communityLinks || {}),
+        ...(newSettings.communityLinks || {})
+      },
+      marketRates: {
+        ...(this.platformSettings?.marketRates || {}),
+        ...(newSettings.marketRates || {})
+      }
+    };
+    this.logActivity({
+      action: 'UPDATE_SETTINGS',
+      category: 'ADMIN',
+      userId: this.user?.id || 'usr_admin',
+      username: this.user?.username || 'admin',
+      details: 'Updated platform settings configuration',
+      status: 'SUCCESS'
+    });
+    this.saveState();
+    return { success: true, settings: this.platformSettings, message: 'Platform settings updated successfully.' };
+  }
+
+  getAdminKPIs() {
+    const userList = Array.isArray(this.users) ? this.users : [];
+    const totalUsers = userList.length;
+    const totalActiveHens = userList.reduce((sum, u) => sum + (Number(u.activeHens) || 0), 0);
+    const totalEggsProduced = userList.reduce((sum, u) => sum + (Number(u.eggVault) || 0), 0) + (this.eggVault || 0);
+
+    const mergedWithdrawals = [...this.withdrawals];
+    for (const item of DEFAULT_INITIAL_WITHDRAWALS) {
+      if (!mergedWithdrawals.some(w => w.id === item.id)) {
+        mergedWithdrawals.push(item);
+      }
+    }
+
+    const pendingWithdrawals = mergedWithdrawals.filter(w => w.status === 'Pending');
+    const completedWithdrawals = mergedWithdrawals.filter(w => w.status === 'Completed');
+
+    const pendingWithdrawalsCount = pendingWithdrawals.length;
+    const pendingWithdrawalsVolume = pendingWithdrawals.reduce((sum, w) => sum + (Number(w.amountPkr) || 0), 0);
+    const totalLiquidatedPkr = completedWithdrawals.reduce((sum, w) => sum + (Number(w.amountPkr) || 0), 0);
+
+    return {
+      totalUsers,
+      totalActiveHens,
+      totalEggsProduced,
+      totalLiquidatedPkr,
+      pendingWithdrawalsCount,
+      pendingWithdrawalsVolume
+    };
+  }
+
+  seedPendingWithdrawals() {
+    for (const item of DEFAULT_INITIAL_WITHDRAWALS) {
+      if (!this.withdrawals.some(w => w.id === item.id)) {
+        this.withdrawals.push({ ...item });
+      }
+    }
+    this.saveState();
+    return this.withdrawals;
+  }
+
   resetToFreshState() {
     this.user = {
       username: 'mrsaqib242',
@@ -543,6 +1147,8 @@ export class FarmEngine {
       accountId: '#1197',
       upliner: 'N/A',
       referralCode: 'mrsaqib242',
+      role: 'farmer',
+      status: 'Active',
       isLoggedIn: true,
       password: 'password123',
       token: 'jwt_seed_session_1197'
@@ -605,6 +1211,9 @@ export class FarmEngine {
       }
     ];
     this.teamMembers = [];
+    this.users = this.getDefaultUsers();
+    this.platformSettings = this.getDefaultPlatformSettings();
+    this.activityLogs = this.getDefaultActivityLogs();
     this.lastHarvest = new Date(Date.now() - 25 * 3600 * 1000).toISOString();
     this.cooldownActive = false;
 
