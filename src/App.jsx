@@ -22,8 +22,12 @@ export default function App() {
   const farm = useFarm();
   const currentRoute = farm?.currentRoute || '/';
 
-  // Normalize route string (remove trailing slash or hashes)
-  const normalizedRoute = currentRoute.split('#')[0].replace(/\/$/, '') || '/';
+  // Normalize route string (strip query strings, leading hashes, anchor fragments, trailing slashes)
+  let cleanRoute = (currentRoute || '/').split('?')[0];
+  cleanRoute = cleanRoute.replace(/^\/?#\/?/, '/');
+  cleanRoute = cleanRoute.split('#')[0];
+  if (!cleanRoute.startsWith('/')) cleanRoute = '/' + cleanRoute;
+  const normalizedRoute = cleanRoute.replace(/\/$/, '') || '/';
 
   switch (normalizedRoute) {
     case '/login':
