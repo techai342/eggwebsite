@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import ToastContainer from '../components/ToastContainer';
+import { supabase } from '../lib/supabaseClient';
 
 // Verified Merchants Catalog from rawafiles and reference engine
 export const VERIFIED_MERCHANTS = [
@@ -700,6 +701,26 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       users: updatedUsers
     });
 
+    // Asynchronously replicate user registration to Supabase
+    try {
+      supabase.from('users').insert({
+        account_id: newUserRecord.accountId,
+        username: newUserRecord.username,
+        email: newUserRecord.email,
+        password_hash: newUserRecord.password || 'password123',
+        full_name: newUserRecord.name,
+        phone: newUserRecord.phone || null,
+        referral_code: newUserRecord.referralCode,
+        upliner_code: newUserRecord.upliner,
+        balance_pkr: 0.00,
+        egg_vault: 0,
+        role: newUserRecord.role || 'farmer',
+        status: 'Active'
+      }).then(({ error }) => {
+        if (error) console.info('Supabase users table sync notice:', error.message);
+      }).catch(() => {});
+    } catch (_) {}
+
     logActivity({
       action: 'USER_REGISTERED',
       category: 'AUTH',
@@ -878,6 +899,24 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setTransactions(updatedTransactions);
     persistState({ activeAssets: updatedAssets, transactions: updatedTransactions });
 
+    // Asynchronously replicate asset purchase to Supabase
+    try {
+      supabase.from('farm_assets').insert({
+        username: user?.username || 'mrsaqib242',
+        asset_name: ASSET_SPEC.name,
+        units: qty,
+        unit_cost: ASSET_SPEC.unitPrice,
+        daily_yield_per_unit: ASSET_SPEC.dailyYieldPerUnit,
+        term_days: ASSET_SPEC.termDays,
+        total_return_eggs: ASSET_SPEC.totalYieldPerUnit,
+        gateway: validGateway.name,
+        status: 'active',
+        expires_at: new Date(Date.now() + ASSET_SPEC.termDays * 24 * 60 * 60 * 1000).toISOString()
+      }).then(({ error }) => {
+        if (error) console.info('Supabase farm_assets table sync notice:', error.message);
+      }).catch(() => {});
+    } catch (_) {}
+
     logActivity({
       action: 'BUY_ASSET',
       category: 'TRANSACTION',
@@ -967,6 +1006,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       cooldownActive: true,
       transactions: updatedTransactions
     });
+
+    // Asynchronously replicate harvest event to Supabase
+    try {
+      supabase.from('harvest_logs').insert({
+        username: user?.username || 'mrsaqib242',
+        active_units: totalActiveUnits,
+        eggs_collected: eggsYield,
+        next_harvest_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      }).then(({ error }) => {
+        if (error) console.info('Supabase harvest_logs table sync notice:', error.message);
+      }).catch(() => {});
+    } catch (_) {}
 
     logActivity({
       action: 'HARVEST',
@@ -1101,6 +1152,25 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       withdrawals: updatedWithdrawals,
       transactions: updatedTransactions
     });
+
+    // Asynchronously replicate withdrawal to Supabase
+    try {
+      supabase.from('withdrawals').insert({
+        username: user?.username || 'mrsaqib242',
+        store_id: String(merchant.id),
+        store_name: merchant.name,
+        eggs_liquidated: qty,
+        rate: merchant.rate,
+        amount_pkr: pkrNet,
+        method: payoutMethod.name,
+        account_title: accountTitle,
+        account_number: accountNumber,
+        bank_name: bankName || null,
+        status: 'Completed'
+      }).then(({ error }) => {
+        if (error) console.info('Supabase withdrawals table sync notice:', error.message);
+      }).catch(() => {});
+    } catch (_) {}
 
     logActivity({
       action: 'SELL_EGGS',
