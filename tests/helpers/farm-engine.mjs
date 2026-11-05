@@ -26,6 +26,11 @@ export const ASSET_SPEC = {
   totalYieldPerUnit: 120
 };
 
+export const COMMISSION_RATES = {
+  LEVEL_1: 0.02,
+  LEVEL_2: 0.01
+};
+
 export class FarmEngine {
   constructor(storage, options = {}) {
     this.storage = storage;
@@ -39,11 +44,15 @@ export class FarmEngine {
       try {
         const parsed = JSON.parse(raw);
         this.user = parsed.user || this.getDefaultUser();
+        if (!this.user.referralCode) {
+          this.user.referralCode = this.user.username || 'mrsaqib242';
+        }
         this.balance = typeof parsed.balance === 'number' ? parsed.balance : 0;
         this.eggVault = typeof parsed.eggVault === 'number' ? parsed.eggVault : 0;
         this.activeAssets = Array.isArray(parsed.activeAssets) ? parsed.activeAssets : [];
         this.transactions = Array.isArray(parsed.transactions) ? parsed.transactions : [];
         this.withdrawals = Array.isArray(parsed.withdrawals) ? parsed.withdrawals : [];
+        this.teamMembers = Array.isArray(parsed.teamMembers) ? parsed.teamMembers : [];
         this.lastHarvest = parsed.lastHarvest || null;
         this.cooldownActive = Boolean(parsed.cooldownActive);
         this.credentials = parsed.credentials || {
@@ -63,6 +72,7 @@ export class FarmEngine {
     this.activeAssets = [];
     this.transactions = [];
     this.withdrawals = [];
+    this.teamMembers = [];
     this.lastHarvest = null;
     this.cooldownActive = false;
     this.credentials = {
@@ -81,6 +91,7 @@ export class FarmEngine {
       activeAssets: this.activeAssets,
       transactions: this.transactions,
       withdrawals: this.withdrawals,
+      teamMembers: this.teamMembers,
       lastHarvest: this.lastHarvest,
       cooldownActive: this.cooldownActive,
       credentials: this.credentials
@@ -94,9 +105,25 @@ export class FarmEngine {
       name: 'Farmer Saqib',
       accountId: '#1197',
       upliner: 'N/A',
+      referralCode: 'mrsaqib242',
       isLoggedIn: false,
       token: null
     };
+  }
+
+  get referralCode() {
+    return this.user?.referralCode || this.user?.username || 'mrsaqib242';
+  }
+
+  get referralLink() {
+    const origin = typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://alkram-meta-eggs.digital';
+    return `${origin}/#/team?ref=${this.referralCode}`;
+  }
+
+  get referralStats() {
+    return this.getReferralStats();
   }
 
   login(usernameOrEmail, password) {
@@ -114,6 +141,7 @@ export class FarmEngine {
         name: 'Farmer Saqib',
         accountId: '#1197',
         upliner: 'N/A',
+        referralCode: this.user?.referralCode || this.credentials.username || 'mrsaqib242',
         isLoggedIn: true,
         token: `jwt_session_${Date.now()}`
       };
@@ -385,6 +413,205 @@ export class FarmEngine {
       activeAssetsCount: this.activeAssets.length,
       withdrawalsCount: this.withdrawals.length,
       transactionsCount: this.transactions.length
+    };
+  }
+
+  getReferralStats() {
+    const members = Array.isArray(this.teamMembers) ? this.teamMembers : [];
+    const level1Members = members.filter((m) => Number(m.tierLevel) === 1);
+    const level2Members = members.filter((m) => Number(m.tierLevel) === 2);
+    const totalInvited = members.length;
+    const level1Count = level1Members.length;
+    const level2Count = level2Members.length;
+    const totalCommissionEarned = Number(
+      members.reduce((sum, m) => sum + (Number(m.commissionEarnedPkr) || 0), 0).toFixed(2)
+    );
+    const activeTeamCount = members.filter((m) => (Number(m.assetsPurchased) || 0) > 0).length;
+    const totalDownlineUnits = members.reduce((sum, m) => sum + (Number(m.assetsPurchased) || 0), 0);
+    const totalDownlineVolumePkr = Number(
+      members.reduce((sum, m) => sum + (Number(m.totalSpentPkr) || 0), 0).toFixed(2)
+    );
+
+    return {
+      totalInvited,
+      level1Count,
+      level2Count,
+      totalCommissionEarned,
+      activeTeamCount,
+      totalDownlineUnits,
+      totalDownlineVolumePkr
+    };
+  }
+
+  registerDownline({ username, tierLevel = 1, upliner, joinDate }) {
+    const cleanUsername = String(username || '').trim();
+    if (!cleanUsername) {
+      return { success: false, message: 'Downline farmer username is required.' };
+    }
+
+    const currentList = Array.isArray(this.teamMembers) ? this.teamMembers : [];
+    const exists = currentList.some((m) => m.username.toLowerCase() === cleanUsername.toLowerCase());
+    if (exists) {
+      return { success: false, message: `Downline member "${cleanUsername}" is already registered.` };
+    }
+
+    const level = Number(tierLevel) === 2 ? 2 : 1;
+    const assignedUpliner = upliner || (level === 1 ? (this.user?.username || 'mrsaqib242') : 'team_leader');
+
+    const newMember = {
+      id: `DL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      username: cleanUsername,
+      joinDate: joinDate || new Date().toISOString(),
+      tierLevel: level,
+      upliner: assignedUpliner,
+      assetsPurchased: 0,
+      totalSpentPkr: 0,
+      commissionEarnedPkr: 0
+    };
+
+    this.teamMembers.unshift(newMember);
+    this.saveState();
+
+    return {
+      success: true,
+      member: newMember,
+      message: `Successfully registered ${cleanUsername} as Level ${level} downline!`
+    };
+  }
+
+  simulateDownlinePurchase({ memberId, username, units = 1 }) {
+    const qty = Number(units);
+    if (!Number.isInteger(qty) || qty <= 0) {
+      return { success: false, message: 'Hen purchase units must be a positive integer.' };
+    }
+
+    const currentList = Array.isArray(this.teamMembers) ? this.teamMembers : [];
+    const memberIndex = currentList.findIndex(
+      (m) => (memberId && m.id === memberId) || (username && m.username.toLowerCase() === String(username).toLowerCase())
+    );
+
+    if (memberIndex === -1) {
+      return { success: false, message: 'Downline member not found.' };
+    }
+
+    const targetMember = currentList[memberIndex];
+    const purchaseCost = qty * ASSET_SPEC.unitPrice;
+    const rate = Number(targetMember.tierLevel) === 1 ? COMMISSION_RATES.LEVEL_1 : COMMISSION_RATES.LEVEL_2;
+    const commission = Number((purchaseCost * rate).toFixed(2));
+    this.balance = Number((this.balance + commission).toFixed(2));
+
+    targetMember.assetsPurchased = (Number(targetMember.assetsPurchased) || 0) + qty;
+    targetMember.totalSpentPkr = (Number(targetMember.totalSpentPkr) || 0) + purchaseCost;
+    targetMember.commissionEarnedPkr = Number(((Number(targetMember.commissionEarnedPkr) || 0) + commission).toFixed(2));
+
+    const commissionTrx = {
+      id: `TRX-COMM-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'COMMISSION',
+      description: `Level ${targetMember.tierLevel} Affiliate Commission (${(rate * 100).toFixed(2)}%) from ${targetMember.username} (${qty}x Hen)`,
+      amount: commission,
+      unit: 'PKR',
+      date: new Date().toISOString(),
+      status: 'Completed',
+      metadata: {
+        downlineId: targetMember.id,
+        downlineUsername: targetMember.username,
+        tierLevel: targetMember.tierLevel,
+        unitsPurchased: qty,
+        purchaseVolumePkr: purchaseCost,
+        rate
+      }
+    };
+
+    this.transactions.unshift(commissionTrx);
+    this.saveState();
+
+    return {
+      success: true,
+      commission,
+      newBalance: this.balance,
+      member: targetMember,
+      transaction: commissionTrx,
+      message: `💰 Received Rs. ${commission.toFixed(2)} PKR affiliate commission from ${targetMember.username} (Level ${targetMember.tierLevel})!`
+    };
+  }
+
+  resetToFreshState() {
+    this.user = {
+      username: 'mrsaqib242',
+      email: 'admin@gmail.com',
+      name: 'Farmer Saqib',
+      accountId: '#1197',
+      upliner: 'N/A',
+      referralCode: 'mrsaqib242',
+      isLoggedIn: true,
+      password: 'password123',
+      token: 'jwt_seed_session_1197'
+    };
+    this.credentials = {
+      username: 'mrsaqib242',
+      email: 'admin@gmail.com',
+      password: 'password123'
+    };
+    this.balance = 1500.00;
+    this.eggVault = 18;
+    this.activeAssets = [
+      {
+        id: 'asset-1',
+        name: 'AL Rehman Meta Eggs',
+        units: 1,
+        unitCost: 500,
+        totalCost: 500,
+        dailyYield: 1,
+        termDays: 120,
+        daysRemaining: 115,
+        purchaseDate: '2026-10-30T10:00:00.000Z',
+        gateway: 'Easypisa'
+      }
+    ];
+    this.transactions = [
+      {
+        id: 'TRX-INIT-1',
+        type: 'BUY',
+        description: 'Purchased 1x AL Rehman Meta Eggs Units',
+        amount: 500,
+        unit: 'PKR',
+        date: '2026-10-30T10:00:00.000Z',
+        status: 'Completed',
+        gateway: 'Easypisa'
+      },
+      {
+        id: 'TRX-INIT-2',
+        type: 'HARVEST',
+        description: 'Collected 24h daily harvest from 1 active hens',
+        amount: 1,
+        unit: 'Egg',
+        date: '2026-11-03T09:00:00.000Z',
+        status: 'Completed'
+      }
+    ];
+    this.withdrawals = [
+      {
+        id: 'WD-INIT-1',
+        store: 'Sonica FORM STORE',
+        eggs: 10,
+        rate: 32,
+        amountPkr: 320,
+        method: 'EasyPaisa',
+        accountTitle: 'Saqib Ali',
+        accountNumber: '03001234567',
+        bankName: null,
+        date: '2026-11-01T14:30:00.000Z',
+        status: 'Completed'
+      }
+    ];
+    this.teamMembers = [];
+    this.lastHarvest = new Date(Date.now() - 25 * 3600 * 1000).toISOString();
+    this.cooldownActive = false;
+
+    this.saveState();
+    return {
+      success: true,
+      message: 'Farm state reset to clean initial baseline. Dummy entries purged.'
     };
   }
 }

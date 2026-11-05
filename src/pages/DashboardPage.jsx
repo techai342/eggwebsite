@@ -20,7 +20,8 @@ export default function DashboardPage() {
     transactions,
     withdrawals,
     showToast,
-    VERIFIED_MERCHANTS
+    VERIFIED_MERCHANTS,
+    referralStats
   } = useFarm();
 
   // Modals state
@@ -1084,11 +1085,7 @@ export default function DashboardPage() {
             {/* 5. Team */}
             <button
               type="button"
-              onClick={() => {
-                const el = document.getElementById('vipSquadHub');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-                showToast('info', 'Squad Hub: Share your invite link to build your affiliate team.');
-              }}
+              onClick={() => navigateTo('/team')}
               className="bg-gradient-to-br from-white via-white to-[#fbfdf9] border border-[#28734a]/20 hover:border-indigo-400/60 rounded-[24px] p-3 flex items-center gap-3 shadow-[0_4px_16px_rgba(21,61,43,0.05)] hover:shadow-md active:scale-[0.98] transition-all text-left group"
             >
               <div className="w-11 h-11 rounded-[18px] bg-gradient-to-br from-[#e0e7ff] via-[#c7d2fe] to-[#a5b4fc] text-indigo-700 flex items-center justify-center text-lg shadow-sm border-2 border-indigo-400/60 group-hover:scale-105 transition-all flex-shrink-0">
@@ -1216,16 +1213,23 @@ export default function DashboardPage() {
 
                 {/* Dual Orbital Team Hubs */}
                 <div className="grid grid-cols-2 gap-2.5">
-                  <div className="bg-white border border-indigo-100 rounded-2xl p-3 flex flex-col justify-between shadow-xs">
-                    <div className="flex items-center justify-between mb-2">
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('/team')}
+                    className="bg-white border border-indigo-100 hover:border-indigo-300 rounded-2xl p-3 flex flex-col justify-between shadow-xs hover:shadow-md active:scale-[0.98] transition-all text-left cursor-pointer group"
+                    title="View Full Squad in Team Hub"
+                  >
+                    <div className="flex items-center justify-between mb-2 w-full">
                       <span className="text-[8.5px] font-black text-indigo-950 uppercase tracking-wider">Total Squad</span>
-                      <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px]">
+                      <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] group-hover:scale-110 transition-transform">
                         <i className="fa-solid fa-users"></i>
                       </div>
                     </div>
                     <div>
                       <div className="flex items-baseline gap-1">
-                        <h4 className="font-manrope font-black text-2xl text-[#0d2c20] tracking-tight">0</h4>
+                        <h4 className="font-manrope font-black text-2xl text-[#0d2c20] tracking-tight">
+                          {referralStats?.totalInvited ?? 0}
+                        </h4>
                         <span className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wide">Farmers</span>
                       </div>
                       <div className="mt-1 flex items-center gap-1 bg-indigo-50 border border-indigo-100 rounded-md px-1.5 py-0.5 w-max">
@@ -1233,18 +1237,25 @@ export default function DashboardPage() {
                         <span className="text-[7.5px] font-bold text-indigo-700 uppercase tracking-wide">Total Network</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
 
-                  <div className="bg-white border border-emerald-200/80 rounded-2xl p-3 flex flex-col justify-between shadow-xs">
-                    <div className="flex items-center justify-between mb-2">
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('/team')}
+                    className="bg-white border border-emerald-200/80 hover:border-emerald-300 rounded-2xl p-3 flex flex-col justify-between shadow-xs hover:shadow-md active:scale-[0.98] transition-all text-left cursor-pointer group"
+                    title="View Active Team in Team Hub"
+                  >
+                    <div className="flex items-center justify-between mb-2 w-full">
                       <span className="text-[8.5px] font-black text-[#15803d] uppercase tracking-wider">Active Team</span>
-                      <div className="w-6 h-6 rounded-full bg-emerald-50 text-[#15803d] flex items-center justify-center text-[10px] animate-pulse">
+                      <div className="w-6 h-6 rounded-full bg-emerald-50 text-[#15803d] flex items-center justify-center text-[10px] animate-pulse group-hover:scale-110 transition-transform">
                         <i className="fa-solid fa-bolt"></i>
                       </div>
                     </div>
                     <div>
                       <div className="flex items-baseline gap-1">
-                        <h4 className="font-manrope font-black text-2xl text-[#15803d] tracking-tight">0</h4>
+                        <h4 className="font-manrope font-black text-2xl text-[#15803d] tracking-tight">
+                          {referralStats?.activeTeamCount ?? 0}
+                        </h4>
                         <span className="text-[8.5px] font-bold text-[#15803d]/70 uppercase tracking-wide">Deposited</span>
                       </div>
                       <div className="mt-1 flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-md px-1.5 py-0.5 w-max">
@@ -1252,22 +1263,49 @@ export default function DashboardPage() {
                         <span className="text-[7.5px] font-bold text-emerald-800 uppercase tracking-wide">Min 1 Deposit</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 </div>
 
                 {/* Conversion meter */}
-                <div className="bg-white border border-[#28734a]/15 rounded-2xl p-2.5 flex flex-col gap-1.5 shadow-sm">
-                  <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider">
+                <button
+                  type="button"
+                  onClick={() => navigateTo('/team')}
+                  className="bg-white border border-[#28734a]/15 hover:border-[#28734a]/35 rounded-2xl p-2.5 flex flex-col gap-1.5 shadow-sm active:scale-[0.99] transition-all text-left cursor-pointer w-full group"
+                  title="View Team Conversion Metrics"
+                >
+                  <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider w-full">
                     <span className="text-[#153d2b] flex items-center gap-1 font-bold">
                       <i className="fa-solid fa-chart-line text-[#16a34a]"></i>
                       <span>Squad Conversion Rate</span>
                     </span>
-                    <span className="text-[#15803d] font-mono font-black">0% Active</span>
+                    <span className="text-[#15803d] font-mono font-black">
+                      {referralStats?.totalInvited > 0
+                        ? `${Math.round(((referralStats?.activeTeamCount || 0) / referralStats.totalInvited) * 100)}% Active`
+                        : '0% Active'}
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
-                    <div className="h-full bg-gradient-to-r from-[#16a34a] via-[#84cc16] to-amber-400 rounded-full w-[6%]"></div>
+                    <div
+                      className="h-full bg-gradient-to-r from-[#16a34a] via-[#84cc16] to-amber-400 rounded-full transition-all duration-500"
+                      style={{
+                        width: referralStats?.totalInvited > 0
+                          ? `${Math.max(6, Math.min(100, Math.round(((referralStats?.activeTeamCount || 0) / referralStats.totalInvited) * 100)))}%`
+                          : '6%'
+                      }}
+                    ></div>
                   </div>
-                </div>
+                </button>
+
+                {/* Open Team & Referral Hub action button */}
+                <button
+                  type="button"
+                  onClick={() => navigateTo('/team')}
+                  className="w-full bg-gradient-to-r from-[#153d2b] to-[#1e523a] hover:from-[#1b4b35] hover:to-[#256648] text-[#c9f36a] font-manrope font-black text-xs py-2.5 rounded-xl shadow-md active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <i className="fa-solid fa-users"></i>
+                  <span>Open Team &amp; Referral Hub</span>
+                  <i className="fa-solid fa-arrow-right text-[10px] ml-0.5"></i>
+                </button>
               </div>
             </div>
           </div>

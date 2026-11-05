@@ -333,6 +333,22 @@ export function AppSidebar({ isOpen, onClose }) {
 
           <li className="tc-menu-item">
             <a
+              href="#/team"
+              onClick={(e) => { e.preventDefault(); handleNav('/team'); }}
+              className="tc-menu-link"
+            >
+              <div className="tc-menu-link-left">
+                <div className="tc-menu-icon-box" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+                  <i className="fa-solid fa-users"></i>
+                </div>
+                <span>My Team &amp; Referrals</span>
+              </div>
+              <i className="fa-solid fa-chevron-right text-[11px] text-slate-300"></i>
+            </a>
+          </li>
+
+          <li className="tc-menu-item">
+            <a
               href="#/change-password"
               onClick={(e) => { e.preventDefault(); handleNav('/change-password'); }}
               className="tc-menu-link"

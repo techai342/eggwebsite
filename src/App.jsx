@@ -6,10 +6,12 @@ import DashboardPage from './pages/DashboardPage';
 import BuyAssetPage from './pages/BuyAssetPage';
 import SellEggPage from './pages/SellEggPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import TeamPage from './pages/TeamPage';
 import './rawafiles.css';
 
 // Export route page components for downstream milestone imports
 export { LandingPage, LoginPage, DashboardPage, BuyAssetPage, SellEggPage, ChangePasswordPage };
+export { TeamPage };
 export const WithdrawPage = SellEggPage; // Alias as per PROJECT.md and DISPATCH.md
 
 /**
@@ -35,6 +37,8 @@ export default function App() {
       return <SellEggPage />;
     case '/change-password':
       return <ChangePasswordPage />;
+    case '/team':
+      return <TeamPage />;
     case '/':
     default:
       return <LandingPage />;

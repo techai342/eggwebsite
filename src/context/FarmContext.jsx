@@ -34,6 +34,12 @@ export const ASSET_SPEC = {
 export const STORAGE_KEY_PRIMARY = 'alrehman_meta_eggs_state';
 export const STORAGE_KEY_SECONDARY = 'alrehman_farm_data';
 
+// 2-Tier Affiliate Commission Rates
+export const COMMISSION_RATES = {
+  LEVEL_1: 0.02,
+  LEVEL_2: 0.01
+};
+
 // Default Initial State if no persistence exists in storage
 const DEFAULT_INITIAL_STATE = {
   user: {
@@ -42,6 +48,7 @@ const DEFAULT_INITIAL_STATE = {
     name: 'Farmer Saqib',
     accountId: '#1197',
     upliner: 'N/A',
+    referralCode: 'mrsaqib242',
     isLoggedIn: true,
     password: 'password123',
     token: 'jwt_seed_session_1197'
@@ -103,6 +110,7 @@ const DEFAULT_INITIAL_STATE = {
       status: 'Completed'
     }
   ],
+  teamMembers: [],
   // 25 hours ago allows immediate harvest on first user action
   lastHarvest: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
   cooldownActive: false
@@ -118,14 +126,19 @@ function loadInitialState() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
+        const loadedUser = parsed.user || DEFAULT_INITIAL_STATE.user;
+        if (!loadedUser.referralCode) {
+          loadedUser.referralCode = loadedUser.username || 'mrsaqib242';
+        }
         return {
-          user: parsed.user || DEFAULT_INITIAL_STATE.user,
+          user: loadedUser,
           credentials: parsed.credentials || DEFAULT_INITIAL_STATE.credentials,
           balance: typeof parsed.balance === 'number' ? parsed.balance : DEFAULT_INITIAL_STATE.balance,
           eggVault: typeof parsed.eggVault === 'number' ? parsed.eggVault : DEFAULT_INITIAL_STATE.eggVault,
           activeAssets: Array.isArray(parsed.activeAssets) ? parsed.activeAssets : DEFAULT_INITIAL_STATE.activeAssets,
           transactions: Array.isArray(parsed.transactions) ? parsed.transactions : DEFAULT_INITIAL_STATE.transactions,
           withdrawals: Array.isArray(parsed.withdrawals) ? parsed.withdrawals : DEFAULT_INITIAL_STATE.withdrawals,
+          teamMembers: Array.isArray(parsed.teamMembers) ? parsed.teamMembers : DEFAULT_INITIAL_STATE.teamMembers,
           lastHarvest: parsed.lastHarvest || DEFAULT_INITIAL_STATE.lastHarvest,
           cooldownActive: parsed.cooldownActive !== undefined ? Boolean(parsed.cooldownActive) : DEFAULT_INITIAL_STATE.cooldownActive
         };
@@ -149,6 +162,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   const [activeAssets, setActiveAssets] = useState(initial.activeAssets);
   const [transactions, setTransactions] = useState(initial.transactions);
   const [withdrawals, setWithdrawals] = useState(initial.withdrawals);
+  const [teamMembers, setTeamMembers] = useState(initial.teamMembers || []);
   const [lastHarvest, setLastHarvest] = useState(initial.lastHarvest);
   const [cooldownActive, setCooldownActive] = useState(initial.cooldownActive);
   const [toasts, setToasts] = useState([]);
@@ -165,6 +179,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         activeAssets: patch.activeAssets !== undefined ? patch.activeAssets : activeAssets,
         transactions: patch.transactions !== undefined ? patch.transactions : transactions,
         withdrawals: patch.withdrawals !== undefined ? patch.withdrawals : withdrawals,
+        teamMembers: patch.teamMembers !== undefined ? patch.teamMembers : teamMembers,
         lastHarvest: patch.lastHarvest !== undefined ? patch.lastHarvest : lastHarvest,
         cooldownActive: patch.cooldownActive !== undefined ? patch.cooldownActive : cooldownActive
       };
@@ -174,7 +189,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     } catch (err) {
       console.warn('Error saving state to localStorage:', err);
     }
-  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, lastHarvest, cooldownActive]);
+  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, lastHarvest, cooldownActive]);
 
   // Initial sync check on mount
   useEffect(() => {
@@ -237,6 +252,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         name: user.name || 'Farmer Saqib',
         accountId: user.accountId || '#1197',
         upliner: user.upliner || 'N/A',
+        referralCode: user.referralCode || credentials.username || 'mrsaqib242',
         isLoggedIn: true,
         token: `jwt_session_${Date.now()}`
       };
@@ -615,6 +631,201 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     };
   }, [activeAssets, withdrawals, eggVault, balance, transactions]);
 
+  // Referral Helpers & Dynamic Selectors
+  const referralCode = useMemo(() => {
+    return user?.referralCode || user?.username || 'mrsaqib242';
+  }, [user]);
+
+  const referralLink = useMemo(() => {
+    const origin = typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://alkram-meta-eggs.digital';
+    return `${origin}/#/team?ref=${referralCode}`;
+  }, [referralCode]);
+
+  const referralStats = useMemo(() => {
+    const members = Array.isArray(teamMembers) ? teamMembers : [];
+    const level1Members = members.filter((m) => Number(m.tierLevel) === 1);
+    const level2Members = members.filter((m) => Number(m.tierLevel) === 2);
+    const totalInvited = members.length;
+    const level1Count = level1Members.length;
+    const level2Count = level2Members.length;
+    const totalCommissionEarned = Number(
+      members.reduce((sum, m) => sum + (Number(m.commissionEarnedPkr) || 0), 0).toFixed(2)
+    );
+    const activeTeamCount = members.filter((m) => (Number(m.assetsPurchased) || 0) > 0).length;
+    const totalDownlineUnits = members.reduce((sum, m) => sum + (Number(m.assetsPurchased) || 0), 0);
+    const totalDownlineVolumePkr = Number(
+      members.reduce((sum, m) => sum + (Number(m.totalSpentPkr) || 0), 0).toFixed(2)
+    );
+
+    return {
+      totalInvited,
+      level1Count,
+      level2Count,
+      totalCommissionEarned,
+      activeTeamCount,
+      totalDownlineUnits,
+      totalDownlineVolumePkr
+    };
+  }, [teamMembers]);
+
+  // Downline Registration Action
+  const registerDownline = useCallback(({ username, tierLevel = 1, upliner, joinDate }) => {
+    const cleanUsername = String(username || '').trim();
+    if (!cleanUsername) {
+      const msg = 'Downline farmer username is required.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const currentList = Array.isArray(teamMembers) ? teamMembers : [];
+    const exists = currentList.some((m) => m.username.toLowerCase() === cleanUsername.toLowerCase());
+    if (exists) {
+      const msg = `Downline member "${cleanUsername}" is already registered.`;
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const level = Number(tierLevel) === 2 ? 2 : 1;
+    const assignedUpliner = upliner || (level === 1 ? (user?.username || 'mrsaqib242') : 'team_leader');
+
+    const newMember = {
+      id: `DL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      username: cleanUsername,
+      joinDate: joinDate || new Date().toISOString(),
+      tierLevel: level,
+      upliner: assignedUpliner,
+      assetsPurchased: 0,
+      totalSpentPkr: 0,
+      commissionEarnedPkr: 0
+    };
+
+    const updatedMembers = [newMember, ...currentList];
+    setTeamMembers(updatedMembers);
+    persistState({ teamMembers: updatedMembers });
+
+    const msg = `Successfully registered ${cleanUsername} as Level ${level} downline!`;
+    showToast('success', msg);
+    return { success: true, member: newMember, message: msg };
+  }, [teamMembers, user, persistState, showToast]);
+
+  // Downline Purchase Simulation Action
+  const simulateDownlinePurchase = useCallback(({ memberId, username, units = 1 }) => {
+    const qty = Number(units);
+    if (!Number.isInteger(qty) || qty <= 0) {
+      const msg = 'Hen purchase units must be a positive integer.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const currentList = Array.isArray(teamMembers) ? teamMembers : [];
+    const memberIndex = currentList.findIndex(
+      (m) => (memberId && m.id === memberId) || (username && m.username.toLowerCase() === String(username).toLowerCase())
+    );
+
+    if (memberIndex === -1) {
+      const msg = 'Downline member not found.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const targetMember = currentList[memberIndex];
+    const purchaseCost = qty * ASSET_SPEC.unitPrice;
+    const rate = Number(targetMember.tierLevel) === 1 ? COMMISSION_RATES.LEVEL_1 : COMMISSION_RATES.LEVEL_2;
+    const commission = Number((purchaseCost * rate).toFixed(2));
+    const newBalance = Number((balance + commission).toFixed(2));
+
+    const updatedMember = {
+      ...targetMember,
+      assetsPurchased: (Number(targetMember.assetsPurchased) || 0) + qty,
+      totalSpentPkr: (Number(targetMember.totalSpentPkr) || 0) + purchaseCost,
+      commissionEarnedPkr: Number(((Number(targetMember.commissionEarnedPkr) || 0) + commission).toFixed(2))
+    };
+
+    const updatedMembers = [...currentList];
+    updatedMembers[memberIndex] = updatedMember;
+
+    const commissionTrx = {
+      id: `TRX-COMM-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'COMMISSION',
+      description: `Level ${targetMember.tierLevel} Affiliate Commission (${(rate * 100).toFixed(2)}%) from ${targetMember.username} (${qty}x Hen)`,
+      amount: commission,
+      unit: 'PKR',
+      date: new Date().toISOString(),
+      status: 'Completed',
+      metadata: {
+        downlineId: targetMember.id,
+        downlineUsername: targetMember.username,
+        tierLevel: targetMember.tierLevel,
+        unitsPurchased: qty,
+        purchaseVolumePkr: purchaseCost,
+        rate
+      }
+    };
+
+    const updatedTransactions = [commissionTrx, ...transactions];
+
+    setTeamMembers(updatedMembers);
+    setBalance(newBalance);
+    setTransactions(updatedTransactions);
+
+    persistState({
+      teamMembers: updatedMembers,
+      balance: newBalance,
+      transactions: updatedTransactions
+    });
+
+    const msg = `💰 Received Rs. ${commission.toFixed(2)} PKR affiliate commission from ${targetMember.username} (Level ${targetMember.tierLevel})!`;
+    showToast('success', msg);
+
+    return {
+      success: true,
+      commission,
+      newBalance,
+      member: updatedMember,
+      transaction: commissionTrx,
+      message: msg
+    };
+  }, [teamMembers, balance, transactions, persistState, showToast]);
+
+  // 1-Click Fresh State Reset Action
+  const resetToFreshState = useCallback(() => {
+    const fresh = {
+      user: { ...DEFAULT_INITIAL_STATE.user },
+      credentials: { ...DEFAULT_INITIAL_STATE.credentials },
+      balance: DEFAULT_INITIAL_STATE.balance,
+      eggVault: DEFAULT_INITIAL_STATE.eggVault,
+      activeAssets: [...DEFAULT_INITIAL_STATE.activeAssets],
+      transactions: [...DEFAULT_INITIAL_STATE.transactions],
+      withdrawals: [...DEFAULT_INITIAL_STATE.withdrawals],
+      teamMembers: [],
+      lastHarvest: new Date(Date.now() - 25 * 3600 * 1000).toISOString(),
+      cooldownActive: false
+    };
+
+    setUser(fresh.user);
+    setCredentials(fresh.credentials);
+    setBalance(fresh.balance);
+    setEggVault(fresh.eggVault);
+    setActiveAssets(fresh.activeAssets);
+    setTransactions(fresh.transactions);
+    setWithdrawals(fresh.withdrawals);
+    setTeamMembers(fresh.teamMembers);
+    setLastHarvest(fresh.lastHarvest);
+    setCooldownActive(fresh.cooldownActive);
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const raw = JSON.stringify(fresh);
+      window.localStorage.setItem(STORAGE_KEY_PRIMARY, raw);
+      window.localStorage.setItem(STORAGE_KEY_SECONDARY, raw);
+    }
+
+    const msg = 'Farm state reset to clean initial baseline. Dummy entries purged.';
+    showToast('info', msg);
+    return { success: true, message: msg };
+  }, [showToast]);
+
   // Routing Helper & State (Hash + Path support for SPA zero-config routing)
   const getInitialRoute = () => {
     if (typeof window === 'undefined') return '/';
@@ -691,6 +902,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setTransactions,
     withdrawals,
     setWithdrawals,
+    teamMembers,
+    setTeamMembers,
+    referralCode,
+    referralLink,
+    referralStats,
     lastHarvest,
     setLastHarvest,
     cooldownActive,
@@ -709,9 +925,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     harvestEggs,
     resetCooldown,
     sellEggs,
+    registerDownline,
+    simulateDownlinePurchase,
+    resetToFreshState,
     simulateDays,
     getAnalytics,
     analytics,
+    COMMISSION_RATES,
     VERIFIED_MERCHANTS,
     PAYMENT_GATEWAYS,
     PAYOUT_METHODS,
@@ -724,6 +944,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     activeAssets,
     transactions,
     withdrawals,
+    teamMembers,
+    referralCode,
+    referralLink,
+    referralStats,
     lastHarvest,
     cooldownActive,
     cooldownHoursRemaining,
@@ -739,6 +963,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     harvestEggs,
     resetCooldown,
     sellEggs,
+    registerDownline,
+    simulateDownlinePurchase,
+    resetToFreshState,
     simulateDays,
     getAnalytics,
     analytics
