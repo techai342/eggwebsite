@@ -8,7 +8,7 @@ import bankImg from '../assets/bank.jpg';
 import '../rawafiles.css';
 
 export default function SellEggPage({ currentRoute = '/sell-egg' }) {
-  const { eggVault, sellEggs, navigateTo, showToast } = useFarm();
+  const { user, eggVault, sellEggs, navigateTo, showToast } = useFarm();
 
   // 3-Step Wizard Navigation State
   const [currentStep, setCurrentStep] = useState(1);
@@ -19,7 +19,7 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
   const [selectedStoreId, setSelectedStoreId] = useState(VERIFIED_MERCHANTS[0]?.id || '1');
   const [selectedMethodCode, setSelectedMethodCode] = useState('2'); // 1: Jazzcash, 2: EasyPaisa, 3: Bank
   const [eggsToSell, setEggsToSell] = useState(() => (eggVault > 0 ? Math.floor(eggVault) : 0));
-  const [accountTitle, setAccountTitle] = useState(user?.name || '');
+  const [accountTitle, setAccountTitle] = useState(user?.name || user?.username || '');
   const [accountNumber, setAccountNumber] = useState(user?.phone || '');
   const [bankName, setBankName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +61,8 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
   const handlePreset = (pct) => {
     const total = Math.floor(eggVault || 0);
     if (total <= 0) {
-      setEggsToSell(selectedStore?.min || 1);
+      showToast('info', 'Your Egg Vault is currently empty (0 Eggs). Please harvest flock eggs or buy hens first.');
+      setEggsToSell(0);
       return;
     }
     if (pct === 1.0) {
@@ -645,6 +646,35 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
             {/* Main Cashout Form & Simulator Card */}
             <form onSubmit={handleConfirmCashout} className="space-y-4">
               <div className="bg-white/95 backdrop-blur-md border border-[#e2ede0] rounded-3xl p-4 shadow-[0_8px_30px_-6px_rgba(21,61,43,0.08)] space-y-4">
+                {/* Empty Vault Guidance Alert */}
+                {eggVault <= 0 && (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-start gap-2.5 text-amber-800">
+                    <i className="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5 text-sm flex-shrink-0"></i>
+                    <div className="text-[11px] leading-tight space-y-2">
+                      <div>
+                        <strong className="block font-black text-amber-900 mb-0.5">Egg Vault is Empty (0 Eggs)</strong>
+                        <span>Apke paas filhal sell karne ke liye ande nahi hain. Cashout lene ke liye pehle My Farm me daily harvest karein ya Buy Hen se hen khareedein.</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => navigateTo('/my-farm')}
+                          className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-[9px] uppercase shadow-sm transition-colors"
+                        >
+                          Go to My Farm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigateTo('/buy-asset')}
+                          className="px-2.5 py-1 bg-farm-forest hover:bg-farm-deep text-farm-lime font-bold rounded-lg text-[9px] uppercase shadow-sm transition-colors"
+                        >
+                          Buy Hen Asset
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. Harvest Quantity to Liquidate */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -670,9 +700,10 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
                       onChange={(e) => setEggsToSell(e.target.value)}
                       placeholder="0.00"
                       required
-                      min={selectedStore.min}
-                      max={Math.min(selectedStore.max, Math.floor(eggVault || 0))}
-                      className="w-full bg-[#f8faf7] border border-[#e2ede0] text-farm-deep text-sm font-black pl-11 pr-20 py-3.5 rounded-2xl outline-none focus:border-farm-leaf focus:bg-white shadow-[0_4px_12px_rgba(21,61,43,0.02)] focus:shadow-[0_0_0_3px_rgba(201,243,106,0.35)] transition-all"
+                      min={eggVault > 0 ? selectedStore.min : 0}
+                      max={eggVault > 0 ? Math.min(selectedStore.max, Math.floor(eggVault)) : 0}
+                      disabled={eggVault <= 0}
+                      className="w-full bg-[#f8faf7] border border-[#e2ede0] text-farm-deep text-sm font-black pl-11 pr-20 py-3.5 rounded-2xl outline-none focus:border-farm-leaf focus:bg-white shadow-[0_4px_12px_rgba(21,61,43,0.02)] focus:shadow-[0_0_0_3px_rgba(201,243,106,0.35)] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                       Eggs
@@ -897,8 +928,8 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
                 {/* 5. Grand 3D Confirmation CTA Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting || eggVault <= 0}
-                  className="w-full btn-3d-sell text-white font-poppins font-black text-xs tracking-widest uppercase py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2.5 shimmer-active disabled:opacity-60"
+                  disabled={isSubmitting || eggVault <= 0 || qty <= 0}
+                  className="w-full btn-3d-sell text-white font-poppins font-black text-xs tracking-widest uppercase py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2.5 shimmer-active disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <img
                     src={logoImg}
@@ -906,7 +937,11 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
                     alt="Sell"
                   />
                   <span>
-                    {isSubmitting ? 'PROCESSING LIQUIDATION...' : 'CONFIRM & RECEIVE CASH'}
+                    {isSubmitting
+                      ? 'PROCESSING LIQUIDATION...'
+                      : eggVault <= 0
+                      ? 'VAULT EMPTY • HARVEST FIRST'
+                      : 'CONFIRM & RECEIVE CASH'}
                   </span>
                   <i className="fa-solid fa-circle-arrow-right text-xs"></i>
                 </button>
