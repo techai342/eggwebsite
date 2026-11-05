@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 CREATE INDEX IF NOT EXISTS idx_tx_user ON public.transactions(user_id, date);
 
 -- ------------------------------------------------------------------------------
--- 7. Table: platform_settings (Global Farm & Gateway Controls)
+-- 7. Table: platform_settings (Global Farm, Pricing Economics & Gateway Controls)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.platform_settings (
   id INT PRIMARY KEY DEFAULT 1,
@@ -136,9 +136,16 @@ CREATE TABLE IF NOT EXISTS public.platform_settings (
   hen_unit_price NUMERIC(10, 2) NOT NULL DEFAULT 500.00,
   daily_egg_yield INT NOT NULL DEFAULT 1,
   contract_duration_days INT NOT NULL DEFAULT 120,
+  min_withdrawal_eggs INT NOT NULL DEFAULT 1,
+  min_withdrawal_pkr NUMERIC(10, 2) NOT NULL DEFAULT 30.00,
+  max_withdrawal_eggs INT NOT NULL DEFAULT 10000,
+  referral_commission_level1 NUMERIC(5, 2) NOT NULL DEFAULT 2.00,
+  referral_commission_level2 NUMERIC(5, 2) NOT NULL DEFAULT 1.00,
   referral_commission_pkr NUMERIC(10, 2) NOT NULL DEFAULT 50.00,
   is_maintenance BOOLEAN NOT NULL DEFAULT FALSE,
-  deposit_gateways JSONB NOT NULL DEFAULT '{"easypaisa":{"enabled":true,"number":"03001234567","title":"AL Rehman Meta Official"},"jazzcash":{"enabled":true,"number":"03009876543","title":"AL Rehman Meta Official"}}',
+  deposit_gateways JSONB NOT NULL DEFAULT '{"easypaisa":{"enabled":true,"number":"03412017923","title":"AL REHMAN META EGGS OFFICIAL"},"jazzcash":{"enabled":true,"number":"03001234567","title":"AL REHMAN ENTERPRISES"}}',
+  market_rates JSONB NOT NULL DEFAULT '{"sonica":32,"usmaina":30,"syed":33}',
+  community_links JSONB NOT NULL DEFAULT '{"whatsappGroup":"https://chat.whatsapp.com/alrehman-meta-eggs-official","whatsappChannel":"https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j","supportPhone":"+923412017923","popupEnabled":true}',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT single_row CHECK (id = 1)
 );
@@ -221,10 +228,28 @@ VALUES
   ('1197', 'mrsaqib242', 'admin@gmail.com', 'password123', 'Farmer Saqib', '03001234567', 'mrsaqib242', 0.00, 0, 'admin', 'Active')
 ON CONFLICT (email) DO UPDATE SET role = 'admin';
 
--- 3. Seed Platform Settings
-INSERT INTO public.platform_settings (id, egg_base_price, hen_unit_price, daily_egg_yield, contract_duration_days, referral_commission_pkr)
-VALUES (1, 30.00, 500.00, 1, 120, 50.00)
-ON CONFLICT (id) DO NOTHING;
+-- 3. Seed Platform Settings & Dynamic Economics
+INSERT INTO public.platform_settings (
+  id, egg_base_price, hen_unit_price, daily_egg_yield, contract_duration_days,
+  min_withdrawal_eggs, min_withdrawal_pkr, max_withdrawal_eggs,
+  referral_commission_level1, referral_commission_level2, referral_commission_pkr
+)
+VALUES (1, 30.00, 500.00, 1, 120, 1, 30.00, 10000, 2.00, 1.00, 50.00)
+ON CONFLICT (id) DO UPDATE SET
+  hen_unit_price = EXCLUDED.hen_unit_price,
+  egg_base_price = EXCLUDED.egg_base_price;
+
+-- ------------------------------------------------------------------------------
+-- 4. Idempotent Migration for Existing Databases (Run in Supabase SQL Editor)
+-- ------------------------------------------------------------------------------
+ALTER TABLE public.platform_settings
+  ADD COLUMN IF NOT EXISTS min_withdrawal_eggs INT NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS min_withdrawal_pkr NUMERIC(10, 2) NOT NULL DEFAULT 30.00,
+  ADD COLUMN IF NOT EXISTS max_withdrawal_eggs INT NOT NULL DEFAULT 10000,
+  ADD COLUMN IF NOT EXISTS referral_commission_level1 NUMERIC(5, 2) NOT NULL DEFAULT 2.00,
+  ADD COLUMN IF NOT EXISTS referral_commission_level2 NUMERIC(5, 2) NOT NULL DEFAULT 1.00,
+  ADD COLUMN IF NOT EXISTS market_rates JSONB NOT NULL DEFAULT '{"sonica":32,"usmaina":30,"syed":33}',
+  ADD COLUMN IF NOT EXISTS community_links JSONB NOT NULL DEFAULT '{"whatsappGroup":"https://chat.whatsapp.com/alrehman-meta-eggs-official","whatsappChannel":"https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j","supportPhone":"+923412017923","popupEnabled":true}';
 
 -- ==============================================================================
 -- End of Schema Setup

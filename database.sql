@@ -122,9 +122,37 @@ CREATE TABLE IF NOT EXISTS `transactions` (
   INDEX `idx_tx_user` (`user_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------------------------
+-- 7. Table: platform_settings (Global Farm, Pricing Economics & Gateway Controls)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `platform_settings` (
+  `id` INT(11) NOT NULL DEFAULT 1,
+  `egg_base_price` DECIMAL(6, 2) NOT NULL DEFAULT 30.00,
+  `hen_unit_price` DECIMAL(10, 2) NOT NULL DEFAULT 500.00,
+  `daily_egg_yield` INT(11) NOT NULL DEFAULT 1,
+  `contract_duration_days` INT(11) NOT NULL DEFAULT 120,
+  `min_withdrawal_eggs` INT(11) NOT NULL DEFAULT 1,
+  `min_withdrawal_pkr` DECIMAL(10, 2) NOT NULL DEFAULT 30.00,
+  `max_withdrawal_eggs` INT(11) NOT NULL DEFAULT 10000,
+  `referral_commission_level1` DECIMAL(5, 2) NOT NULL DEFAULT 2.00,
+  `referral_commission_level2` DECIMAL(5, 2) NOT NULL DEFAULT 1.00,
+  `referral_commission_pkr` DECIMAL(10, 2) NOT NULL DEFAULT 50.00,
+  `is_maintenance` TINYINT(1) NOT NULL DEFAULT 0,
+  `deposit_gateways` JSON DEFAULT NULL,
+  `market_rates` JSON DEFAULT NULL,
+  `community_links` JSON DEFAULT NULL,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ==============================================================================
 -- Seed Data Initialization
 -- ==============================================================================
+
+-- Seed Platform Settings & Dynamic Economics
+INSERT INTO `platform_settings` (`id`, `egg_base_price`, `hen_unit_price`, `daily_egg_yield`, `contract_duration_days`, `min_withdrawal_eggs`, `min_withdrawal_pkr`, `max_withdrawal_eggs`, `referral_commission_level1`, `referral_commission_level2`, `referral_commission_pkr`)
+VALUES (1, 30.00, 500.00, 1, 120, 1, 30.00, 10000, 2.00, 1.00, 50.00)
+ON DUPLICATE KEY UPDATE `hen_unit_price`=VALUES(`hen_unit_price`);
 
 -- Seed Verified Stores
 INSERT INTO `p2p_stores` (`id`, `name`, `tag`, `rate_per_egg`, `rating`, `trades_count`, `min_eggs`, `max_eggs`, `status`) VALUES

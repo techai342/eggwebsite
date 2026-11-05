@@ -429,12 +429,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             referralFlatBonusPkr: Number(dbSettings.referral_commission_pkr || prev.referralFlatBonusPkr || 50),
             isMaintenance: Boolean(dbSettings.is_maintenance),
             depositGateways: dbSettings.deposit_gateways || prev.depositGateways,
-            minWithdrawalEggs: economics.minWithdrawalEggs ?? prev.minWithdrawalEggs ?? 1,
-            minWithdrawalPkr: economics.minWithdrawalPkr ?? prev.minWithdrawalPkr ?? 30,
-            maxWithdrawalEggs: economics.maxWithdrawalEggs ?? prev.maxWithdrawalEggs ?? 10000,
-            referralCommissionLevel1: economics.referralCommissionLevel1 ?? prev.referralCommissionLevel1 ?? 2.0,
-            referralCommissionLevel2: economics.referralCommissionLevel2 ?? prev.referralCommissionLevel2 ?? 1.0,
-            marketRates: economics.marketRates || prev.marketRates
+            minWithdrawalEggs: Number(dbSettings.min_withdrawal_eggs ?? economics.minWithdrawalEggs ?? prev.minWithdrawalEggs ?? 1),
+            minWithdrawalPkr: Number(dbSettings.min_withdrawal_pkr ?? economics.minWithdrawalPkr ?? prev.minWithdrawalPkr ?? 30),
+            maxWithdrawalEggs: Number(dbSettings.max_withdrawal_eggs ?? economics.maxWithdrawalEggs ?? prev.maxWithdrawalEggs ?? 10000),
+            referralCommissionLevel1: Number(dbSettings.referral_commission_level1 ?? economics.referralCommissionLevel1 ?? prev.referralCommissionLevel1 ?? 2.0),
+            referralCommissionLevel2: Number(dbSettings.referral_commission_level2 ?? economics.referralCommissionLevel2 ?? prev.referralCommissionLevel2 ?? 1.0),
+            marketRates: dbSettings.market_rates || economics.marketRates || prev.marketRates,
+            communityLinks: dbSettings.community_links || prev.communityLinks
           }));
         }
 
