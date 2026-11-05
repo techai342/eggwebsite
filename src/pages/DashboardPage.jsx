@@ -1067,7 +1067,7 @@ export default function DashboardPage() {
             {/* 4. My Farm */}
             <button
               type="button"
-              onClick={() => setIsMyFarmModalOpen(true)}
+              onClick={() => navigateTo('/my-farm')}
               className="bg-gradient-to-br from-white via-white to-[#fbfdf9] border border-[#28734a]/20 hover:border-[#16a34a]/60 rounded-[24px] p-3 flex items-center gap-3 shadow-[0_4px_16px_rgba(21,61,43,0.05)] hover:shadow-md active:scale-[0.98] transition-all text-left group"
             >
               <div className="w-11 h-11 rounded-[18px] bg-gradient-to-br from-[#ecfccb] via-[#d9f99d] to-[#bef264] text-[#166534] flex items-center justify-center text-lg shadow-sm border-2 border-lime-400/60 group-hover:scale-105 transition-all flex-shrink-0">

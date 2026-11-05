@@ -353,6 +353,24 @@ export function AppSidebar({ isOpen, onClose }) {
 
           <li className="tc-menu-item">
             <a
+              href="#/my-farm"
+              onClick={(e) => { e.preventDefault(); handleNav('/my-farm'); }}
+              className="tc-menu-link"
+            >
+              <div className="tc-menu-link-left">
+                <div className="tc-menu-icon-box" style={{ background: '#fef9c3', color: '#854d0e' }}>
+                  <i className="fa-solid fa-egg"></i>
+                </div>
+                <span>My Farm Coop</span>
+              </div>
+              <span className="px-1.5 py-0.5 text-[8.5px] font-black rounded-full bg-emerald-100 text-emerald-800 uppercase">
+                Flock
+              </span>
+            </a>
+          </li>
+
+          <li className="tc-menu-item">
+            <a
               href="#/buy-asset"
               onClick={(e) => { e.preventDefault(); handleNav('/buy-asset'); }}
               className="tc-menu-link"
@@ -468,11 +486,11 @@ export function AppBottomNav({ currentRoute = '/dashboard', onNavigate }) {
     }
   };
 
-  const isHomeActive = currentRoute === '/dashboard' || currentRoute === '/';
-  const isFarmActive = currentRoute === '/dashboard#farm';
-  const isBuyActive = currentRoute === '/buy-asset';
-  const isSaleActive = currentRoute === '/sell-egg' || currentRoute === '/withdraw';
-  const isProfileActive = currentRoute === '/change-password';
+  const isHomeActive = currentRoute === '/dashboard' || currentRoute === '/home' || currentRoute === '/user/dashboard' || currentRoute === '/';
+  const isFarmActive = currentRoute === '/my-farm' || currentRoute === '/farm' || currentRoute === '/user/farm' || currentRoute === '/dashboard#farm';
+  const isBuyActive = currentRoute === '/buy-asset' || currentRoute === '/deposit' || currentRoute === '/buy' || currentRoute === '/user/deposit';
+  const isSaleActive = currentRoute === '/sell-egg' || currentRoute === '/withdraw' || currentRoute === '/sale' || currentRoute === '/user/withdraw';
+  const isProfileActive = currentRoute === '/change-password' || currentRoute === '/profile' || currentRoute === '/user/change-password';
 
   return (
     <nav className="tc-bottombar" aria-label="Bottom Navigation Dock">
@@ -491,8 +509,8 @@ export function AppBottomNav({ currentRoute = '/dashboard', onNavigate }) {
 
       {/* 2. My Farm Option */}
       <a
-        href="#/dashboard"
-        onClick={(e) => handleItemClick(e, '/dashboard')}
+        href="#/my-farm"
+        onClick={(e) => handleItemClick(e, '/my-farm')}
         className={`tc-bottom-item ${isFarmActive ? 'active' : ''}`}
         aria-label="My Farm"
       >
