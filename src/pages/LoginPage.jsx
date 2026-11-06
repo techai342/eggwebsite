@@ -90,29 +90,15 @@ export default function LoginPage() {
               <span>AL REHMAN META EGGS FARM CLOUD</span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <a
-                href="#/register"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateTo('/register');
-                }}
-                className="px-3 py-1.5 rounded-full bg-[#c9f36a] text-[#0a2717] font-manrope font-black text-xs uppercase tracking-wider shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer no-underline"
-                title="Create Account"
-              >
-                <i className="fa-solid fa-user-plus text-[10px]"></i>
-                <span>Register</span>
-              </a>
-              <button
-                type="button"
-                onClick={() => navigateTo('/')}
-                className="home-circle-btn"
-                title="Farm Portal Home"
-                aria-label="Farm Portal Home"
-              >
-                <i className="fa-solid fa-house"></i>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => navigateTo('/')}
+              className="home-circle-btn"
+              title="Farm Portal Home"
+              aria-label="Farm Portal Home"
+            >
+              <i className="fa-solid fa-house"></i>
+            </button>
           </div>
 
           {/* Hero Info & 3D Hen Display */}
