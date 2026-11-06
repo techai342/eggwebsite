@@ -23,8 +23,8 @@ import '../rawafiles.css';
  */
 export default function LoginPage() {
   const { login, navigateTo, showToast } = useFarm();
-  const [username, setUsername] = useState('mrsaqib242');
-  const [password, setPassword] = useState('password123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -59,16 +59,13 @@ export default function LoginPage() {
     e.preventDefault();
     showToast(
       'info',
-      'Password recovery: For local prototype, use mrsaqib242 / password123 or reset in Change Password settings.'
+      'Please contact official admin support on WhatsApp to reset your account password.'
     );
   };
 
   const handleRegisterNotice = (e) => {
     e.preventDefault();
-    showToast(
-      'success',
-      'Welcome to AL Rehman Meta Eggs! You can sign in immediately with the preloaded demo account.'
-    );
+    navigateTo('/register');
   };
 
   return (
@@ -273,24 +270,6 @@ export default function LoginPage() {
                 </div>
               </button>
             </form>
-
-            {/* Quick Demo Credentials Helper Card */}
-            <div className="p-3 rounded-2xl bg-[#f0f5eb] border border-[#c2d9bf] text-[11px] text-[#153d2b]">
-              <div className="flex items-center gap-1.5 font-black uppercase text-[10px] tracking-wider text-[#0e3b22] mb-1">
-                <i className="fa-solid fa-key text-[#228b4f]"></i>
-                <span>Quick Demo Farmer Credentials:</span>
-              </div>
-              <div className="font-mono text-[10px] space-y-0.5">
-                <div>
-                  User: <span className="font-bold text-[#0a2717]">mrsaqib242</span> | Pass:{' '}
-                  <span className="font-bold text-[#0a2717]">password123</span>
-                </div>
-                <div>
-                  Admin: <span className="font-bold text-[#0a2717]">admin@gmail.com</span> | Pass:{' '}
-                  <span className="font-bold text-[#0a2717]">password123</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Bottom Elements */}

@@ -42,8 +42,8 @@ function AdminAccessDeniedGuard({ user, onReturn, onLogin }) {
         <div className="bg-black/40 border border-amber-500/25 rounded-xl p-3 mb-6 text-left flex items-start gap-2.5">
           <i className="fa-solid fa-circle-info text-amber-400 text-sm mt-0.5"></i>
           <div className="text-[11px] text-slate-300">
-            <span className="font-bold text-amber-300 block">Operator Credential Hint:</span>
-            <span>Default Super Admin: <code className="bg-black/60 px-1.5 py-0.5 rounded text-amber-200">admin@gmail.com</code> / <code className="bg-black/60 px-1.5 py-0.5 rounded text-amber-200">password123</code></span>
+            <span className="font-bold text-amber-300 block">Security Notice:</span>
+            <span>This cockpit is reserved for authorized platform administrators only.</span>
           </div>
         </div>
 
