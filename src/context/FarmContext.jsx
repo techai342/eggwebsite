@@ -879,14 +879,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
   // Cooldown calculation helper
   const cooldownHoursRemaining = useMemo(() => {
-    if (!cooldownActive || !lastHarvest) return 0;
-    const last = new Date(lastHarvest).getTime();
-    const now = Date.now();
-    const hoursPassed = (now - last) / (1000 * 60 * 60);
-    if (hoursPassed < 24) {
-      return Math.ceil(24 - hoursPassed);
+    if (!lastHarvest && !cooldownActive) return 0;
+    if (lastHarvest) {
+      const last = new Date(lastHarvest).getTime();
+      if (!isNaN(last)) {
+        const now = Date.now();
+        const hoursPassed = (now - last) / (1000 * 60 * 60);
+        if (hoursPassed < 24) {
+          return Math.ceil(Math.max(1, 24 - hoursPassed));
+        }
+      }
     }
-    return 0;
+    return cooldownActive ? 24 : 0;
   }, [cooldownActive, lastHarvest]);
 
   // Farmer & Super Admin Authentication
@@ -1529,7 +1533,21 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       const curTime = current.getTime();
       const hoursPassed = (curTime - last) / (1000 * 60 * 60);
       if (hoursPassed < 24) {
-        const remainingHours = Math.ceil(24 - hoursPassed);
+        const remainingHours = Math.ceil(Math.max(1, 24 - hoursPassed));
+        const msg = `Harvest cooldown active. Please wait ${remainingHours} hour(s) before next collection.`;
+        showToast('warning', msg);
+        return {
+          success: false,
+          eggsCollected: 0,
+          message: msg
+        };
+      }
+    } else if (lastHarvest) {
+      const last = new Date(lastHarvest).getTime();
+      const curTime = current.getTime();
+      const hoursPassed = (curTime - last) / (1000 * 60 * 60);
+      if (hoursPassed < 24 && hoursPassed >= 0) {
+        const remainingHours = Math.ceil(Math.max(1, 24 - hoursPassed));
         const msg = `Harvest cooldown active. Please wait ${remainingHours} hour(s) before next collection.`;
         showToast('warning', msg);
         return {
@@ -1633,8 +1651,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   }, [user, activeAssets, cooldownActive, lastHarvest, eggVault, transactions, persistState, showToast, logActivity]);
 
   const resetCooldown = useCallback(() => {
+    const expiredTimestamp = new Date(Date.now() - 25 * 3600 * 1000).toISOString();
+    setLastHarvest(expiredTimestamp);
     setCooldownActive(false);
-    persistState({ cooldownActive: false });
+    persistState({ lastHarvest: expiredTimestamp, cooldownActive: false });
   }, [persistState]);
 
   // Egg Liquidation & P2P Cashout

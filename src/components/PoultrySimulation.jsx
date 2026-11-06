@@ -217,22 +217,13 @@ export default function PoultrySimulation() {
     }
   }
 
-  // Automatic laying cycle loop
+  // User-governed simulation: lays only when farmer clicks "Lay Egg Now"
+  // Runaway automatic loop disabled to prevent uncontrolled egg accrual
   useEffect(() => {
-    let active = true
-    const loop = async () => {
-      while (active) {
-        await sleep(3500)
-        if (active && !isBusyRef.current) {
-          await runLayingCycle()
-        }
-      }
-    }
-    const timer = setTimeout(loop, 1500)
-    return () => {
-      active = false
-      clearTimeout(timer)
-    }
+    // Initial resting state on mount
+    setStatusText('Resting in Roost')
+    setDoorOpen(false)
+    setHenClasses('in-coop')
   }, [])
 
   const currentBatchPKR = eggsInTray * ratePerEgg

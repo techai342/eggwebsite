@@ -55,13 +55,14 @@ export default function MyFarmPage() {
     resetCooldown,
     cooldownActive,
     cooldownHoursRemaining,
+    lastHarvest,
     navigateTo,
     showToast
   } = useFarm();
 
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [selectedBatchFilter, setSelectedBatchFilter] = useState('ALL'); // ALL, ACTIVE, MATURE
-  const [remainingTimeStr, setRemainingTimeStr] = useState('23:59:59');
+  const [remainingTimeStr, setRemainingTimeStr] = useState('24:00:00');
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
   const [collectedCount, setCollectedCount] = useState(0);
 
@@ -84,21 +85,34 @@ export default function MyFarmPage() {
   const estMonthlyRevenue = estMonthlyEggs * 32; // Average egg rate Rs. 32
   const totalLifecycleRevenue = totalHens * (ASSET_SPEC.totalYieldPerUnit || 120) * 32;
 
-  // Real-time countdown timer
+  // Real-time second-by-second countdown timer
   useEffect(() => {
     const updateClock = () => {
-      const remainingHours = Number(cooldownHoursRemaining) || 24;
-      const totalSeconds = remainingHours * 3600;
+      if (!lastHarvest || !cooldownActive) {
+        setRemainingTimeStr('24:00:00');
+        return;
+      }
+      const last = new Date(lastHarvest).getTime();
+      if (isNaN(last)) {
+        setRemainingTimeStr('24:00:00');
+        return;
+      }
+      const diffMs = (24 * 60 * 60 * 1000) - (Date.now() - last);
+      if (diffMs <= 0) {
+        setRemainingTimeStr('00:00:00');
+        return;
+      }
+      const totalSeconds = Math.floor(diffMs / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = Math.floor(totalSeconds % 60);
+      const seconds = totalSeconds % 60;
       const pad = (n) => String(n).padStart(2, '0');
       setRemainingTimeStr(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
     };
     updateClock();
     const interval = setInterval(updateClock, 1000);
     return () => clearInterval(interval);
-  }, [cooldownHoursRemaining]);
+  }, [lastHarvest, cooldownActive, cooldownHoursRemaining]);
 
   // Handle Hen Sound
   const handleHenAudio = () => {
@@ -300,10 +314,10 @@ export default function MyFarmPage() {
                 }`}
               >
                 <i className="fa-solid fa-basket-shopping text-sm"></i>
-                <span>{cooldownActive ? 'Cooldown Active' : 'Harvest Daily Eggs'}</span>
+                <span>{cooldownActive ? `Cooldown Active (${remainingTimeStr})` : 'Harvest Daily Eggs'}</span>
               </button>
 
-              {/* Dev/Test Instant Reset Cooldown Button */}
+              {/* Dev/Test Instant Reset Cooldown Button (Discreet for automated test suites) */}
               {cooldownActive && (
                 <button
                   type="button"
@@ -311,8 +325,8 @@ export default function MyFarmPage() {
                     resetCooldown();
                     showToast('success', 'Cooldown reset for testing! You can now harvest instantly.');
                   }}
-                  className="py-3 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-manrope font-extrabold text-[9px] uppercase tracking-wider border border-white/20 active:scale-95 transition-all"
-                  title="Instant Test Reset"
+                  className="py-3 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white font-manrope font-extrabold text-[9px] uppercase tracking-wider border border-white/15 active:scale-95 transition-all"
+                  title="Test Reset"
                 >
                   <i className="fa-solid fa-bolt text-[#c9f36a]"></i>
                 </button>

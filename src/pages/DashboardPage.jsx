@@ -16,6 +16,7 @@ export default function DashboardPage() {
     resetCooldown,
     cooldownActive,
     cooldownHoursRemaining,
+    lastHarvest,
     navigateTo,
     analytics,
     transactions,
@@ -59,22 +60,35 @@ export default function DashboardPage() {
   }, [depositRequests, user]);
 
   // Live countdown clock state for cooldown modal
-  const [remainingTimeStr, setRemainingTimeStr] = useState('23:59:59');
+  const [remainingTimeStr, setRemainingTimeStr] = useState('24:00:00');
 
   useEffect(() => {
     const updateClock = () => {
-      const remainingHours = Number(cooldownHoursRemaining) || 24;
-      const totalSeconds = remainingHours * 3600;
+      if (!lastHarvest || !cooldownActive) {
+        setRemainingTimeStr('24:00:00');
+        return;
+      }
+      const last = new Date(lastHarvest).getTime();
+      if (isNaN(last)) {
+        setRemainingTimeStr('24:00:00');
+        return;
+      }
+      const diffMs = (24 * 60 * 60 * 1000) - (Date.now() - last);
+      if (diffMs <= 0) {
+        setRemainingTimeStr('00:00:00');
+        return;
+      }
+      const totalSeconds = Math.floor(diffMs / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = Math.floor(totalSeconds % 60);
+      const seconds = totalSeconds % 60;
       const pad = (n) => String(n).padStart(2, '0');
       setRemainingTimeStr(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
     };
     updateClock();
     const interval = setInterval(updateClock, 1000);
     return () => clearInterval(interval);
-  }, [cooldownHoursRemaining]);
+  }, [lastHarvest, cooldownActive, cooldownHoursRemaining]);
 
   // P2P trade animation step loop
   useEffect(() => {
