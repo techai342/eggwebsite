@@ -143,6 +143,16 @@ export default function BuyAssetPage() {
   // Selected gateway object
   const selectedGateway = PAYMENT_GATEWAYS.find((g) => g.code === selectedGatewayCode) || PAYMENT_GATEWAYS[0];
 
+  // Dynamic Gateway Details from Super Admin Platform Settings
+  const gwKey = selectedGateway?.name?.toLowerCase().includes('jazz') ? 'jazzcash' : 'easypisa';
+  const gwConfig = platformSettings?.depositGateways?.[gwKey] ||
+                   platformSettings?.depositGateways?.[gwKey === 'easypisa' ? 'easypaisa' : 'jazzcash'] ||
+                   {};
+
+  const activeAccountTitle = gwConfig.accountTitle || gwConfig.title || 'AL Rehman Meta Eggs';
+  const activeAccountNumber = gwConfig.accountNumber || gwConfig.number || (gwKey === 'jazzcash' ? '03001234567' : '03412017923');
+  const activeInstructions = gwConfig.instructions || '';
+
   // Step change with smooth scroll
   const goToStep = (step) => {
     setCurrentStep(step);
@@ -999,9 +1009,9 @@ export default function BuyAssetPage() {
                   </button>
 
                   <a
-                    href={`https://wa.me/923412017923?text=${encodeURIComponent(
+                    href={getWhatsAppSupportUrl(
                       `Assalam-o-Alaikum Admin! Maine abhi AL Rehman Meta Eggs mein ${units} Hens ka deposit submit kiya hai (Rs. ${totalCost} via ${selectedGateway?.name}). Mera TID: ${transactionId}. Kindly verify ker k activate ker dein!`
-                    )}`}
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-manrope font-bold text-[11px] uppercase tracking-wider transition-all shadow flex items-center justify-center gap-2"
@@ -1032,7 +1042,7 @@ export default function BuyAssetPage() {
                           Account Title
                         </span>
                         <strong className="font-manrope font-black text-xs text-[#0d2c20]">
-                          AL Rehman Meta Eggs
+                          {activeAccountTitle}
                         </strong>
                       </div>
                       <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg">
@@ -1047,12 +1057,12 @@ export default function BuyAssetPage() {
                           {selectedGateway?.name} Number
                         </span>
                         <span className="font-mono font-black text-sm text-[#153d2b] tracking-wider">
-                          03412017923
+                          {activeAccountNumber}
                         </span>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleCopy('03412017923', 'Account Number')}
+                        onClick={() => handleCopy(activeAccountNumber, 'Account Number')}
                         className="px-2.5 py-1.5 bg-[#f0f7ee] hover:bg-[#e4f1e1] text-[#153d2b] text-[10px] font-black rounded-lg border border-[#cbe0c8] transition-all flex items-center gap-1 active:scale-95"
                       >
                         <i className={`fa-solid ${copiedField === 'Account Number' ? 'fa-check text-emerald-600' : 'fa-copy'}`}></i>
@@ -1084,7 +1094,13 @@ export default function BuyAssetPage() {
 
                   <p className="text-[8.5px] text-slate-500 font-medium mt-2 leading-relaxed bg-[#f6faf5] p-2 rounded-lg border border-[#e4eee1]">
                     <i className="fa-solid fa-circle-info text-emerald-600 mr-1"></i>
-                    Oper diye gaye number per <strong>Rs. {totalCost.toLocaleString()}</strong> transfer karein. Transfer ke baad SMS ya receipt se <strong>Transaction ID (TID)</strong> neechay enter ker k submit karein.
+                    {activeInstructions ? (
+                      <span>{activeInstructions}</span>
+                    ) : (
+                      <span>
+                        Oper diye gaye number per <strong>Rs. {totalCost.toLocaleString()}</strong> transfer karein. Transfer ke baad SMS ya receipt se <strong>Transaction ID (TID)</strong> neechay enter ker k submit karein.
+                      </span>
+                    )}
                   </p>
                 </div>
 

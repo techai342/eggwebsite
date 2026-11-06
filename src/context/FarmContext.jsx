@@ -819,6 +819,58 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     };
   }, []);
 
+  // Realtime Live Subscription for Platform Settings (Gateways, Economics & Contact Info)
+  useEffect(() => {
+    let settingsChannel = null;
+    try {
+      settingsChannel = supabase
+        .channel('platform_settings_live_channel')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'platform_settings' },
+          (payload) => {
+            if (payload?.new) {
+              const row = payload.new;
+              const economics = (row.deposit_gateways && typeof row.deposit_gateways === 'object')
+                ? (row.deposit_gateways._economics || {})
+                : {};
+              setPlatformSettings((prev) => {
+                const updated = {
+                  ...prev,
+                  eggBasePrice: Number(row.egg_base_price || prev.eggBasePrice || 30),
+                  henUnitPrice: Number(row.hen_unit_price || prev.henUnitPrice || 500),
+                  dailyEggYield: Number(row.daily_egg_yield || prev.dailyEggYield || 1),
+                  contractDurationDays: Number(row.contract_duration_days || prev.contractDurationDays || 120),
+                  referralCommissionPkr: Number(row.referral_commission_pkr || prev.referralCommissionPkr || 50),
+                  referralFlatBonusPkr: Number(row.referral_commission_pkr || prev.referralFlatBonusPkr || 50),
+                  isMaintenance: Boolean(row.is_maintenance),
+                  depositGateways: row.deposit_gateways || prev.depositGateways,
+                  minWithdrawalEggs: Number(row.min_withdrawal_eggs ?? economics.minWithdrawalEggs ?? prev.minWithdrawalEggs ?? 1),
+                  minWithdrawalPkr: Number(row.min_withdrawal_pkr ?? economics.minWithdrawalPkr ?? prev.minWithdrawalPkr ?? 30),
+                  maxWithdrawalEggs: Number(row.max_withdrawal_eggs ?? economics.maxWithdrawalEggs ?? prev.maxWithdrawalEggs ?? 10000),
+                  referralCommissionLevel1: Number(row.referral_commission_level1 ?? economics.referralCommissionLevel1 ?? prev.referralCommissionLevel1 ?? 2.0),
+                  referralCommissionLevel2: Number(row.referral_commission_level2 ?? economics.referralCommissionLevel2 ?? prev.referralCommissionLevel2 ?? 1.0),
+                  marketRates: row.market_rates || economics.marketRates || prev.marketRates,
+                  communityLinks: row.community_links || prev.communityLinks
+                };
+                try {
+                  window.localStorage.setItem('farm_platform_settings', JSON.stringify(updated));
+                } catch (_) {}
+                return updated;
+              });
+            }
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.info('Supabase platform_settings realtime notice:', e);
+    }
+
+    return () => {
+      if (settingsChannel) supabase.removeChannel(settingsChannel);
+    };
+  }, []);
+
   // Toast notification management
   const showToast = useCallback((type, message, duration = 3000) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;

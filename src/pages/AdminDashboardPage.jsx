@@ -618,18 +618,21 @@ export default function AdminDashboardPage() {
 
   // Sync state if platformSettings changes from context
   React.useEffect(() => {
-    if (platformSettings?.depositGateways?.easypisa) {
-      setEasyTitle(platformSettings.depositGateways.easypisa.accountTitle || '');
-      setEasyNumber(platformSettings.depositGateways.easypisa.accountNumber || '');
-      setEasyQr(platformSettings.depositGateways.easypisa.qrCodeUrl || '/src/assets/easypisa.png');
-      setEasyInst(platformSettings.depositGateways.easypisa.instructions || '');
+    const ep = platformSettings?.depositGateways?.easypisa || platformSettings?.depositGateways?.easypaisa;
+    if (ep) {
+      setEasyTitle(ep.accountTitle || ep.title || '');
+      setEasyNumber(ep.accountNumber || ep.number || '');
+      setEasyQr(ep.qrCodeUrl || '/src/assets/easypisa.png');
+      setEasyInst(ep.instructions || '');
     }
-    if (platformSettings?.depositGateways?.jazzcash) {
-      setJazzTitle(platformSettings.depositGateways.jazzcash.accountTitle || '');
-      setJazzNumber(platformSettings.depositGateways.jazzcash.accountNumber || '');
-      setJazzQr(platformSettings.depositGateways.jazzcash.qrCodeUrl || '/src/assets/jazzcash.png');
-      setJazzInst(platformSettings.depositGateways.jazzcash.instructions || '');
+    const jz = platformSettings?.depositGateways?.jazzcash;
+    if (jz) {
+      setJazzTitle(jz.accountTitle || jz.title || '');
+      setJazzNumber(jz.accountNumber || jz.number || '');
+      setJazzQr(jz.qrCodeUrl || '/src/assets/jazzcash.png');
+      setJazzInst(jz.instructions || '');
     }
+
     if (platformSettings?.communityLinks) {
       setWaGroup(platformSettings.communityLinks.whatsappGroup || '');
       setWaChannel(platformSettings.communityLinks.whatsappChannel || '');
