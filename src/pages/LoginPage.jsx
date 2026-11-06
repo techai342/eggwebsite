@@ -90,15 +90,29 @@ export default function LoginPage() {
               <span>AL REHMAN META EGGS FARM CLOUD</span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => navigateTo('/')}
-              className="home-circle-btn"
-              title="Farm Portal Home"
-              aria-label="Farm Portal Home"
-            >
-              <i className="fa-solid fa-house"></i>
-            </button>
+            <div className="flex items-center gap-2">
+              <a
+                href="#/register"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateTo('/register');
+                }}
+                className="px-3 py-1.5 rounded-full bg-[#c9f36a] text-[#0a2717] font-manrope font-black text-xs uppercase tracking-wider shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer no-underline"
+                title="Create Account"
+              >
+                <i className="fa-solid fa-user-plus text-[10px]"></i>
+                <span>Register</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => navigateTo('/')}
+                className="home-circle-btn"
+                title="Farm Portal Home"
+                aria-label="Farm Portal Home"
+              >
+                <i className="fa-solid fa-house"></i>
+              </button>
+            </div>
           </div>
 
           {/* Hero Info & 3D Hen Display */}
@@ -160,6 +174,28 @@ export default function LoginPage() {
               <div className="headline-icon-badge">
                 <i className="fa-solid fa-fingerprint"></i>
               </div>
+            </div>
+
+            {/* Account Switcher Tabs: Sign In (Active) vs Register */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl mb-4 border border-slate-200/80 shadow-inner">
+              <button
+                type="button"
+                className="flex-1 py-2 px-3 rounded-xl bg-[#0a2717] text-[#c9f36a] font-manrope font-black text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-1.5 cursor-default transition-all"
+              >
+                <i className="fa-solid fa-lock text-[11px]"></i>
+                <span>Sign In</span>
+              </button>
+              <a
+                href="#/register"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateTo('/register');
+                }}
+                className="flex-1 py-2 px-3 rounded-xl text-slate-700 hover:text-emerald-950 hover:bg-white/90 font-manrope font-black text-xs uppercase tracking-wider text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 no-underline active:scale-95"
+              >
+                <i className="fa-solid fa-user-plus text-[11px] text-emerald-600"></i>
+                <span>Register</span>
+              </a>
             </div>
 
             {/* Error Message Feedback Banner */}
@@ -269,6 +305,22 @@ export default function LoginPage() {
                   <i className={loading ? 'fa-solid fa-circle-notch fa-spin' : 'fa-solid fa-arrow-right-to-bracket'}></i>
                 </div>
               </button>
+
+              {/* Direct In-Form Register Link */}
+              <div className="flex items-center justify-center gap-1.5 pt-3 text-center">
+                <span className="text-xs text-slate-500 font-medium">Don't have a farm account?</span>
+                <a
+                  href="#/register"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigateTo('/register');
+                  }}
+                  className="text-xs font-black text-emerald-800 hover:text-emerald-950 underline underline-offset-2 flex items-center gap-1 cursor-pointer transition-colors no-underline"
+                >
+                  <span className="underline">Register Free</span>
+                  <i className="fa-solid fa-arrow-right text-[10px]"></i>
+                </a>
+              </div>
             </form>
           </div>
 
@@ -280,14 +332,17 @@ export default function LoginPage() {
                 <h4>New to the Farm?</h4>
                 <p>Start with free daily egg harvests</p>
               </div>
-              <button
-                type="button"
-                onClick={() => navigateTo('/register')}
-                className="reg-link-pill"
+              <a
+                href="#/register"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateTo('/register');
+                }}
+                className="reg-link-pill cursor-pointer no-underline flex items-center gap-1.5"
               >
                 <span>Register</span>
                 <i className="fa-solid fa-chevron-right text-[8px]"></i>
-              </button>
+              </a>
             </div>
 
             {/* SSL Status Indicator */}
