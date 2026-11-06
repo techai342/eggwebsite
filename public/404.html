@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AL Rehman Meta Eggs</title>
+    <script>
+      // SPA Fallback Redirect: preserves pathname, search query, and hash
+      var path = window.location.pathname || '/';
+      var search = window.location.search || '';
+      var hash = window.location.hash || '';
+      if (path !== '/' && path !== '/index.html') {
+        window.location.replace('/#' + (path.startsWith('/') ? path : '/' + path) + search + hash);
+      } else {
+        window.location.replace('/' + search + hash);
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to poultry farm cloud...</p>
+  </body>
+</html>
