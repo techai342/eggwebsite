@@ -90,12 +90,12 @@ export default function SupportChatModal({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-xs animate-fadeIn"
+      className="fixed inset-0 z-[10000000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
       role="dialog"
       aria-modal="true"
       aria-labelledby="support-modal-title"
     >
-      <div className="w-full sm:max-w-md bg-gradient-to-b from-[#0a2318] to-[#071911] text-white rounded-t-3xl sm:rounded-3xl border border-emerald-500/40 shadow-[0_10px_40px_rgba(0,0,0,0.85)] flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden">
+      <div className="w-full sm:max-w-md bg-gradient-to-b from-[#0a2318] to-[#071911] text-white rounded-t-3xl sm:rounded-3xl border border-emerald-500/40 shadow-[0_10px_50px_rgba(0,0,0,0.95)] flex flex-col h-[88vh] sm:h-auto sm:max-h-[85vh] overflow-hidden">
         
         {/* Header Bar */}
         <div className="p-3.5 bg-gradient-to-r from-emerald-950 via-[#0d3322] to-emerald-950 border-b border-emerald-500/30 flex items-center justify-between">
@@ -187,11 +187,11 @@ export default function SupportChatModal({ isOpen, onClose }) {
 
         {/* Content Body */}
         {activeTab === 'chat' ? (
-          <div className="flex-1 flex flex-col min-h-[300px] max-h-[50vh] sm:max-h-[380px] overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* Messages Scroll Area */}
             <div
               ref={chatScrollRef}
-              className="flex-1 p-3.5 space-y-3 overflow-y-auto custom-scrollbar"
+              className="flex-1 min-h-0 p-3.5 space-y-3 overflow-y-auto custom-scrollbar"
             >
               {/* Bot Greeting Header */}
               <div className="bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-3 text-xs flex items-start gap-2.5 shadow-sm">
@@ -322,7 +322,7 @@ export default function SupportChatModal({ isOpen, onClose }) {
             </div>
 
             {/* Quick Inquiry FAQ Chips */}
-            <div className="px-3 py-1.5 bg-black/40 border-t border-emerald-500/20 flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
+            <div className="px-3 py-1.5 bg-black/40 border-t border-emerald-500/20 flex items-center gap-1.5 overflow-x-auto custom-scrollbar shrink-0">
               <span className="text-[8.5px] uppercase font-bold text-slate-400 whitespace-nowrap">FAQ:</span>
               {[
                 "How to buy hens with Easypisa/JazzCash?",
@@ -334,7 +334,7 @@ export default function SupportChatModal({ isOpen, onClose }) {
                   key={idx}
                   type="button"
                   onClick={() => setInputMessage(q)}
-                  className="px-2 py-0.5 rounded-full bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/30 text-[9.5px] text-emerald-300 whitespace-nowrap cursor-pointer transition-all active:scale-95"
+                  className="px-2.5 py-1 rounded-full bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/30 text-[10px] text-emerald-300 whitespace-nowrap cursor-pointer transition-all active:scale-95"
                 >
                   {q}
                 </button>
@@ -342,18 +342,18 @@ export default function SupportChatModal({ isOpen, onClose }) {
             </div>
 
             {/* Input Form */}
-            <form onSubmit={handleSend} className="p-2.5 bg-black/50 border-t border-emerald-500/20 flex items-center gap-2">
+            <form onSubmit={handleSend} className="p-2.5 bg-black/60 border-t border-emerald-500/20 flex items-center gap-2 shrink-0">
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Type your message to Admin Support..."
-                className="flex-1 bg-black/60 border border-emerald-500/40 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400"
+                className="flex-1 bg-black/70 border border-emerald-500/40 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400"
               />
               <button
                 type="submit"
                 disabled={!inputMessage.trim()}
-                className="w-9 h-9 rounded-xl bg-gradient-to-r from-emerald-500 to-[#16a34a] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center hover:brightness-110 active:scale-95 transition-all shadow-sm cursor-pointer"
+                className="w-10 h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-[#16a34a] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center hover:brightness-110 active:scale-95 transition-all shadow-sm cursor-pointer shrink-0"
                 title="Send Message"
                 aria-label="Send Message"
               >
@@ -363,7 +363,7 @@ export default function SupportChatModal({ isOpen, onClose }) {
           </div>
         ) : (
           /* Official Community Channels View */
-          <div className="p-4 space-y-3 overflow-y-auto max-h-[50vh] sm:max-h-[380px]">
+          <div className="flex-1 min-h-0 p-4 space-y-3 overflow-y-auto">
             {/* WhatsApp Group */}
             <div className="bg-[#0f2d1e] border border-emerald-500/30 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center gap-3">
@@ -432,8 +432,8 @@ export default function SupportChatModal({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Footer info pill */}
-        <div className="p-2.5 bg-black/60 border-t border-emerald-500/20 flex items-center justify-between text-[9px] text-slate-400">
+        {/* Footer info pill with safe-area padding */}
+        <div className="px-3.5 py-2.5 pb-[max(12px,env(safe-area-inset-bottom,12px))] bg-black/80 border-t border-emerald-500/20 flex items-center justify-between text-[9px] text-slate-400 shrink-0">
           <span className="flex items-center gap-1 text-emerald-400 font-semibold">
             <i className="fa-solid fa-shield-check"></i>
             <span>End-to-End SSL Encrypted</span>
