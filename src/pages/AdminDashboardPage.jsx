@@ -526,6 +526,7 @@ export default function AdminDashboardPage() {
   const [balanceModalUser, setBalanceModalUser] = useState(null);
   const [rejectModalWithdrawal, setRejectModalWithdrawal] = useState(null);
   const [rejectModalDeposit, setRejectModalDeposit] = useState(null);
+  const [viewingReceipt, setViewingReceipt] = useState(null);
 
   // Tab 1 (Users) state
   const [userSearch, setUserSearch] = useState('');
@@ -2031,6 +2032,76 @@ export default function AdminDashboardPage() {
                             Verify in {dep.gateway} app
                           </span>
                         </div>
+                      </div>
+
+                      {/* Payment Proof Receipt Screenshot (ImageKit Cloud CDN) */}
+                      <div className="mb-3 p-3 rounded-xl bg-black/60 border border-slate-800/90 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          {dep.proofScreenshot ? (
+                            <div
+                              onClick={() => setViewingReceipt(dep)}
+                              className="relative w-14 h-14 rounded-lg overflow-hidden border border-emerald-500/40 bg-slate-900 cursor-pointer group flex-shrink-0"
+                              title="Click to Zoom Receipt"
+                            >
+                              <img
+                                src={dep.proofScreenshot}
+                                alt="Payment Proof"
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs transition-opacity">
+                                <i className="fa-solid fa-magnifying-glass-plus"></i>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="w-14 h-14 rounded-lg border border-dashed border-slate-700 bg-slate-900/50 flex flex-col items-center justify-center text-slate-500 text-[9px] text-center p-1 flex-shrink-0">
+                              <i className="fa-solid fa-image-slash text-xs mb-0.5"></i>
+                              <span>No Image</span>
+                            </div>
+                          )}
+
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-white">Payment Receipt Proof</span>
+                              {dep.proofScreenshot ? (
+                                <span className="px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                                  <i className="fa-solid fa-cloud-arrow-up text-[9px]"></i>
+                                  <span>ImageKit CDN</span>
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[8.5px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400">
+                                  TID Only
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              {dep.proofScreenshot
+                                ? 'Receipt screenshot verified & hosted on ImageKit CDN'
+                                : 'Farmer submitted TID without image. Verify via SMS / App.'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {dep.proofScreenshot && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setViewingReceipt(dep)}
+                              className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <i className="fa-solid fa-expand text-[10px]"></i>
+                              <span>View Receipt</span>
+                            </button>
+                            <a
+                              href={dep.proofScreenshot}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-all"
+                              title="Open original CDN URL"
+                            >
+                              <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                            </a>
+                          </div>
+                        )}
                       </div>
 
                       {/* Rejection Note (if rejected) */}
@@ -3603,6 +3674,88 @@ export default function AdminDashboardPage() {
           onClose={() => setRejectModalWithdrawal(null)}
           onConfirm={(id, reason, refund) => rejectWithdrawal(id, reason, refund)}
         />
+      )}
+
+      {/* Payment Receipt Fullscreen Lightbox Modal (ImageKit CDN) */}
+      {viewingReceipt && (
+        <div
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn"
+          onClick={() => setViewingReceipt(null)}
+        >
+          <div
+            className="relative max-w-2xl w-full bg-[#0a1f13] border-2 border-emerald-500/40 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[92vh] flex flex-col text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                  <i className="fa-solid fa-receipt"></i>
+                </div>
+                <div>
+                  <h3 className="font-manrope font-black text-sm text-white">
+                    Payment Proof Receipt: @{viewingReceipt.username}
+                  </h3>
+                  <p className="text-[10px] text-slate-400">
+                    TID: <span className="font-mono text-amber-300">{viewingReceipt.transactionId}</span> • Rs. {Number(viewingReceipt.amountPkr || 0).toLocaleString()} via {viewingReceipt.gateway}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingReceipt(null)}
+                className="w-8 h-8 rounded-full bg-black/60 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-black/70 rounded-2xl p-2 border border-slate-800 flex items-center justify-center overflow-hidden">
+              <img
+                src={viewingReceipt.proofScreenshot}
+                alt="Full Payment Proof"
+                className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-lg"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+              <a
+                href={viewingReceipt.proofScreenshot}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-emerald-400 hover:text-emerald-300 underline flex items-center gap-1 font-mono"
+              >
+                <i className="fa-solid fa-link text-[10px]"></i>
+                <span className="truncate max-w-[280px]">{viewingReceipt.proofScreenshot}</span>
+              </a>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.clipboard?.writeText) {
+                      navigator.clipboard.writeText(viewingReceipt.proofScreenshot);
+                    }
+                    showToast('info', 'ImageKit CDN URL copied to clipboard!');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 cursor-pointer"
+                >
+                  <i className="fa-solid fa-copy mr-1 text-[10px]"></i>
+                  Copy URL
+                </button>
+                {viewingReceipt.status === 'Pending' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      approveDepositRequest({ depositId: viewingReceipt.id || viewingReceipt.dbId });
+                      setViewingReceipt(null);
+                    }}
+                    className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-black font-manrope font-black text-xs uppercase tracking-wider shadow-md active:scale-95 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-check mr-1"></i>
+                    Approve Deposit
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Reject Deposit Dialog Modal */}
