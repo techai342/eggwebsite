@@ -546,10 +546,18 @@ export class FarmEngine {
     if (Array.isArray(this.users)) {
       const targetUsername = this.user?.username || 'mrsaqib242';
       const targetId = this.user?.id || 'usr_saqib';
-      const uIdx = this.users.findIndex(u => u.username === targetUsername || u.id === targetId);
-      if (uIdx !== -1) {
-        this.users[uIdx].password = newPassword;
-      }
+      this.users = this.users.map((u) => {
+        if (
+          u.username === targetUsername ||
+          u.id === targetId ||
+          u.username === 'admin' ||
+          u.email === 'admin@gmail.com' ||
+          u.username === this.credentials.username
+        ) {
+          return { ...u, password: newPassword };
+        }
+        return u;
+      });
     }
 
     this.logActivity({
