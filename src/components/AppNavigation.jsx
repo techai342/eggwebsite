@@ -646,7 +646,11 @@ export function AppShell({
         <button
           type="button"
           onClick={() => setIsSupportOpen(true)}
-          className="fixed bottom-20 right-4 sm:right-6 z-40 w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 via-[#16a34a] to-[#15803d] text-white shadow-[0_4px_20px_rgba(22,163,74,0.5)] border-2 border-[#c9f36a] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+          style={{
+            bottom: 'calc(4.85rem + env(safe-area-inset-bottom, 0px))',
+            right: 'max(1rem, calc(50vw - 230px))'
+          }}
+          className="fixed z-40 w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 via-[#16a34a] to-[#15803d] text-white shadow-[0_4px_20px_rgba(22,163,74,0.5)] border-2 border-[#c9f36a] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer group"
           title="24/7 Official Live Support Desk"
           aria-label="Open Live Support Desk"
         >

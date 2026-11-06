@@ -1834,3 +1834,125 @@
   background: linear-gradient(90deg, #10b981, #c9f36a);
   box-shadow: 0 0 10px rgba(201, 243, 106, 0.7);
 }
+
+/* ==========================================================================
+   AL REHMAN META EGGS — MOBILE RESPONSIVENESS & NATIVE SMOOTHNESS SUITE
+   - Fluid 100dvh Viewport & iPhone/Android Notch Safe-Areas
+   - Zero Tap Latency (touch-action: manipulation) & Tactile Micro-Physics
+   - Native Momentum Touch Swiping for Horizontal Carousels & Modals
+   - iOS Safari Auto-Zoom Prevention (16px Input Rule)
+   - Edge-to-Edge Clean Shell Fit for All Mobile Screens
+   ========================================================================== */
+
+/* 1. Global Viewport, Touch & Scroll Smoothness */
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Eliminate 300ms tap delay and ensure instant tactile feedback on touch devices */
+a, button, input, select, textarea, [role="button"] {
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation;
+}
+
+/* 2. Full Edge-to-Edge Mobile Canvas (< 480px) */
+@media (max-width: 480px) {
+  .app-desktop-canvas {
+    background-color: #f8f7f0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .app-shell-480 {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow-x: hidden;
+  }
+
+  /* Safe Area Padding for Arched Headers */
+  .canopy-header {
+    padding-top: max(14px, env(safe-area-inset-top, 0px)) !important;
+    border-bottom-left-radius: 24px !important;
+    border-bottom-right-radius: 24px !important;
+  }
+
+  .full-green-header {
+    padding-top: max(20px, env(safe-area-inset-top, 0px)) !important;
+    border-bottom-left-radius: 36px !important;
+    border-bottom-right-radius: 36px !important;
+  }
+}
+
+/* 3. Small Mobile Devices (Screen width <= 375px) */
+@media (max-width: 375px) {
+  .px-4 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  .px-3\.5 {
+    padding-left: 0.65rem !important;
+    padding-right: 0.65rem !important;
+  }
+  .p-4 {
+    padding: 0.85rem !important;
+  }
+}
+
+/* 4. Native-Feel Horizontal Swiping / Carousel Snapping */
+.overflow-x-auto, [class*="overflow-x-auto"] {
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: smooth !important;
+  overscroll-behavior-x: contain;
+}
+
+/* 5. iOS Safari Auto-Zoom Prevention on Form Inputs */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  input[type="email"],
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents iOS auto-zoom when tapping inputs */
+  }
+}
+
+/* 6. Sticky Bottom Navigation Bar on Mobile with Safe Areas */
+.tc-bottombar {
+  height: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  padding-left: max(10px, env(safe-area-inset-left, 0px)) !important;
+  padding-right: max(10px, env(safe-area-inset-right, 0px)) !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Bottom padding for page content so nothing is obscured by bottom bar */
+.pb-24 {
+  padding-bottom: calc(5.85rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* 7. Micro-Tactile Press Physics for All Buttons */
+button:active:not(:disabled),
+a:active:not(.disabled),
+.cursor-pointer:active {
+  transform: scale(0.97) !important;
+  transition: transform 0.08s ease-out !important;
+}
