@@ -197,6 +197,16 @@ export default function BuyAssetPage() {
       return;
     }
 
+    if (isUploadingProof) {
+      showToast('info', 'Please wait! Payment screenshot is currently uploading to ImageKit Cloud CDN...');
+      return;
+    }
+
+    if (!proofScreenshot && !proofPreview) {
+      showToast('error', 'Payment screenshot / receipt is required! Please attach your receipt before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await submitDepositRequest({
@@ -1158,7 +1168,7 @@ export default function BuyAssetPage() {
                             <span className="truncate">{proofFileName || 'Receipt Attached'}</span>
                           </div>
                           <span className="text-[8px] text-slate-500 block truncate mt-0.5 font-mono">
-                            {isUploadingProof ? 'Uploading to ImageKit CDN...' : (proofScreenshot || 'Uploaded')}
+                            {isUploadingProof ? 'Uploading to ImageKit Cloud CDN...' : (proofScreenshot || 'Uploaded to ImageKit CDN')}
                           </span>
                         </div>
                         <button
@@ -1167,17 +1177,17 @@ export default function BuyAssetPage() {
                           className="px-2 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-lg text-[8.5px] font-bold uppercase transition-colors flex-shrink-0 cursor-pointer"
                           title="Remove Screenshot"
                         >
-                          Remove
+                          Change
                         </button>
                       </div>
                     ) : (
-                      <label className="relative border-2 border-dashed border-[#c5d8c1] hover:border-[#153d2b] bg-[#f8faf7] hover:bg-[#eef5ec] rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all group">
+                      <div className="relative border-2 border-dashed border-[#c5d8c1] hover:border-[#153d2b] bg-[#f8faf7] hover:bg-[#eef5ec] rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all group overflow-hidden">
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleProofFileSelect}
                           disabled={isUploadingProof}
-                          className="sr-only"
+                          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                         />
                         <div className="w-8 h-8 rounded-full bg-emerald-100 group-hover:bg-emerald-200 text-emerald-800 flex items-center justify-center text-xs transition-colors">
                           {isUploadingProof ? (
@@ -1186,13 +1196,18 @@ export default function BuyAssetPage() {
                             <i className="fa-solid fa-cloud-arrow-up text-emerald-700"></i>
                           )}
                         </div>
-                        <span className="text-[10px] font-bold text-slate-700">
-                          {isUploadingProof ? 'Uploading to ImageKit...' : 'Upload Payment Screenshot (Optional)'}
+                        <div className="text-center pointer-events-none">
+                          <span className="text-[10.5px] font-black text-slate-800 block">
+                            {isUploadingProof ? 'Uploading to ImageKit...' : 'Upload Payment Screenshot / Receipt'}
+                          </span>
+                          <span className="text-[7.5px] font-extrabold text-amber-700 uppercase tracking-wider block mt-0.5">
+                            * Required for Quick Verification
+                          </span>
+                        </div>
+                        <span className="text-[7.5px] text-slate-400 text-center pointer-events-none">
+                          Tap anywhere to select Easypisa / JazzCash receipt • Auto-converted to ImageKit CDN URL
                         </span>
-                        <span className="text-[7.5px] text-slate-400 text-center">
-                          Tap to select Easypisa / JazzCash receipt • Auto-saved to ImageKit Cloud CDN
-                        </span>
-                      </label>
+                      </div>
                     )}
                   </div>
                 </div>

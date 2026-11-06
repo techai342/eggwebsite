@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useFarm, COMMISSION_RATES, ASSET_SPEC, VERIFIED_MERCHANTS, DEFAULT_PLATFORM_SETTINGS } from '../context/FarmContext';
+import { uploadToImageKit } from '../services/imagekit';
 import easypisaImg from '../assets/easypisa.png';
 import jazzcashImg from '../assets/jazzcash.png';
 import henImg from '../assets/hen.png';
@@ -493,6 +494,7 @@ export default function AdminDashboardPage() {
     depositRequests = [],
     approveDepositRequest,
     rejectDepositRequest,
+    updateDepositProof,
     platformSettings = DEFAULT_PLATFORM_SETTINGS,
     activityLogs = [],
     teamMembers = [],
@@ -527,6 +529,32 @@ export default function AdminDashboardPage() {
   const [rejectModalWithdrawal, setRejectModalWithdrawal] = useState(null);
   const [rejectModalDeposit, setRejectModalDeposit] = useState(null);
   const [viewingReceipt, setViewingReceipt] = useState(null);
+  const [isAttachingReceiptForId, setIsAttachingReceiptForId] = useState(null);
+
+  const handleAdminAttachReceipt = async (depId, file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Please select a valid image file (PNG, JPG, WEBP).');
+      return;
+    }
+    setIsAttachingReceiptForId(depId);
+    showToast('info', 'Uploading receipt screenshot to ImageKit CDN...');
+    try {
+      const res = await uploadToImageKit(file, `admin_receipt_${depId}_${Date.now()}.jpg`);
+      if (res.success && res.url) {
+        if (updateDepositProof) {
+          await updateDepositProof({ depositId: depId, proofScreenshot: res.url });
+        }
+        showToast('success', 'Receipt attached and verified successfully!');
+      } else {
+        showToast('error', res.error || 'Failed to upload receipt.');
+      }
+    } catch (err) {
+      showToast('error', err?.message || 'Error attaching receipt.');
+    } finally {
+      setIsAttachingReceiptForId(null);
+    }
+  };
 
   // Tab 1 (Users) state
   const [userSearch, setUserSearch] = useState('');
@@ -2081,7 +2109,7 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
 
-                        {dep.proofScreenshot && (
+                        {dep.proofScreenshot ? (
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
@@ -2100,6 +2128,20 @@ export default function AdminDashboardPage() {
                             >
                               <i className="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
                             </a>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <label className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer relative overflow-hidden">
+                              <i className="fa-solid fa-cloud-arrow-up text-[10px]"></i>
+                              <span>{isAttachingReceiptForId === dep.id ? 'Uploading...' : 'Attach Receipt'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleAdminAttachReceipt(dep.id, e.target.files?.[0])}
+                                disabled={isAttachingReceiptForId === dep.id}
+                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                              />
+                            </label>
                           </div>
                         )}
                       </div>

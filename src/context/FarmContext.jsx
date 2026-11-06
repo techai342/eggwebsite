@@ -3089,6 +3089,43 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     return { success: true, message: msg };
   }, [depositRequests, transactions, persistState, showToast, logActivity]);
 
+  // Admin / Farmer Action: Attach or Update Payment Proof Receipt
+  const updateDepositProof = useCallback(async ({ depositId, proofScreenshot }) => {
+    let index = depositRequests.findIndex((d) => d.id === depositId || String(d.dbId) === String(depositId));
+    if (index === -1) {
+      const msg = 'Deposit request not found.';
+      showToast('error', msg);
+      return { success: false, message: msg };
+    }
+
+    const targetDep = depositRequests[index];
+    const updatedDep = {
+      ...targetDep,
+      proofScreenshot: proofScreenshot,
+      updatedAt: new Date().toISOString()
+    };
+
+    const nextDeposits = [...depositRequests];
+    nextDeposits[index] = updatedDep;
+    setDepositRequests(nextDeposits);
+    persistState({ depositRequests: nextDeposits });
+
+    try {
+      await supabase
+        .from('deposit_requests')
+        .update({
+          proof_screenshot: proofScreenshot,
+          updated_at: new Date().toISOString()
+        })
+        .or(`request_id.eq.${targetDep.id},id.eq.${targetDep.dbId || 0}`);
+    } catch (e) {
+      console.info('Supabase deposit proof update note:', e?.message || e);
+    }
+
+    showToast('success', 'Payment receipt proof attached successfully!');
+    return { success: true, deposit: updatedDep };
+  }, [depositRequests, persistState, showToast]);
+
   // Routing Helper & State (Hash + Path support for SPA zero-config routing)
   const getInitialRoute = () => {
     if (typeof window === 'undefined') return '/';
@@ -3209,6 +3246,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     submitDepositRequest,
     approveDepositRequest,
     rejectDepositRequest,
+    updateDepositProof,
     updatePlatformSettings,
     getAdminKPIs,
     logActivity,
@@ -3278,6 +3316,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     submitDepositRequest,
     approveDepositRequest,
     rejectDepositRequest,
+    updateDepositProof,
     updatePlatformSettings,
     getAdminKPIs,
     logActivity,
