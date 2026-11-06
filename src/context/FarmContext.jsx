@@ -1443,8 +1443,14 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       dailyYield: dailyYield,
       termDays: termDays,
       daysRemaining: termDays,
+      daysElapsed: 0,
+      eggsHarvested: 0,
+      totalYieldCapacity: fullTermEggs,
       purchaseDate: new Date().toISOString(),
-      gateway: validGateway.name
+      purchasedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + termDays * 24 * 60 * 60 * 1000).toISOString(),
+      gateway: validGateway.name,
+      status: 'active'
     };
 
     const newTrx = {
@@ -1561,12 +1567,34 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     const updatedTransactions = [newTrx, ...transactions];
 
+    // Progress 120-Day lifecycle for each active hen unit
+    const updatedAssets = activeAssets.map((asset) => {
+      const term = Number(asset.termDays) || 120;
+      const currentElapsed = asset.daysElapsed !== undefined ? Number(asset.daysElapsed) : Math.max(0, term - (Number(asset.daysRemaining) || term));
+      const nextElapsed = Math.min(term, currentElapsed + 1);
+      const nextRemaining = Math.max(0, term - nextElapsed);
+      const units = Number(asset.units) || 1;
+      const harvestYield = units * (Number(asset.dailyYieldPerUnit) || 1);
+      const nextHarvested = (Number(asset.eggsHarvested) || (currentElapsed * units)) + harvestYield;
+      const isMatured = nextRemaining === 0 || nextElapsed >= term;
+
+      return {
+        ...asset,
+        daysElapsed: nextElapsed,
+        daysRemaining: nextRemaining,
+        eggsHarvested: nextHarvested,
+        status: isMatured ? 'completed' : (asset.status || 'active')
+      };
+    });
+
+    setActiveAssets(updatedAssets);
     setEggVault(newVault);
     setLastHarvest(isoTime);
     setCooldownActive(true);
     setTransactions(updatedTransactions);
 
     persistState({
+      activeAssets: updatedAssets,
       eggVault: newVault,
       lastHarvest: isoTime,
       cooldownActive: true,
@@ -2874,8 +2902,14 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       dailyYield: dailyYield,
       termDays: termDays,
       daysRemaining: termDays,
+      daysElapsed: 0,
+      eggsHarvested: 0,
+      totalYieldCapacity: qty * Number(platformSettings?.dailyEggYield || 1) * termDays,
       purchaseDate: new Date().toISOString(),
-      gateway: targetDep.gateway
+      purchasedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + termDays * 24 * 60 * 60 * 1000).toISOString(),
+      gateway: targetDep.gateway,
+      status: 'active'
     };
 
     const updatedDep = {

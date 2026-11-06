@@ -2157,38 +2157,63 @@ export default function DashboardPage() {
             </div>
 
             <div className="p-3 overflow-y-auto space-y-2.5 flex-1">
-              {activeAssets.map((asset, idx) => (
-                <div
-                  key={asset.id || idx}
-                  className="p-3 rounded-2xl border border-emerald-200/80 bg-emerald-50/40 flex items-center justify-between gap-2"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-white border border-emerald-300 p-1 flex items-center justify-center shadow-xs">
-                      <img src={henImg} className="w-8 h-8 object-contain" alt="Hen" />
+              {activeAssets.map((asset, idx) => {
+                const totalDays = Number(asset.termDays) || 120;
+                const units = Number(asset.units) || 1;
+                const purchaseTs = asset.purchaseDate || asset.purchasedAt ? new Date(asset.purchaseDate || asset.purchasedAt).getTime() : Date.now();
+                const calendarElapsed = Math.max(0, Math.floor((Date.now() - purchaseTs) / (24 * 60 * 60 * 1000)));
+                const harvestElapsed = asset.daysElapsed !== undefined ? Number(asset.daysElapsed) : (asset.daysRemaining !== undefined ? Math.max(0, totalDays - Number(asset.daysRemaining)) : 0);
+                const daysElapsed = Math.min(totalDays, Math.max(harvestElapsed, calendarElapsed));
+                const daysRemaining = Math.max(0, totalDays - daysElapsed);
+                const progressPct = Math.min(100, Math.round((daysElapsed / totalDays) * 100));
+                const isCompleted = daysRemaining === 0 || asset.status === 'completed';
+
+                return (
+                  <div
+                    key={asset.id || idx}
+                    className="p-3 rounded-2xl border border-emerald-200/80 bg-emerald-50/40 space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-emerald-300 p-1 flex items-center justify-center shadow-xs">
+                          <img src={henImg} className="w-8 h-8 object-contain" alt="Hen" />
+                        </div>
+                        <div>
+                          <h4 className="font-manrope font-black text-xs text-slate-900 uppercase">
+                            {asset.name || 'AL Rehman Meta Eggs'}
+                          </h4>
+                          <span className="text-[9px] font-bold text-emerald-700 block">
+                            Flock: {units} Hen(s) • +{units} Egg/day
+                          </span>
+                          <span className="text-[8px] text-slate-400 block mt-0.5">
+                            Purchased: {new Date(purchaseTs).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[8px] font-black uppercase text-slate-400 block">
+                          Day {daysElapsed}/{totalDays}
+                        </span>
+                        <span className="font-mono font-black text-xs text-slate-800 block">
+                          {isCompleted ? 'Completed' : `${daysRemaining}d Left`}
+                        </span>
+                        <span className={`inline-block mt-0.5 text-[8px] font-black px-1.5 py-0.2 rounded uppercase ${
+                          isCompleted ? 'bg-amber-100 text-amber-800' : 'text-emerald-700 bg-emerald-200/80'
+                        }`}>
+                          {isCompleted ? 'Completed' : 'Active'}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-manrope font-black text-xs text-slate-900 uppercase">
-                        {asset.name || 'AL Rehman Meta Eggs'}
-                      </h4>
-                      <span className="text-[9px] font-bold text-emerald-700 block">
-                        Flock: {asset.units} Hen(s) • +{asset.units} Egg/day
-                      </span>
-                      <span className="text-[8px] text-slate-400 block mt-0.5">
-                        Purchased: {new Date(asset.purchaseDate || Date.now()).toLocaleDateString()}
-                      </span>
+                    {/* Mini Progress */}
+                    <div className="w-full h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-[#153d2b] rounded-full transition-all"
+                        style={{ width: `${Math.max(5, progressPct)}%` }}
+                      ></div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[8px] font-black uppercase text-slate-400 block">Term</span>
-                    <span className="font-mono font-black text-xs text-slate-800">
-                      {asset.termDays || 120} Days
-                    </span>
-                    <span className="inline-block mt-0.5 text-[8px] font-black text-emerald-700 bg-emerald-200/80 px-1.5 py-0.2 rounded">
-                      ACTIVE
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">

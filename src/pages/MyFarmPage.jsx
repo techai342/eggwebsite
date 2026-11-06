@@ -65,10 +65,19 @@ export default function MyFarmPage() {
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
   const [collectedCount, setCollectedCount] = useState(0);
 
-  // Compute flock totals
-  const totalHens = useMemo(() => {
-    return activeAssets.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
+  // Compute flock totals (active laying vs completed)
+  const activeFlockAssets = useMemo(() => {
+    return activeAssets.filter((a) => {
+      const term = Number(a.termDays) || 120;
+      const elapsed = Number(a.daysElapsed) || 0;
+      const rem = a.daysRemaining !== undefined ? Number(a.daysRemaining) : Math.max(0, term - elapsed);
+      return a.status !== 'completed' && rem > 0;
+    });
   }, [activeAssets]);
+
+  const totalHens = useMemo(() => {
+    return activeFlockAssets.reduce((sum, a) => sum + (Number(a.units) || 1), 0);
+  }, [activeFlockAssets]);
 
   const dailyEggsCapacity = totalHens * (ASSET_SPEC.dailyYieldPerUnit || 1);
   const estMonthlyEggs = dailyEggsCapacity * 30;
@@ -423,60 +432,92 @@ export default function MyFarmPage() {
           </div>
 
           {/* Batches List */}
-          <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
             {activeAssets.length > 0 ? (
               activeAssets.map((asset, idx) => {
-                const totalDays = asset.termDays || ASSET_SPEC.termDays || 120;
-                const remDays = asset.remainingDays ?? totalDays;
-                const daysElapsed = Math.max(0, totalDays - remDays);
+                const totalDays = Number(asset.termDays) || 120;
+                const units = Number(asset.units) || 1;
+                const purchaseTs = asset.purchaseDate || asset.purchasedAt ? new Date(asset.purchaseDate || asset.purchasedAt).getTime() : Date.now();
+                const calendarElapsed = Math.max(0, Math.floor((Date.now() - purchaseTs) / (24 * 60 * 60 * 1000)));
+                const harvestElapsed = asset.daysElapsed !== undefined ? Number(asset.daysElapsed) : (asset.daysRemaining !== undefined ? Math.max(0, totalDays - Number(asset.daysRemaining)) : 0);
+                const daysElapsed = Math.min(totalDays, Math.max(harvestElapsed, calendarElapsed));
+                const daysRemaining = Math.max(0, totalDays - daysElapsed);
+                const eggsHarvested = asset.eggsHarvested !== undefined ? Number(asset.eggsHarvested) : (daysElapsed * units);
+                const totalEggsMax = totalDays * units;
                 const progressPct = Math.min(100, Math.round((daysElapsed / totalDays) * 100));
+                const isCompleted = daysRemaining === 0 || asset.status === 'completed';
+                const expiryDate = new Date(purchaseTs + totalDays * 24 * 60 * 60 * 1000);
 
                 return (
                   <div
                     key={asset.id || idx}
-                    className="p-3 rounded-2xl bg-gradient-to-br from-[#fbfdf9] to-[#f4f8f3] border border-[#dce9d9] hover:border-[#153d2b]/40 transition-all space-y-2"
+                    className={`p-3.5 rounded-2xl border transition-all space-y-2.5 ${
+                      isCompleted
+                        ? 'bg-slate-50 border-slate-200 opacity-90'
+                        : 'bg-gradient-to-br from-[#fbfdf9] via-white to-[#f4f8f3] border-[#dce9d9] shadow-xs hover:border-[#153d2b]/40'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-white border border-[#d2e4cf] p-1 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-10 h-10 rounded-2xl p-1 flex items-center justify-center flex-shrink-0 shadow-sm border ${
+                          isCompleted ? 'bg-slate-100 border-slate-300' : 'bg-emerald-50 border-emerald-300/80'
+                        }`}>
                           <img src={henImg} alt="Hen" className="w-full h-full object-contain" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <h4 className="font-manrope font-black text-xs text-[#0d2c20]">
                               Batch #{String(asset.id || idx + 1).slice(-4)}
                             </h4>
-                            <span className="text-[7.5px] font-black px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase">
-                              {asset.units || 1} Hen Units
+                            <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase">
+                              {units} Hen {units > 1 ? 'Units' : 'Unit'}
+                            </span>
+                            <span className={`text-[7.5px] font-black px-1.5 py-0.5 rounded uppercase ${
+                              isCompleted
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-[#c9f36a]/30 text-[#0d2c20] border border-[#c9f36a]/60 animate-pulse'
+                            }`}>
+                              {isCompleted ? '✓ 120d Completed' : '🟢 Laying Active'}
                             </span>
                           </div>
-                          <span className="text-[7.5px] text-slate-400 block">
-                            Adopted via {asset.gateway || 'Easypaisa'} • {asset.purchasedAt || 'Active'}
+                          <span className="text-[8px] text-slate-400 block mt-0.5">
+                            Adopted via {asset.gateway || 'Easypaisa'} • {new Date(purchaseTs).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <span className="text-[8px] font-black text-emerald-700 block">
-                          +{asset.units || 1} Egg/day
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-[9px] font-black text-emerald-700 block">
+                          +{units} Egg/day
                         </span>
-                        <span className="text-[7px] text-slate-400 block">
-                          Cycle Day {daysElapsed}/{totalDays}
+                        <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-tight block">
+                          {isCompleted ? 'Finished' : `${daysRemaining}d Left`}
                         </span>
                       </div>
                     </div>
 
-                    {/* Progress Bar of 120-Day Term */}
-                    <div>
-                      <div className="flex items-center justify-between text-[7px] font-bold text-slate-400 mb-1">
-                        <span>Laying Lifecycle Progress</span>
-                        <span className="font-manrope font-black text-emerald-800">{progressPct}%</span>
+                    {/* 120-Day Lifecycle Progress Bar */}
+                    <div className="bg-white/70 p-2 rounded-xl border border-slate-100">
+                      <div className="flex items-center justify-between text-[8px] font-bold text-slate-500 mb-1">
+                        <span className="flex items-center gap-1">
+                          <i className="fa-solid fa-clock-rotate-left text-emerald-600"></i>
+                          <span>Cycle Day <strong className="text-[#0d2c20]">{daysElapsed}</strong> of {totalDays}</span>
+                        </span>
+                        <span className="font-manrope font-black text-emerald-800">{progressPct}% Complete</span>
                       </div>
-                      <div className="w-full h-1.5 bg-[#e2ede0] rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-[#e2ede0] rounded-full overflow-hidden p-0.5">
                         <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-[#153d2b] rounded-full transition-all duration-500"
-                          style={{ width: `${Math.max(5, progressPct)}%` }}
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isCompleted
+                              ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                              : 'bg-gradient-to-r from-emerald-500 via-[#16a34a] to-[#153d2b]'
+                          }`}
+                          style={{ width: `${Math.max(4, progressPct)}%` }}
                         ></div>
+                      </div>
+                      <div className="flex items-center justify-between text-[7.5px] text-slate-400 mt-1">
+                        <span>Harvested: <strong className="text-emerald-700">{eggsHarvested}</strong> / {totalEggsMax} Eggs</span>
+                        <span>Term Ends: {expiryDate.toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
