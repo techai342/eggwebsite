@@ -2948,17 +2948,27 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         }
       };
 
+      const supabasePayload = {
+        egg_base_price: Number(merged.eggBasePrice) || 30,
+        hen_unit_price: Number(merged.henUnitPrice) || 500,
+        daily_egg_yield: Number(merged.dailyEggYield) || 1,
+        contract_duration_days: Number(merged.contractDurationDays) || 120,
+        referral_commission_pkr: Number(merged.referralFlatBonusPkr || merged.referralCommissionPkr || 50),
+        is_maintenance: Boolean(merged.isMaintenance),
+        deposit_gateways: gatewaysWithEconomics,
+        community_links: merged.communityLinks || {},
+        min_withdrawal_eggs: Number(merged.minWithdrawalEggs) || 1,
+        min_withdrawal_pkr: Number(merged.minWithdrawalPkr) || 30,
+        max_withdrawal_eggs: Number(merged.maxWithdrawalEggs) || 10000,
+        referral_commission_level1: Number(merged.referralCommissionLevel1) || 2.0,
+        referral_commission_level2: Number(merged.referralCommissionLevel2) || 1.0,
+        market_rates: merged.marketRates || {},
+        updated_at: new Date().toISOString()
+      };
+
       supabase
         .from('platform_settings')
-        .update({
-          egg_base_price: Number(merged.eggBasePrice) || 30,
-          hen_unit_price: Number(merged.henUnitPrice) || 500,
-          daily_egg_yield: Number(merged.dailyEggYield) || 1,
-          contract_duration_days: Number(merged.contractDurationDays) || 120,
-          referral_commission_pkr: Number(merged.referralFlatBonusPkr || merged.referralCommissionPkr || 50),
-          is_maintenance: Boolean(merged.isMaintenance),
-          deposit_gateways: gatewaysWithEconomics
-        })
+        .update(supabasePayload)
         .eq('id', 1)
         .then(({ error }) => {
           if (error) console.info('Supabase settings update note:', error.message);

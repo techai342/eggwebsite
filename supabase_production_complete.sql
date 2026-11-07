@@ -386,7 +386,9 @@ VALUES (
 )
 ON CONFLICT (id) DO UPDATE SET
   hen_unit_price = EXCLUDED.hen_unit_price,
-  egg_base_price = EXCLUDED.egg_base_price;
+  egg_base_price = EXCLUDED.egg_base_price,
+  community_links = EXCLUDED.community_links,
+  updated_at = NOW();
 
 -- ==============================================================================
 

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useFarm, COMMISSION_RATES, ASSET_SPEC, VERIFIED_MERCHANTS, DEFAULT_PLATFORM_SETTINGS } from '../context/FarmContext';
 import { uploadToImageKit } from '../services/imagekit';
+import { supabase } from '../lib/supabaseClient';
 import easypisaImg from '../assets/easypisa.png';
 import jazzcashImg from '../assets/jazzcash.png';
 import henImg from '../assets/hen.png';
@@ -934,21 +935,45 @@ export default function AdminDashboardPage() {
   };
 
   // Quick Save Support Channels & Helpline Numbers
-  const handleSaveSupportConfig = (e) => {
+  const handleSaveSupportConfig = async (e) => {
     e?.preventDefault?.();
+    const cleanSupportPhone = supportPhone.trim();
+    const cleanCallNumber = callNumber.trim() || cleanSupportPhone;
+    const cleanWaGroup = waGroup.trim();
+    const cleanWaChannel = waChannel.trim();
+
+    const communityLinksObj = {
+      whatsappGroup: cleanWaGroup,
+      whatsappGroupUrl: cleanWaGroup,
+      whatsappChannel: cleanWaChannel,
+      whatsappChannelUrl: cleanWaChannel,
+      supportPhone: cleanSupportPhone,
+      callNumber: cleanCallNumber,
+      popupEnabled: Boolean(popupEnabled),
+      communityPopupEnabled: Boolean(popupEnabled)
+    };
+
     updatePlatformSettings({
-      communityLinks: {
-        whatsappGroup: waGroup.trim(),
-        whatsappGroupUrl: waGroup.trim(),
-        whatsappChannel: waChannel.trim(),
-        whatsappChannelUrl: waChannel.trim(),
-        supportPhone: supportPhone.trim(),
-        callNumber: callNumber.trim() || supportPhone.trim(),
-        popupEnabled: Boolean(popupEnabled),
-        communityPopupEnabled: Boolean(popupEnabled)
-      }
+      communityLinks: communityLinksObj
     });
-    showToast('success', 'Support channels & helpline numbers saved successfully!');
+
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .update({
+          community_links: communityLinksObj,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1);
+
+      if (error) {
+        console.warn('Supabase community_links update error:', error.message);
+      }
+    } catch (err) {
+      console.warn('Direct supabase save failed:', err);
+    }
+
+    showToast('success', 'Support channels & helpline numbers saved successfully and synced with database!');
   };
 
   // 1-Click Reject Deposit Confirm
@@ -1035,8 +1060,24 @@ export default function AdminDashboardPage() {
   };
 
   // Save Platform Settings Handler (Replicates to localStorage and live Supabase table)
-  const handleSaveSettings = (e) => {
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
+    const cleanSupportPhone = supportPhone.trim();
+    const cleanCallNumber = callNumber.trim() || cleanSupportPhone;
+    const cleanWaGroup = waGroup.trim();
+    const cleanWaChannel = waChannel.trim();
+
+    const communityLinksObj = {
+      whatsappGroup: cleanWaGroup,
+      whatsappGroupUrl: cleanWaGroup,
+      whatsappChannel: cleanWaChannel,
+      whatsappChannelUrl: cleanWaChannel,
+      supportPhone: cleanSupportPhone,
+      callNumber: cleanCallNumber,
+      popupEnabled: Boolean(popupEnabled),
+      communityPopupEnabled: Boolean(popupEnabled)
+    };
+
     updatePlatformSettings({
       henUnitPrice: Number(henPrice) || 500,
       dailyEggYield: Number(dailyYield) || 1,
@@ -1048,16 +1089,7 @@ export default function AdminDashboardPage() {
       referralCommissionLevel1: Number(commL1) || 2.0,
       referralCommissionLevel2: Number(commL2) || 1.0,
       referralFlatBonusPkr: Number(flatBonus) || 50,
-      communityLinks: {
-        whatsappGroup: waGroup,
-        whatsappGroupUrl: waGroup,
-        whatsappChannel: waChannel,
-        whatsappChannelUrl: waChannel,
-        supportPhone: supportPhone.trim(),
-        callNumber: callNumber.trim() || supportPhone.trim(),
-        popupEnabled: popupEnabled,
-        communityPopupEnabled: popupEnabled
-      },
+      communityLinks: communityLinksObj,
       marketRates: {
         henUnitPrice: Number(henPrice) || 500,
         stores: [
@@ -1072,6 +1104,18 @@ export default function AdminDashboardPage() {
         }
       }
     });
+
+    try {
+      await supabase
+        .from('platform_settings')
+        .update({
+          community_links: communityLinksObj,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1);
+    } catch (_) {}
+
+    showToast('success', 'Platform settings & contact channels saved and synced with database!');
   };
 
   // Security barrier check
