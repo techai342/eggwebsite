@@ -282,7 +282,7 @@ export function AppSidebar({ isOpen, onClose, onOpenSupport }) {
             <div className="tc-hbc-top">
               <span className="tc-hbc-label">Harvested Egg Vault</span>
               <div className="tc-hbc-val-wrap">
-                <span className="tc-hbc-val">{Number(eggVault || 0).toFixed(2)}</span>
+                <span className="tc-hbc-val">{Math.floor(Number(eggVault || 0)).toLocaleString()}</span>
                 <span className="tc-hbc-unit">Eggs</span>
               </div>
             </div>

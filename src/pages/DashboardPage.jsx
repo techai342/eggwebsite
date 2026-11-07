@@ -45,7 +45,12 @@ export default function DashboardPage() {
 
   // Total active hens count
   const totalActiveUnits = useMemo(() => {
-    return activeAssets.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
+    return activeAssets.filter((a) => {
+      const term = Number(a.termDays) || 120;
+      const elapsed = a.daysElapsed !== undefined ? Number(a.daysElapsed) : 0;
+      const remaining = a.daysRemaining !== undefined ? Number(a.daysRemaining) : (term - elapsed);
+      return remaining > 0 && a.status !== 'completed';
+    }).reduce((sum, a) => sum + (Number(a.units) || 0), 0);
   }, [activeAssets]);
 
   // Pending deposit / hen orders for current farmer
@@ -1996,7 +2001,7 @@ export default function DashboardPage() {
               Harvest Successful!
             </h3>
             <p className="text-xs text-white/80 font-medium">
-              +{harvestYieldAmount} fresh organic eggs added to your Egg Vault. Total Vault: {eggVault} Eggs.
+              +{harvestYieldAmount} fresh organic eggs added to your Egg Vault. Total Vault: {Math.floor(Number(eggVault || 0))} Eggs.
             </p>
           </div>
 

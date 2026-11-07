@@ -531,6 +531,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               unitCost: Number(a.unit_cost),
               totalCost: Number(a.units) * Number(a.unit_cost),
               dailyYield: Number(a.daily_yield_per_unit || 1) * Number(a.units),
+              dailyYieldPerUnit: Number(a.daily_yield_per_unit || 1),
               termDays: Number(a.term_days || 120),
               daysRemaining: Math.max(
                 0,
@@ -1021,6 +1022,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
                   unitCost: Number(a.unit_cost),
                   totalCost: Number(a.units) * Number(a.unit_cost),
                   dailyYield: Number(a.daily_yield_per_unit || 1) * Number(a.units),
+              dailyYieldPerUnit: Number(a.daily_yield_per_unit || 1),
                   termDays: Number(a.term_days || 120),
                   daysRemaining: Math.max(
                     0,
@@ -1497,6 +1499,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       unitCost: henPrice,
       totalCost: cost,
       dailyYield: dailyYield,
+      dailyYieldPerUnit: dailyYieldPerUnit,
       termDays: termDays,
       daysRemaining: termDays,
       daysElapsed: 0,
@@ -1610,7 +1613,14 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       }
     }
 
-    const totalActiveUnits = activeAssets.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
+    const activeFlock = activeAssets.filter((a) => {
+      const term = Number(a.termDays) || 120;
+      const elapsed = a.daysElapsed !== undefined ? Number(a.daysElapsed) : 0;
+      const remaining = a.daysRemaining !== undefined ? Number(a.daysRemaining) : (term - elapsed);
+      return remaining > 0 && a.status !== 'completed';
+    });
+
+    const totalActiveUnits = activeFlock.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
     if (totalActiveUnits === 0) {
       const msg = 'No active hen units available in your coop to produce eggs.';
       showToast('error', msg);
@@ -1621,8 +1631,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       };
     }
 
-    const eggsYield = totalActiveUnits * ASSET_SPEC.dailyYieldPerUnit;
-    const newVault = eggVault + eggsYield;
+    // Exactly 1 egg per active hen unit daily (2 hens = 2 eggs, 10 hens = 10 eggs)
+    const eggsYield = totalActiveUnits * (Number(platformSettings?.dailyEggYield) || ASSET_SPEC.dailyYieldPerUnit || 1);
+    const newVault = Math.floor(Number(eggVault || 0) + eggsYield);
     const isoTime = current.toISOString();
 
     const newTrx = {
@@ -1644,12 +1655,16 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       const nextElapsed = Math.min(term, currentElapsed + 1);
       const nextRemaining = Math.max(0, term - nextElapsed);
       const units = Number(asset.units) || 1;
-      const harvestYield = units * (Number(asset.dailyYieldPerUnit) || 1);
-      const nextHarvested = (Number(asset.eggsHarvested) || (currentElapsed * units)) + harvestYield;
+      const harvestYield = units * (Number(asset.dailyYieldPerUnit) || Number(platformSettings?.dailyEggYield) || 1);
+      const prevHarvested = asset.eggsHarvested !== undefined ? Number(asset.eggsHarvested) : (currentElapsed * units);
+      const nextHarvested = prevHarvested + harvestYield;
       const isMatured = nextRemaining === 0 || nextElapsed >= term;
 
       return {
         ...asset,
+        units,
+        dailyYield: units * 1,
+        dailyYieldPerUnit: 1,
         daysElapsed: nextElapsed,
         daysRemaining: nextRemaining,
         eggsHarvested: nextHarvested,
@@ -2972,6 +2987,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       unitCost: henPrice,
       totalCost: targetDep.amountPkr,
       dailyYield: dailyYield,
+      dailyYieldPerUnit: dailyYieldPerUnit,
       termDays: termDays,
       daysRemaining: termDays,
       daysElapsed: 0,

@@ -270,7 +270,7 @@ export default function MyFarmPage() {
               </div>
               <div>
                 <span className="text-[7px] uppercase tracking-wider text-white/60 block">Ready in Vault</span>
-                <strong className="text-xs font-black text-amber-300">{Number(eggVault || 0).toFixed(1)} Eggs</strong>
+                <strong className="text-xs font-black text-amber-300">{Math.floor(Number(eggVault || 0)).toLocaleString()} Eggs</strong>
               </div>
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function MyFarmPage() {
               Egg Vault
             </span>
             <strong className="text-base font-black text-amber-600 block mt-1 leading-none font-manrope">
-              {Number(eggVault || 0).toFixed(1)}
+              {Math.floor(Number(eggVault || 0)).toLocaleString()}
             </strong>
             <span className="text-[7px] font-bold text-amber-700 uppercase block mt-1">Liquid Ready</span>
           </div>
@@ -574,7 +574,7 @@ export default function MyFarmPage() {
                 You collected <strong className="text-emerald-700 font-black">+{collectedCount} Fresh Eggs</strong> into your vault.
               </p>
               <div className="mt-3 p-3 rounded-2xl bg-[#f0f7ee] border border-[#d2e4cf] text-xs font-manrope font-bold text-[#153d2b]">
-                New Vault Balance: {Number(eggVault || 0).toFixed(2)} Eggs
+                New Vault Balance: {Math.floor(Number(eggVault || 0)).toLocaleString()} Eggs
               </div>
               <button
                 type="button"
