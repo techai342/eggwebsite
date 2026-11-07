@@ -984,9 +984,9 @@ export default function DashboardPage() {
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a] animate-ping"></span>
                     <span className="font-manrope font-black text-[8px] text-[#0d2c20] tracking-wider uppercase">
-                      {cooldownActive ? 'COOLDOWN ACTIVE • TAP FOR STATUS' : 'AUTOMATED DAILY HARVEST'}
+                      {cooldownActive ? `🤖 AUTO-HARVEST IN ${remainingTimeStr}` : '🤖 AUTO-HARVEST READY • 24H YIELD'}
                     </span>
-                    <i className="fa-solid fa-bolt text-[#16a34a] text-[8.5px]"></i>
+                    <i className="fa-solid fa-robot text-[#16a34a] text-[8.5px]"></i>
                   </div>
                 </div>
 
@@ -1963,11 +1963,15 @@ export default function DashboardPage() {
           </div>
 
           <div className="text-center max-w-xs space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-[#c9f36a] border border-[#c9f36a]/30 text-[9px] font-black uppercase mb-1">
+              <i className="fa-solid fa-robot"></i>
+              <span>Auto-Play Yield Engine Active</span>
+            </div>
             <h3 className="font-manrope font-black text-white text-base tracking-widest uppercase">
               Harvest Cooldown Active
             </h3>
             <p className="text-[10.5px] text-white/70 font-medium">
-              Your active flock is currently nesting. Your next batch of organic eggs will be ready to harvest in:
+              Your active flock is currently nesting. Your next batch of organic eggs will be ready in:
             </p>
           </div>
 
@@ -1977,6 +1981,10 @@ export default function DashboardPage() {
               {remainingTimeStr}
             </span>
           </div>
+
+          <p className="text-[9.5px] text-white/60 text-center max-w-xs font-medium">
+            💡 Auto-Deposit Active: You don't need to manually click. Fresh eggs will automatically deposit into your vault every 24 hours!
+          </p>
 
           {/* Action buttons */}
           <div className="flex flex-col gap-2 w-full max-w-xs mt-2">

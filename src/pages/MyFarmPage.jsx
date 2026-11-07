@@ -52,6 +52,8 @@ export default function MyFarmPage() {
     eggVault,
     balance,
     harvestEggs,
+    triggerAutoHarvest,
+    autoHarvestActive,
     cooldownActive,
     cooldownHoursRemaining,
     lastHarvest,
@@ -123,7 +125,7 @@ export default function MyFarmPage() {
   // Harvest handler
   const handleHarvest = () => {
     if (cooldownActive) {
-      showToast('warning', `Cooldown Active! Next harvest ready in ${remainingTimeStr}.`);
+      showToast('info', `🤖 Auto-Harvest is Active! Your fresh eggs will automatically deposit into your vault in ${remainingTimeStr}. You don't need to manually click!`);
       return;
     }
     if (totalHens <= 0) {
@@ -327,6 +329,23 @@ export default function MyFarmPage() {
 
           {/* 24-HOUR AUTOMATED HARVEST ACTION ENGINE */}
           <div className="bg-white/10 border border-white/15 rounded-2xl p-3 backdrop-blur-md">
+            {/* Auto-Harvest Engine Status Header */}
+            <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9f36a] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c9f36a]"></span>
+                </span>
+                <span className="text-[9px] font-black uppercase text-[#c9f36a] tracking-wider flex items-center gap-1">
+                  <i className="fa-solid fa-robot text-[10px]"></i>
+                  Auto-Play Harvest: Active
+                </span>
+              </div>
+              <span className="text-[7.5px] text-white/90 font-bold bg-[#c9f36a]/20 text-[#c9f36a] px-2 py-0.5 rounded-full border border-[#c9f36a]/30">
+                100% Automated
+              </span>
+            </div>
+
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <i className="fa-solid fa-clock-rotate-left text-[#c9f36a] text-xs"></i>
@@ -355,16 +374,21 @@ export default function MyFarmPage() {
             <button
               type="button"
               onClick={handleHarvest}
-              disabled={cooldownActive || totalHens <= 0}
+              disabled={totalHens <= 0}
               className={`w-full py-3.5 px-4 rounded-xl font-manrope font-black text-xs tracking-wider uppercase shadow-lg transition-all flex items-center justify-center gap-2 ${
-                cooldownActive || totalHens <= 0
+                totalHens <= 0
                   ? 'bg-white/15 text-white/40 cursor-not-allowed border border-white/10'
+                  : cooldownActive
+                  ? 'bg-white/10 hover:bg-white/15 text-white/80 border border-white/20 cursor-pointer active:scale-98'
                   : 'bg-gradient-to-r from-[#c9f36a] via-lime-400 to-[#c9f36a] text-[#0d2c20] hover:scale-[1.01] active:scale-95 shadow-[#c9f36a]/20 cursor-pointer animate-pulse'
               }`}
             >
-              <i className="fa-solid fa-basket-shopping text-sm"></i>
-              <span>{cooldownActive ? `Cooldown Active (${remainingTimeStr})` : 'Harvest Daily Eggs'}</span>
+              <i className="fa-solid fa-robot text-sm"></i>
+              <span>{cooldownActive ? `Auto-Harvest in (${remainingTimeStr})` : 'Harvest Daily Eggs (Auto-Ready)'}</span>
             </button>
+            <p className="text-[8px] text-white/60 text-center mt-2 font-medium">
+              💡 Automated Yield: Eggs auto-deposit into your vault every 24h even if you don't click.
+            </p>
           </div>
         </div>
 

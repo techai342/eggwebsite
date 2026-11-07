@@ -1582,9 +1582,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const updatedAssets = [...activeAssets, newAsset];
     const updatedTransactions = [newTrx, ...transactions];
 
+    const patchState = { activeAssets: updatedAssets, transactions: updatedTransactions };
+    if (!lastHarvest) {
+      const nowIso = new Date().toISOString();
+      setLastHarvest(nowIso);
+      setCooldownActive(true);
+      patchState.lastHarvest = nowIso;
+      patchState.cooldownActive = true;
+    }
+
     setActiveAssets(updatedAssets);
     setTransactions(updatedTransactions);
-    persistState({ activeAssets: updatedAssets, transactions: updatedTransactions });
+    persistState(patchState);
 
     // Asynchronously replicate asset purchase to Supabase
     try {
@@ -1779,6 +1788,131 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setCooldownActive(false);
     persistState({ lastHarvest: expiredTimestamp, cooldownActive: false });
   }, [persistState]);
+
+  // Automated 24-Hour Yield Engine (Auto-Play / Auto-Collect)
+  const triggerAutoHarvest = useCallback((cyclesToHarvest = 1) => {
+    if (user?.status === 'Blocked') return { success: false, eggsCollected: 0 };
+
+    const activeFlock = activeAssets.filter((a) => {
+      const term = Number(a.termDays) || 120;
+      const elapsed = a.daysElapsed !== undefined ? Number(a.daysElapsed) : 0;
+      const remaining = a.daysRemaining !== undefined ? Number(a.daysRemaining) : (term - elapsed);
+      return remaining > 0 && a.status !== 'completed';
+    });
+
+    const totalActiveUnits = activeFlock.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
+    if (totalActiveUnits <= 0) return { success: false, eggsCollected: 0 };
+
+    const cycles = Math.max(1, Math.min(120, Math.floor(Number(cyclesToHarvest) || 1)));
+    const dailyRate = Number(platformSettings?.dailyEggYield) || ASSET_SPEC.dailyYieldPerUnit || 1;
+    const eggsPerCycle = totalActiveUnits * dailyRate;
+    const totalEggsYield = eggsPerCycle * cycles;
+    const newVault = Math.floor(Number(eggVault || 0) + totalEggsYield);
+    const nowIso = new Date().toISOString();
+
+    const newTrx = {
+      id: `AUTO-HRV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'HARVEST',
+      description: `🤖 Auto-Harvest: Collected ${totalEggsYield} fresh eggs (${cycles} x 24h cycle${cycles > 1 ? 's' : ''}) from ${totalActiveUnits} active hens`,
+      amount: totalEggsYield,
+      unit: 'Egg',
+      date: nowIso,
+      status: 'Completed'
+    };
+
+    const updatedTransactions = [newTrx, ...transactions];
+
+    const updatedAssets = activeAssets.map((asset) => {
+      const term = Number(asset.termDays) || 120;
+      const currentElapsed = asset.daysElapsed !== undefined ? Number(asset.daysElapsed) : Math.max(0, term - (Number(asset.daysRemaining) || term));
+      const nextElapsed = Math.min(term, currentElapsed + cycles);
+      const nextRemaining = Math.max(0, term - nextElapsed);
+      const units = Number(asset.units) || 1;
+      const harvestYield = units * dailyRate * cycles;
+      const prevHarvested = asset.eggsHarvested !== undefined ? Number(asset.eggsHarvested) : (currentElapsed * units);
+      const nextHarvested = prevHarvested + harvestYield;
+      const isMatured = nextRemaining === 0 || nextElapsed >= term;
+
+      return {
+        ...asset,
+        units,
+        dailyYield: units * dailyRate,
+        dailyYieldPerUnit: dailyRate,
+        daysElapsed: nextElapsed,
+        daysRemaining: nextRemaining,
+        eggsHarvested: nextHarvested,
+        status: isMatured ? 'completed' : (asset.status || 'active')
+      };
+    });
+
+    setActiveAssets(updatedAssets);
+    setEggVault(newVault);
+    setLastHarvest(nowIso);
+    setCooldownActive(true);
+    setTransactions(updatedTransactions);
+
+    persistState({
+      activeAssets: updatedAssets,
+      eggVault: newVault,
+      lastHarvest: nowIso,
+      cooldownActive: true,
+      transactions: updatedTransactions
+    });
+
+    try {
+      supabase.from('harvest_logs').insert({
+        username: user?.username || 'mrsaqib242',
+        active_units: totalActiveUnits,
+        eggs_collected: totalEggsYield,
+        next_harvest_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      }).catch(() => {});
+    } catch (_) {}
+
+    logActivity({
+      action: 'AUTO_HARVEST',
+      category: 'TRANSACTION',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: `🤖 Auto-Harvested ${totalEggsYield} fresh eggs into vault`,
+      status: 'SUCCESS'
+    });
+
+    showToast('success', `🤖 Auto-Harvest Active: +${totalEggsYield} Fresh Eggs collected automatically into your vault!`);
+    return { success: true, eggsCollected: totalEggsYield, eggVault: newVault };
+  }, [user, activeAssets, eggVault, transactions, platformSettings, persistState, showToast, logActivity]);
+
+  // Auto-Harvest 24h Background Watcher & Offline Catch-Up Engine
+  useEffect(() => {
+    if (!activeAssets || activeAssets.length === 0) return;
+    const activeUnits = activeAssets
+      .filter((a) => (Number(a.daysRemaining) || 120) > 0 && a.status !== 'completed')
+      .reduce((sum, a) => sum + (Number(a.units) || 0), 0);
+    if (activeUnits <= 0) return;
+
+    const checkAndAutoHarvest = () => {
+      const now = Date.now();
+      let lastTime = lastHarvest ? new Date(lastHarvest).getTime() : null;
+
+      if (!lastTime) {
+        const oldest = activeAssets[0]?.purchaseDate || activeAssets[0]?.purchasedAt;
+        lastTime = oldest ? new Date(oldest).getTime() : now;
+      }
+
+      if (!isNaN(lastTime)) {
+        const hoursPassed = (now - lastTime) / (1000 * 60 * 60);
+        if (hoursPassed >= 24) {
+          const cycles = Math.min(120, Math.floor(hoursPassed / 24));
+          if (cycles >= 1) {
+            triggerAutoHarvest(cycles);
+          }
+        }
+      }
+    };
+
+    checkAndAutoHarvest();
+    const timer = setInterval(checkAndAutoHarvest, 5000);
+    return () => clearInterval(timer);
+  }, [lastHarvest, activeAssets, triggerAutoHarvest]);
 
   // Egg Liquidation & P2P Cashout
   const sellEggs = useCallback(({ storeId, storeName, rate, eggs, method, accountTitle, accountNumber, bankName }) => {
@@ -3528,6 +3662,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     changePassword,
     buyFarmAsset,
     harvestEggs,
+    triggerAutoHarvest,
+    autoHarvestActive: true,
     resetCooldown,
     sellEggs,
     registerDownline,
@@ -3600,6 +3736,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     changePassword,
     buyFarmAsset,
     harvestEggs,
+    triggerAutoHarvest,
     resetCooldown,
     sellEggs,
     registerDownline,
