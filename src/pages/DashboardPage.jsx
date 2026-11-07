@@ -13,7 +13,6 @@ export default function DashboardPage() {
     eggVault,
     activeAssets,
     harvestEggs,
-    resetCooldown,
     cooldownActive,
     cooldownHoursRemaining,
     lastHarvest,
@@ -128,12 +127,6 @@ export default function DashboardPage() {
     } else {
       setIsCooldownModalOpen(true);
     }
-  };
-
-  const handleResetCooldownAndHarvest = () => {
-    resetCooldown();
-    setIsCooldownModalOpen(false);
-    showToast('info', '24h Cooldown Reset! You can harvest immediately.');
   };
 
   // 1-Tap Copy Referral Code
@@ -1989,11 +1982,14 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-2 w-full max-w-xs mt-2">
             <button
               type="button"
-              onClick={handleResetCooldownAndHarvest}
+              onClick={() => {
+                setIsCooldownModalOpen(false);
+                navigateTo('MY_FARM');
+              }}
               className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-[#16a34a] text-white font-manrope font-black text-[10px] tracking-widest uppercase rounded-xl shadow transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <i className="fa-solid fa-forward-fast"></i>
-              <span>Simulate 24h Pass (Reset Cooldown)</span>
+              <i className="fa-solid fa-wheat-awn"></i>
+              <span>View Flock in My Farm</span>
             </button>
 
             <button

@@ -52,7 +52,6 @@ export default function MyFarmPage() {
     eggVault,
     balance,
     harvestEggs,
-    resetCooldown,
     cooldownActive,
     cooldownHoursRemaining,
     lastHarvest,
@@ -353,36 +352,19 @@ export default function MyFarmPage() {
             </div>
 
             {/* Primary Harvest CTA Button */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleHarvest}
-                disabled={cooldownActive || totalHens <= 0}
-                className={`flex-1 py-3 px-4 rounded-xl font-manrope font-black text-xs tracking-wider uppercase shadow-lg transition-all flex items-center justify-center gap-2 ${
-                  cooldownActive || totalHens <= 0
-                    ? 'bg-white/15 text-white/40 cursor-not-allowed border border-white/10'
-                    : 'bg-gradient-to-r from-[#c9f36a] via-lime-400 to-[#c9f36a] text-[#0d2c20] hover:scale-[1.02] active:scale-95 shadow-[#c9f36a]/20 cursor-pointer animate-pulse'
-                }`}
-              >
-                <i className="fa-solid fa-basket-shopping text-sm"></i>
-                <span>{cooldownActive ? `Cooldown Active (${remainingTimeStr})` : 'Harvest Daily Eggs'}</span>
-              </button>
-
-              {/* Dev/Test Instant Reset Cooldown Button (Discreet for automated test suites) */}
-              {cooldownActive && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetCooldown();
-                    showToast('success', 'Cooldown reset for testing! You can now harvest instantly.');
-                  }}
-                  className="py-3 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white font-manrope font-extrabold text-[9px] uppercase tracking-wider border border-white/15 active:scale-95 transition-all"
-                  title="Test Reset"
-                >
-                  <i className="fa-solid fa-bolt text-[#c9f36a]"></i>
-                </button>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={handleHarvest}
+              disabled={cooldownActive || totalHens <= 0}
+              className={`w-full py-3.5 px-4 rounded-xl font-manrope font-black text-xs tracking-wider uppercase shadow-lg transition-all flex items-center justify-center gap-2 ${
+                cooldownActive || totalHens <= 0
+                  ? 'bg-white/15 text-white/40 cursor-not-allowed border border-white/10'
+                  : 'bg-gradient-to-r from-[#c9f36a] via-lime-400 to-[#c9f36a] text-[#0d2c20] hover:scale-[1.01] active:scale-95 shadow-[#c9f36a]/20 cursor-pointer animate-pulse'
+              }`}
+            >
+              <i className="fa-solid fa-basket-shopping text-sm"></i>
+              <span>{cooldownActive ? `Cooldown Active (${remainingTimeStr})` : 'Harvest Daily Eggs'}</span>
+            </button>
           </div>
         </div>
 
