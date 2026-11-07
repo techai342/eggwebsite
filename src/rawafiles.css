@@ -2047,12 +2047,6 @@ a:active:not(.disabled),
   .pb-24 {
     padding-bottom: 2rem !important;
   }
-
-  /* Support floating beacon positioned in corner on desktop */
-  .tc-support-beacon {
-    bottom: 2rem !important;
-    right: 2rem !important;
-  }
 }
 
 /* Custom sleek, visible scrollbar for laptop & desktop browsing */

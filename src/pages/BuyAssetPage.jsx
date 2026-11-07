@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFarm, PAYMENT_GATEWAYS, ASSET_SPEC } from '../context/FarmContext';
 import { AppShell } from '../components/AppNavigation';
 import { uploadToImageKit } from '../services/imagekit';
