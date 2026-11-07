@@ -291,7 +291,7 @@ function loadInitialState() {
         if (cleanBalance === 1500) cleanBalance = 0;
         cleanAssets = cleanAssets.filter((a) => a.id !== 'asset-1');
         cleanTransactions = cleanTransactions.filter((t) => !String(t.id || '').startsWith('TRX-INIT-') && !String(t.id || '').startsWith('LOG-INIT-'));
-        cleanWithdrawals = cleanWithdrawals.filter((w) => !String(w.id || '').startsWith('WD-PEND-') && !String(w.id || '').startsWith('WD-INIT-'));
+        cleanWithdrawals = cleanWithdrawals.filter((w) => !String(w.id || '').startsWith('WD-INIT-') && !String(w.id || '').startsWith('WD-DUMMY-'));
 
         // Sanitize users in storage to ensure zero fake inflated balances
         let cleanUsers = Array.isArray(parsed.users) && parsed.users.length > 0 ? parsed.users : DEFAULT_USERS;
@@ -562,10 +562,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               accountNumber: w.account_number,
               bankName: w.bank_name,
               date: w.date,
-              status: w.status,
+              status: w.status || 'Completed',
               username: w.username
             }));
-            setWithdrawals(formattedWds);
+            setWithdrawals((prev) => {
+              const map = new Map();
+              formattedWds.forEach((w) => map.set(String(w.id), w));
+              (prev || []).forEach((w) => {
+                if (!map.has(String(w.id))) map.set(String(w.id), w);
+              });
+              const list = Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+              return list;
+            });
           }
 
           // Fetch user's transactions
@@ -585,7 +593,15 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               status: t.status,
               date: t.date
             }));
-            setTransactions(formattedTxs);
+            setTransactions((prev) => {
+              const map = new Map();
+              formattedTxs.forEach((t) => map.set(String(t.id), t));
+              (prev || []).forEach((t) => {
+                if (!map.has(String(t.id))) map.set(String(t.id), t);
+              });
+              const list = Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+              return list;
+            });
           }
         }
 
@@ -649,6 +665,46 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             try {
               window.localStorage.setItem('metaeggs_deposit_requests', JSON.stringify(formattedDeps));
             } catch (_) {}
+
+            // Auto-mirror deposit requests into transactions for matching status
+            if (user?.username) {
+              setTransactions((prev) => {
+                const nextList = [...(prev || [])];
+                formattedDeps
+                  .filter((d) => String(d.username || '').toLowerCase() === String(user.username || '').toLowerCase())
+                  .forEach((d) => {
+                    const matchIdx = nextList.findIndex((t) => t.depositId === d.id || t.id === d.id);
+                    if (matchIdx !== -1) {
+                      nextList[matchIdx] = {
+                        ...nextList[matchIdx],
+                        status: d.status,
+                        description: d.status === 'Completed'
+                          ? `Purchased ${d.units}x ${ASSET_SPEC.name} Units (Approved by Admin)`
+                          : d.status === 'Rejected'
+                          ? `Hen Purchase Rejected: ${d.adminNotes || 'Payment not verified'}`
+                          : `Hen Purchase Pending (${d.units}x Units via ${d.gateway} - TID: #${d.transactionId})`
+                      };
+                    } else {
+                      nextList.unshift({
+                        id: `TRX-DEP-${d.id}`,
+                        depositId: d.id,
+                        type: 'BUY',
+                        description: d.status === 'Completed'
+                          ? `Purchased ${d.units}x ${ASSET_SPEC.name} Units (Approved by Admin)`
+                          : d.status === 'Rejected'
+                          ? `Hen Purchase Rejected: ${d.adminNotes || 'Payment not verified'}`
+                          : `Hen Purchase Pending (${d.units}x Units via ${d.gateway} - TID: #${d.transactionId})`,
+                        amount: d.amountPkr,
+                        unit: 'PKR',
+                        date: d.createdAt,
+                        status: d.status,
+                        gateway: d.gateway
+                      });
+                    }
+                  });
+                return nextList;
+              });
+            }
           }
         } catch (depErr) {
           console.info('Supabase deposit_requests note:', depErr?.message || depErr);
@@ -1869,6 +1925,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       }).then(({ error }) => {
         if (error) console.info('Supabase withdrawals table sync notice:', error.message);
       }).catch(() => {});
+
+      supabase.from('transactions').insert({
+        username: user?.username || 'mrsaqib242',
+        type: 'SELL',
+        amount: pkrNet,
+        unit: 'PKR',
+        description: `Sold ${qty} eggs to ${merchant.name} via ${payoutMethod.name} (@ Rs. ${effectiveRate})`,
+        status: 'Completed',
+        date: new Date().toISOString()
+      }).then(({ error }) => {
+        if (error) console.info('Supabase transactions table sync notice:', error.message);
+      }).catch(() => {});
     } catch (_) {}
 
     logActivity({
@@ -2924,7 +2992,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setTransactions(updatedTransactions);
     persistState({ depositRequests: updatedDeposits, transactions: updatedTransactions });
 
-    // Sync to Supabase deposit_requests table
+    // Sync to Supabase deposit_requests & transactions table
     try {
       await supabase.from('deposit_requests').insert({
         request_id: newDeposit.id,
@@ -2939,6 +3007,16 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         transaction_id: newDeposit.transactionId,
         proof_screenshot: newDeposit.proofScreenshot,
         status: 'Pending'
+      });
+
+      await supabase.from('transactions').insert({
+        username: newDeposit.username,
+        type: 'BUY',
+        amount: newDeposit.amountPkr,
+        unit: 'PKR',
+        description: `Hen Purchase Pending (${newDeposit.units}x Units via ${newDeposit.gateway} - TID: #${newDeposit.transactionId})`,
+        status: 'Pending',
+        date: newDeposit.createdAt
       });
     } catch (e) {
       console.info('Supabase deposit_requests insert fallback:', e?.message || e);
@@ -3079,6 +3157,17 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         status: 'active',
         expires_at: new Date(Date.now() + newAsset.termDays * 24 * 60 * 60 * 1000).toISOString()
       });
+
+      // Update matching BUY transaction in Supabase to Completed
+      await supabase
+        .from('transactions')
+        .update({
+          status: 'Completed',
+          description: `Purchased ${qty}x ${ASSET_SPEC.name} Units (Approved by Admin)`
+        })
+        .eq('username', targetDep.username)
+        .eq('type', 'BUY')
+        .eq('status', 'Pending');
     } catch (e) {
       console.info('Supabase deposit approve sync note:', e?.message || e);
     }
@@ -3139,6 +3228,16 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         .from('deposit_requests')
         .update({ status: 'Rejected', admin_notes: rejReason, updated_at: new Date().toISOString() })
         .eq('request_id', targetDep.id);
+
+      await supabase
+        .from('transactions')
+        .update({
+          status: 'Rejected',
+          description: `Hen Purchase Rejected: ${rejReason}`
+        })
+        .eq('username', targetDep.username)
+        .eq('type', 'BUY')
+        .eq('status', 'Pending');
     } catch (e) {
       console.info('Supabase deposit reject sync note:', e?.message || e);
     }
@@ -3193,6 +3292,137 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     showToast('success', 'Payment receipt proof attached successfully!');
     return { success: true, deposit: updatedDep };
   }, [depositRequests, persistState, showToast]);
+
+  // Public On-Demand Sync with Supabase (Refreshes Deposits, Assets, Withdrawals & Transactions)
+  const [isLiveSyncing, setIsLiveSyncing] = useState(false);
+  const syncWithSupabase = useCallback(async () => {
+    setIsLiveSyncing(true);
+    try {
+      // 1. Fetch live deposit requests
+      const { data: dbDeposits } = await supabase
+        .from('deposit_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (Array.isArray(dbDeposits) && dbDeposits.length > 0) {
+        const formattedDeps = dbDeposits.map((d) => ({
+          id: String(d.request_id || d.id),
+          dbId: d.id,
+          userId: String(d.user_id),
+          username: d.username,
+          gateway: d.gateway,
+          units: Number(d.units || 1),
+          unitPrice: Number(d.unit_price || 500),
+          amountPkr: Number(d.amount_pkr),
+          senderAccountTitle: d.sender_account_title,
+          senderAccountNumber: d.sender_account_number,
+          transactionId: d.transaction_id,
+          proofScreenshot: d.proof_screenshot,
+          status: d.status || 'Pending',
+          adminNotes: d.admin_notes,
+          createdAt: d.created_at,
+          updatedAt: d.updated_at
+        }));
+        setDepositRequests(formattedDeps);
+        try {
+          window.localStorage.setItem('metaeggs_deposit_requests', JSON.stringify(formattedDeps));
+        } catch (_) {}
+      }
+
+      // 2. Fetch live farm assets if user is logged in
+      if (user?.username) {
+        const { data: dbAssets } = await supabase
+          .from('farm_assets')
+          .select('*')
+          .eq('username', user.username);
+
+        if (Array.isArray(dbAssets) && dbAssets.length > 0) {
+          const formattedAssets = dbAssets.map((a) => ({
+            id: String(a.id),
+            name: a.asset_name,
+            units: Number(a.units),
+            unitCost: Number(a.unit_cost),
+            totalCost: Number(a.units) * Number(a.unit_cost),
+            dailyYield: Number(a.daily_yield_per_unit || 1) * Number(a.units),
+            dailyYieldPerUnit: Number(a.daily_yield_per_unit || 1),
+            termDays: Number(a.term_days || 120),
+            daysRemaining: Math.max(
+              0,
+              Math.ceil((new Date(a.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            ),
+            purchaseDate: a.purchased_at,
+            gateway: a.gateway
+          }));
+          setActiveAssets(formattedAssets);
+        }
+
+        // 3. Fetch user withdrawals
+        const { data: dbWds } = await supabase
+          .from('withdrawals')
+          .select('*')
+          .eq('username', user.username)
+          .order('date', { ascending: false });
+
+        if (Array.isArray(dbWds)) {
+          const formattedWds = dbWds.map((w) => ({
+            id: String(w.id),
+            store: w.store_name,
+            eggs: Number(w.eggs_liquidated),
+            rate: Number(w.rate),
+            amountPkr: Number(w.amount_pkr),
+            method: w.method,
+            accountTitle: w.account_title,
+            accountNumber: w.account_number,
+            bankName: w.bank_name,
+            date: w.date,
+            status: w.status || 'Completed',
+            username: w.username
+          }));
+          setWithdrawals((prev) => {
+            const map = new Map();
+            formattedWds.forEach((w) => map.set(String(w.id), w));
+            (prev || []).forEach((w) => {
+              if (!map.has(String(w.id))) map.set(String(w.id), w);
+            });
+            return Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+          });
+        }
+
+        // 4. Fetch user transactions
+        const { data: dbTxs } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('username', user.username)
+          .order('date', { ascending: false });
+
+        if (Array.isArray(dbTxs)) {
+          const formattedTxs = dbTxs.map((t) => ({
+            id: String(t.id),
+            type: t.type,
+            amount: Number(t.amount),
+            unit: t.unit || 'PKR',
+            description: t.description,
+            status: t.status,
+            date: t.date
+          }));
+          setTransactions((prev) => {
+            const map = new Map();
+            formattedTxs.forEach((t) => map.set(String(t.id), t));
+            (prev || []).forEach((t) => {
+              if (!map.has(String(t.id))) map.set(String(t.id), t);
+            });
+            return Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+          });
+        }
+      }
+      return { success: true };
+    } catch (e) {
+      console.info('Manual syncWithSupabase notice:', e?.message || e);
+      return { success: false, error: e?.message };
+    } finally {
+      setIsLiveSyncing(false);
+    }
+  }, [user]);
 
   // Routing Helper & State (Hash + Path support for SPA zero-config routing)
   const getInitialRoute = () => {
@@ -3316,6 +3546,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     rejectDepositRequest,
     updateDepositProof,
     updatePlatformSettings,
+    syncWithSupabase,
+    isLiveSyncing,
     getAdminKPIs,
     logActivity,
     simulateDays,
@@ -3386,6 +3618,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     rejectDepositRequest,
     updateDepositProof,
     updatePlatformSettings,
+    syncWithSupabase,
+    isLiveSyncing,
     getAdminKPIs,
     logActivity,
     simulateDays,

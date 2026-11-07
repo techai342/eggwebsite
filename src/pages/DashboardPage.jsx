@@ -163,8 +163,35 @@ export default function DashboardPage() {
   // Filtered transactions for History modal
   const filteredHistory = useMemo(() => {
     const list = [];
-    // Map transactions
+    const seenDepositIds = new Set();
+
+    // 1. Map user's deposit requests as BUY orders
+    (depositRequests || []).forEach((d) => {
+      const isMine =
+        (user?.id && String(d.userId) === String(user.id)) ||
+        (user?.accountId && String(d.userId) === String(user.accountId)) ||
+        (user?.username && String(d.username).toLowerCase() === String(user.username).toLowerCase());
+      if (isMine) {
+        seenDepositIds.add(String(d.id));
+        if (d.dbId) seenDepositIds.add(String(d.dbId));
+        list.push({
+          id: d.id,
+          category: 'BUY',
+          title: `Hen Purchase (${d.units}x Hens via ${d.gateway})`,
+          amount: Number(d.amountPkr || 0),
+          unit: 'PKR',
+          date: d.createdAt,
+          status: d.status || 'Pending',
+          channel: `${d.gateway} • TID: #${d.transactionId}`,
+          proofScreenshot: d.proofScreenshot,
+          adminNotes: d.adminNotes
+        });
+      }
+    });
+
+    // 2. Map transactions
     (transactions || []).forEach((t) => {
+      if (t.depositId && seenDepositIds.has(String(t.depositId))) return;
       list.push({
         id: t.id,
         category: t.type, // 'BUY' | 'HARVEST' | 'SELL'
@@ -176,18 +203,19 @@ export default function DashboardPage() {
         channel: t.gateway || 'Platform Vault'
       });
     });
-    // Map withdrawals as SELL
+
+    // 3. Map withdrawals as SELL
     (withdrawals || []).forEach((w) => {
       list.push({
         id: w.id,
         category: 'SELL',
-        title: `P2P Sale to ${w.store}`,
+        title: `P2P Sale to ${w.store || 'Verified Store'}`,
         amount: w.amountPkr,
         unit: 'PKR',
         eggs: w.eggs,
         date: w.date,
         status: w.status || 'Completed',
-        channel: `${w.method} (${w.accountTitle})`
+        channel: `${w.method} (${w.accountTitle || ''})`
       });
     });
 
@@ -196,7 +224,7 @@ export default function DashboardPage() {
 
     if (historyTab === 'ALL') return list;
     return list.filter((item) => item.category === historyTab);
-  }, [transactions, withdrawals, historyTab]);
+  }, [transactions, withdrawals, depositRequests, historyTab, user]);
 
   const activeMerchant = (VERIFIED_MERCHANTS && VERIFIED_MERCHANTS[p2pActiveMerchantIndex]) || {
     name: 'Usmaina Poltry Farm',
@@ -2122,7 +2150,15 @@ export default function DashboardPage() {
                         {item.category === 'SELL' ? '+' : item.category === 'BUY' ? '-' : '+'}
                         {item.unit === 'PKR' ? `Rs. ${Number(item.amount).toLocaleString()}` : `${item.amount} Eggs`}
                       </span>
-                      <span className="inline-block text-[8px] font-black uppercase text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded mt-0.5">
+                      <span
+                        className={`inline-block text-[8px] font-black uppercase px-2 py-0.5 rounded mt-0.5 ${
+                          item.status === 'Pending'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : item.status === 'Rejected'
+                            ? 'bg-rose-100 text-rose-900 border border-rose-300'
+                            : 'bg-emerald-100/90 text-emerald-800 border border-emerald-300'
+                        }`}
+                      >
                         {item.status}
                       </span>
                     </div>

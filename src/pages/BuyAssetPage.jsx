@@ -56,7 +56,10 @@ export default function BuyAssetPage() {
     showToast,
     platformSettings,
     user,
-    getWhatsAppSupportUrl
+    getWhatsAppSupportUrl,
+    depositRequests = [],
+    syncWithSupabase,
+    isLiveSyncing
   } = useFarm();
 
   // Wizard state: Step 1 (Showcase), Step 2 (Multiplier), Step 3 (Payment)
@@ -73,6 +76,18 @@ export default function BuyAssetPage() {
   const [copiedField, setCopiedField] = useState(null);
   const [depositSubmitted, setDepositSubmitted] = useState(false);
   const [submittedDepositDetails, setSubmittedDepositDetails] = useState(null);
+
+  // User's persistent deposit requests & orders across refresh
+  const myDeposits = useMemo(() => {
+    if (!Array.isArray(depositRequests)) return [];
+    return depositRequests.filter((d) => {
+      return (
+        (user?.id && String(d.userId) === String(user.id)) ||
+        (user?.accountId && String(d.userId) === String(user.accountId)) ||
+        (user?.username && String(d.username).toLowerCase() === String(user.username).toLowerCase())
+      );
+    });
+  }, [depositRequests, user]);
 
   // Payment Proof Screenshot state (ImageKit CDN integration)
   const [proofScreenshot, setProofScreenshot] = useState('');
@@ -1258,6 +1273,177 @@ export default function BuyAssetPage() {
             )}
           </div>
         )}
+
+        {/* ============================================================== */}
+        {/* MY DEPOSIT ORDERS & PAYMENT HISTORY (PERSISTENT ACROSS REFRESH)*/}
+        {/* ============================================================== */}
+        <div className="mt-8 pt-5 border-t-2 border-emerald-900/10 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-sm shadow-xs border border-emerald-200">
+                <i className="fa-solid fa-clock-rotate-left"></i>
+              </span>
+              <div>
+                <h3 className="font-manrope font-black text-xs md:text-sm text-[#0d2c20] uppercase tracking-wide">
+                  My Deposit Orders &amp; History
+                </h3>
+                <span className="text-[8px] md:text-[9px] font-bold text-slate-500 block">
+                  Live Status • Auto-Synced with Database
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (syncWithSupabase) {
+                  await syncWithSupabase();
+                  showToast('info', 'Deposit records refreshed from database.');
+                }
+              }}
+              disabled={isLiveSyncing}
+              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-800 font-manrope font-extrabold text-[9px] uppercase tracking-wider shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Refresh Deposit Status"
+            >
+              <i className={`fa-solid fa-arrows-rotate text-[10px] ${isLiveSyncing ? 'animate-spin' : ''}`}></i>
+              <span>{isLiveSyncing ? 'Syncing...' : 'Refresh'}</span>
+            </button>
+          </div>
+
+          {myDeposits.length === 0 ? (
+            <div className="bg-white/80 border border-dashed border-[#ccdcc8] rounded-2xl p-6 text-center text-slate-400">
+              <i className="fa-solid fa-receipt text-3xl mb-2 text-slate-300"></i>
+              <p className="text-xs font-bold text-slate-600">No deposit orders found</p>
+              <p className="text-[9.5px] text-slate-400 mt-0.5">
+                Submit a deposit above to buy hens and your order will show here with real-time approval status.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {myDeposits.map((dep) => {
+                const isPending = dep.status === 'Pending';
+                const isCompleted = dep.status === 'Completed' || dep.status === 'Approved';
+                const isRejected = dep.status === 'Rejected';
+
+                return (
+                  <div
+                    key={dep.id || dep.dbId}
+                    className={`rounded-2xl p-3.5 border transition-all ${
+                      isPending
+                        ? 'bg-gradient-to-br from-amber-500/10 via-amber-50/80 to-white border-amber-300 shadow-sm'
+                        : isCompleted
+                        ? 'bg-gradient-to-br from-emerald-500/10 via-emerald-50/50 to-white border-emerald-300 shadow-sm'
+                        : 'bg-gradient-to-br from-rose-500/10 via-rose-50/50 to-white border-rose-300 shadow-sm'
+                    }`}
+                  >
+                    {/* Top Row: Units, Gateway & Status Badge */}
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-black/5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-emerald-800 text-[#c9f36a] flex items-center justify-center text-xs font-black shadow-xs">
+                          🐔
+                        </span>
+                        <div>
+                          <strong className="font-manrope font-black text-xs text-[#0d2c20] block">
+                            {dep.units}x Hens
+                          </strong>
+                          <span className="text-[8.5px] font-bold text-slate-500">
+                            via {dep.gateway}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex flex-col items-end">
+                        <span className="font-manrope font-black text-xs text-emerald-800">
+                          Rs. {Number(dep.amountPkr || 0).toLocaleString()} PKR
+                        </span>
+                        <span
+                          className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider border ${
+                            isPending
+                              ? 'bg-amber-100 text-amber-900 border-amber-300'
+                              : isCompleted
+                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                              : 'bg-rose-100 text-rose-900 border-rose-300'
+                          }`}
+                        >
+                          {isPending && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>}
+                          {isCompleted && <i className="fa-solid fa-circle-check text-[9px] text-emerald-600"></i>}
+                          {isRejected && <i className="fa-solid fa-circle-xmark text-[9px] text-rose-600"></i>}
+                          <span>{isPending ? 'Pending Approval' : isCompleted ? 'Approved & Credited' : 'Rejected'}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Middle Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-[9.5px] text-slate-600 py-2 border-b border-black/5">
+                      <div>
+                        <span className="text-slate-400 block text-[7.5px] uppercase font-bold">Transaction ID (TID)</span>
+                        <code className="font-mono font-bold text-amber-800 bg-amber-50 px-1 py-0.5 rounded border border-amber-200/60 block truncate">
+                          {dep.transactionId || 'N/A'}
+                        </code>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[7.5px] uppercase font-bold">Sender Title</span>
+                        <strong className="text-slate-800 block truncate">
+                          {dep.senderAccountTitle || 'Farmer'} ({dep.senderAccountNumber || ''})
+                        </strong>
+                      </div>
+                      <div className="col-span-2 flex items-center justify-between text-[8px] text-slate-400 pt-0.5">
+                        <span>Submitted: {new Date(dep.createdAt || Date.now()).toLocaleString()}</span>
+                        {dep.proofScreenshot && (
+                          <a
+                            href={dep.proofScreenshot}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-700 hover:text-emerald-900 font-bold underline flex items-center gap-1"
+                          >
+                            <i className="fa-solid fa-receipt text-emerald-600"></i>
+                            <span>View Proof Receipt</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Admin Notes if rejected */}
+                    {isRejected && dep.adminNotes && (
+                      <div className="mt-2 p-2 rounded-xl bg-rose-50 border border-rose-200 text-[9px] text-rose-800">
+                        <strong className="block font-black text-rose-900">Reason:</strong>
+                        <span>{dep.adminNotes}</span>
+                      </div>
+                    )}
+
+                    {/* Action Bar */}
+                    <div className="pt-2 flex items-center gap-2">
+                      {isPending && (
+                        <a
+                          href={getWhatsAppSupportUrl(
+                            `Assalam-o-Alaikum Admin! Maine AL Rehman Meta Eggs pe ${dep.units}x Hens ka deposit submit kiya tha (Rs. ${dep.amountPkr} via ${dep.gateway}, TID: ${dep.transactionId}). Kindly approve ker k hens credit ker dein!`
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-manrope font-bold text-[9.5px] uppercase tracking-wider transition-all shadow-xs flex items-center justify-center gap-1.5"
+                        >
+                          <i className="fa-brands fa-whatsapp text-xs"></i>
+                          <span>Fast Track on WhatsApp</span>
+                        </a>
+                      )}
+
+                      {isCompleted && (
+                        <button
+                          type="button"
+                          onClick={() => navigateTo('/my-farm')}
+                          className="flex-1 py-2 bg-gradient-to-r from-[#153d2b] to-[#28734a] text-[#c9f36a] rounded-xl font-manrope font-black text-[9.5px] uppercase tracking-wider transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                        >
+                          <i className="fa-solid fa-egg text-xs"></i>
+                          <span>View Flock in My Farm</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </AppShell>
   );

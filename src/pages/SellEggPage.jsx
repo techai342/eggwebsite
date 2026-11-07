@@ -8,7 +8,29 @@ import bankImg from '../assets/bank.jpg';
 import '../rawafiles.css';
 
 export default function SellEggPage({ currentRoute = '/sell-egg' }) {
-  const { user, eggVault, sellEggs, navigateTo, showToast, platformSettings } = useFarm();
+  const {
+    user,
+    eggVault,
+    sellEggs,
+    navigateTo,
+    showToast,
+    platformSettings,
+    withdrawals = [],
+    syncWithSupabase,
+    isLiveSyncing
+  } = useFarm();
+
+  // User's persistent withdrawals across refresh
+  const myWithdrawals = useMemo(() => {
+    if (!Array.isArray(withdrawals)) return [];
+    return withdrawals.filter((w) => {
+      return (
+        (user?.username && String(w.username).toLowerCase() === String(user.username).toLowerCase()) ||
+        (user?.id && String(w.userId) === String(user.id)) ||
+        (user?.accountId && String(w.userId) === String(user.accountId))
+      );
+    });
+  }, [withdrawals, user]);
 
   // Dynamic Verified Merchant Stores computed from Platform Settings
   const dynamicMerchants = useMemo(() => {
@@ -984,6 +1006,128 @@ export default function SellEggPage({ currentRoute = '/sell-egg' }) {
             </form>
           </div>
         )}
+        {/* ============================================================== */}
+        {/* MY WITHDRAWAL & CASHOUT ORDERS (PERSISTENT ACROSS REFRESH)     */}
+        {/* ============================================================== */}
+        <div className="mt-8 pt-5 border-t-2 border-emerald-900/10 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center text-sm shadow-xs border border-amber-200">
+                <i className="fa-solid fa-hand-holding-dollar"></i>
+              </span>
+              <div>
+                <h3 className="font-manrope font-black text-xs md:text-sm text-[#0d2c20] uppercase tracking-wide">
+                  My Withdrawal &amp; Cashout Orders
+                </h3>
+                <span className="text-[8px] md:text-[9px] font-bold text-slate-500 block">
+                  P2P Liquidation History • Database Synced
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (syncWithSupabase) {
+                  await syncWithSupabase();
+                  showToast('info', 'Withdrawal records refreshed from database.');
+                }
+              }}
+              disabled={isLiveSyncing}
+              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-800 font-manrope font-extrabold text-[9px] uppercase tracking-wider shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Refresh Withdrawal Status"
+            >
+              <i className={`fa-solid fa-arrows-rotate text-[10px] ${isLiveSyncing ? 'animate-spin' : ''}`}></i>
+              <span>{isLiveSyncing ? 'Syncing...' : 'Refresh'}</span>
+            </button>
+          </div>
+
+          {myWithdrawals.length === 0 ? (
+            <div className="bg-white/80 border border-dashed border-[#ccdcc8] rounded-2xl p-6 text-center text-slate-400">
+              <i className="fa-solid fa-money-bill-transfer text-3xl mb-2 text-slate-300"></i>
+              <p className="text-xs font-bold text-slate-600">No withdrawal records found</p>
+              <p className="text-[9.5px] text-slate-400 mt-0.5">
+                Sell your eggs to verified merchant stores to cash out directly to Easypisa, JazzCash, or Bank.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {myWithdrawals.map((wd) => {
+                const isPending = wd.status === 'Pending';
+                const isCompleted = wd.status === 'Completed' || wd.status === 'Approved';
+                const isRejected = wd.status === 'Rejected';
+
+                return (
+                  <div
+                    key={wd.id}
+                    className={`rounded-2xl p-3.5 border transition-all ${
+                      isPending
+                        ? 'bg-gradient-to-br from-amber-500/10 via-amber-50/80 to-white border-amber-300 shadow-sm'
+                        : isCompleted
+                        ? 'bg-gradient-to-br from-emerald-500/10 via-emerald-50/50 to-white border-emerald-300 shadow-sm'
+                        : 'bg-gradient-to-br from-rose-500/10 via-rose-50/50 to-white border-rose-300 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-black/5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                          🥚
+                        </span>
+                        <div>
+                          <strong className="font-manrope font-black text-xs text-[#0d2c20] block">
+                            Sold {wd.eggs} Eggs
+                          </strong>
+                          <span className="text-[8.5px] font-bold text-slate-500">
+                            to {wd.store || 'Verified Store'} (@ Rs. {wd.rate}/egg)
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex flex-col items-end">
+                        <span className="font-manrope font-black text-xs text-emerald-800">
+                          +Rs. {Number(wd.amountPkr || 0).toLocaleString()} PKR
+                        </span>
+                        <span
+                          className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider border ${
+                            isPending
+                              ? 'bg-amber-100 text-amber-900 border-amber-300'
+                              : isCompleted
+                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                              : 'bg-rose-100 text-rose-900 border-rose-300'
+                          }`}
+                        >
+                          {isPending && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>}
+                          {isCompleted && <i className="fa-solid fa-circle-check text-[9px] text-emerald-600"></i>}
+                          {isRejected && <i className="fa-solid fa-circle-xmark text-[9px] text-rose-600"></i>}
+                          <span>{isPending ? 'Processing' : isCompleted ? 'Completed' : 'Rejected'}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[9.5px] text-slate-600 py-2">
+                      <div>
+                        <span className="text-slate-400 block text-[7.5px] uppercase font-bold">Payout Method</span>
+                        <strong className="text-slate-800 block truncate">
+                          {wd.method} {wd.bankName ? `(${wd.bankName})` : ''}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[7.5px] uppercase font-bold">Account</span>
+                        <span className="font-mono font-bold text-slate-800 block truncate">
+                          {wd.accountTitle} • {wd.accountNumber}
+                        </span>
+                      </div>
+                      <div className="col-span-2 text-[8px] text-slate-400 pt-0.5">
+                        <span>Date: {new Date(wd.date || Date.now()).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
     </AppShell>
   );
