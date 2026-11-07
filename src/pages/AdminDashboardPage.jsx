@@ -593,6 +593,7 @@ export default function AdminDashboardPage() {
   const [waGroup, setWaGroup] = useState(platformSettings?.communityLinks?.whatsappGroup || '');
   const [waChannel, setWaChannel] = useState(platformSettings?.communityLinks?.whatsappChannel || '');
   const [supportPhone, setSupportPhone] = useState(platformSettings?.communityLinks?.supportPhone || '');
+  const [callNumber, setCallNumber] = useState(platformSettings?.communityLinks?.callNumber || platformSettings?.communityLinks?.supportPhone || '+923412017923');
   const [popupEnabled, setPopupEnabled] = useState(Boolean(platformSettings?.communityLinks?.popupEnabled ?? true));
 
   // 1. Livestock & Production Yield
@@ -637,6 +638,7 @@ export default function AdminDashboardPage() {
       setWaGroup(platformSettings.communityLinks.whatsappGroup || '');
       setWaChannel(platformSettings.communityLinks.whatsappChannel || '');
       setSupportPhone(platformSettings.communityLinks.supportPhone || '');
+      setCallNumber(platformSettings.communityLinks.callNumber || platformSettings.communityLinks.supportPhone || '+923412017923');
       setPopupEnabled(Boolean(platformSettings.communityLinks.popupEnabled ?? true));
     }
     if (platformSettings) {
@@ -908,8 +910,15 @@ export default function AdminDashboardPage() {
   };
 
   // 1-Click Approve Withdrawal
-  const handleApproveWithdrawal = (withdrawalId) => {
-    approveWithdrawal(withdrawalId);
+  const handleApproveWithdrawal = async (withdrawalId) => {
+    try {
+      const res = await approveWithdrawal(withdrawalId);
+      if (res?.success) {
+        showToast('success', res.message || 'Withdrawal approved successfully!');
+      }
+    } catch (err) {
+      showToast('error', err?.message || 'Failed to approve withdrawal.');
+    }
   };
 
   // 1-Click Approve Deposit & Credit Hens
@@ -922,6 +931,24 @@ export default function AdminDashboardPage() {
     } catch (err) {
       showToast('error', err?.message || 'Failed to approve deposit.');
     }
+  };
+
+  // Quick Save Support Channels & Helpline Numbers
+  const handleSaveSupportConfig = (e) => {
+    e?.preventDefault?.();
+    updatePlatformSettings({
+      communityLinks: {
+        whatsappGroup: waGroup.trim(),
+        whatsappGroupUrl: waGroup.trim(),
+        whatsappChannel: waChannel.trim(),
+        whatsappChannelUrl: waChannel.trim(),
+        supportPhone: supportPhone.trim(),
+        callNumber: callNumber.trim() || supportPhone.trim(),
+        popupEnabled: Boolean(popupEnabled),
+        communityPopupEnabled: Boolean(popupEnabled)
+      }
+    });
+    showToast('success', 'Support channels & helpline numbers saved successfully!');
   };
 
   // 1-Click Reject Deposit Confirm
@@ -1026,7 +1053,8 @@ export default function AdminDashboardPage() {
         whatsappGroupUrl: waGroup,
         whatsappChannel: waChannel,
         whatsappChannelUrl: waChannel,
-        supportPhone: supportPhone,
+        supportPhone: supportPhone.trim(),
+        callNumber: callNumber.trim() || supportPhone.trim(),
         popupEnabled: popupEnabled,
         communityPopupEnabled: popupEnabled
       },
@@ -3243,17 +3271,36 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    <i className="fa-solid fa-phone text-emerald-400 mr-1"></i> Customer Support Phone Number
-                  </label>
-                  <input
-                    type="text"
-                    value={supportPhone}
-                    onChange={(e) => setSupportPhone(e.target.value)}
-                    required
-                    className="w-full bg-black/50 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono focus:outline-none focus:border-amber-400"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                      <i className="fa-solid fa-headset text-sky-400 mr-1"></i> Helpline Call Number (Direct Phone Call)
+                    </label>
+                    <input
+                      type="text"
+                      value={callNumber}
+                      onChange={(e) => setCallNumber(e.target.value)}
+                      placeholder="+923412017923"
+                      required
+                      className="w-full bg-black/50 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono focus:outline-none focus:border-amber-400"
+                    />
+                    <p className="text-[9.5px] text-slate-400 mt-1">Users clicking 'Call Helpline' will dial this number directly.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                      <i className="fa-brands fa-whatsapp text-emerald-400 mr-1"></i> WhatsApp Support Chat Number (wa.me)
+                    </label>
+                    <input
+                      type="text"
+                      value={supportPhone}
+                      onChange={(e) => setSupportPhone(e.target.value)}
+                      placeholder="+923412017923"
+                      required
+                      className="w-full bg-black/50 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono focus:outline-none focus:border-amber-400"
+                    />
+                    <p className="text-[9.5px] text-slate-400 mt-1">Users clicking 'WhatsApp Chat' will open chat with this number.</p>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-black/40 border border-slate-800 rounded-xl">
@@ -3337,6 +3384,103 @@ export default function AdminDashboardPage() {
                   <i className="fa-brands fa-whatsapp text-sm"></i>
                   <span>Test WhatsApp</span>
                 </a>
+              </div>
+            </div>
+
+            {/* Quick Support Channels & Helpline Numbers Manager */}
+            <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-emerald-950/40 via-black/50 to-slate-900/40 border border-emerald-500/30 shadow-lg">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h4 className="font-manrope font-black text-xs uppercase tracking-wider text-emerald-300 flex items-center gap-2">
+                    <i className="fa-solid fa-sliders text-amber-400"></i>
+                    <span>Official Support &amp; Contact Channels Manager</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Live editable helpline phone number, WhatsApp chat number, official group &amp; channel links across the website.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveSupportConfig}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-black font-manrope font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <i className="fa-solid fa-floppy-disk"></i>
+                  <span>Save Support Settings</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <i className="fa-solid fa-headset text-sky-400 mr-1"></i> Helpline Call Number
+                  </label>
+                  <input
+                    type="text"
+                    value={callNumber}
+                    onChange={(e) => setCallNumber(e.target.value)}
+                    placeholder="+923412017923"
+                    className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                  <div className="mt-1 flex items-center justify-between text-[10px]">
+                    <a href={`tel:${callNumber}`} className="text-sky-400 hover:underline flex items-center gap-1">
+                      <i className="fa-solid fa-phone"></i> Test Call
+                    </a>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <i className="fa-brands fa-whatsapp text-emerald-400 mr-1"></i> WhatsApp Support Chat
+                  </label>
+                  <input
+                    type="text"
+                    value={supportPhone}
+                    onChange={(e) => setSupportPhone(e.target.value)}
+                    placeholder="+923412017923"
+                    className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                  <div className="mt-1 flex items-center justify-between text-[10px]">
+                    <a href={getWhatsAppSupportUrl()} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline flex items-center gap-1">
+                      <i className="fa-brands fa-whatsapp"></i> Test Chat
+                    </a>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <i className="fa-solid fa-users text-teal-400 mr-1"></i> WhatsApp Group URL
+                  </label>
+                  <input
+                    type="url"
+                    value={waGroup}
+                    onChange={(e) => setWaGroup(e.target.value)}
+                    placeholder="https://chat.whatsapp.com/..."
+                    className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                  <div className="mt-1 flex items-center justify-between text-[10px]">
+                    <a href={waGroup} target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline flex items-center gap-1">
+                      <i className="fa-solid fa-arrow-up-right-from-square"></i> Visit Group
+                    </a>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <i className="fa-solid fa-bullhorn text-amber-400 mr-1"></i> WhatsApp Channel URL
+                  </label>
+                  <input
+                    type="url"
+                    value={waChannel}
+                    onChange={(e) => setWaChannel(e.target.value)}
+                    placeholder="https://whatsapp.com/channel/..."
+                    className="w-full bg-black/60 border border-slate-700 rounded-xl py-2 px-3 text-white text-xs font-mono focus:outline-none focus:border-emerald-400"
+                  />
+                  <div className="mt-1 flex items-center justify-between text-[10px]">
+                    <a href={waChannel} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline flex items-center gap-1">
+                      <i className="fa-solid fa-arrow-up-right-from-square"></i> Visit Channel
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
 

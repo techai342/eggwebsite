@@ -796,7 +796,7 @@ export default function DashboardPage() {
                       Admin is verifying payment...
                     </span>
                     <a
-                      href={`https://wa.me/923412017923?text=${encodeURIComponent(
+                      href={`https://wa.me/${String(platformSettings?.communityLinks?.supportPhone || '+923412017923').replace(/\D/g, '')}?text=${encodeURIComponent(
                         `Assalam-o-Alaikum Admin! Maine AL Rehman Meta Eggs pe ${dep.units} Hens ka deposit submit kiya hai (Rs. ${dep.amountPkr}, TID: ${dep.transactionId}). Kindly isay jaldi approve ker k hens active ker dein.`
                       )}`}
                       target="_blank"
@@ -1888,7 +1888,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <a
-                      href={`tel:${platformSettings?.communityLinks?.supportPhone || '+923412017923'}`}
+                      href={`tel:${platformSettings?.communityLinks?.callNumber || platformSettings?.communityLinks?.supportPhone || '+923412017923'}`}
                       className="w-full bg-gradient-to-r from-sky-600 to-blue-700 text-white font-manrope font-black text-[9.5px] py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all uppercase tracking-wider"
                     >
                       <i className="fa-solid fa-phone text-[9.5px]"></i>

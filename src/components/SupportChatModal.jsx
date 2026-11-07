@@ -23,6 +23,7 @@ export default function SupportChatModal({ isOpen, onClose }) {
   const chatScrollRef = useRef(null);
 
   const supportPhone = platformSettings?.communityLinks?.supportPhone || '+923412017923';
+  const callNumber = platformSettings?.communityLinks?.callNumber || platformSettings?.communityLinks?.supportPhone || '+923412017923';
   const whatsappGroup = platformSettings?.communityLinks?.whatsappGroup || 'https://chat.whatsapp.com/alrehman-meta-eggs-official';
   const whatsappChannel = platformSettings?.communityLinks?.whatsappChannel || 'https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j';
 
@@ -143,7 +144,7 @@ export default function SupportChatModal({ isOpen, onClose }) {
 
           {/* Direct Call Helpline */}
           <a
-            href={`tel:${supportPhone}`}
+            href={`tel:${callNumber}`}
             className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 text-white font-manrope font-black text-[11px] uppercase tracking-wider shadow-md hover:brightness-110 active:scale-95 transition-all text-center"
             title="Call Support Helpline"
           >
@@ -418,7 +419,14 @@ export default function SupportChatModal({ isOpen, onClose }) {
             {/* Direct Admin WhatsApp Chat Details */}
             <div className="bg-black/40 border border-emerald-500/20 rounded-2xl p-3 text-xs text-slate-300 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Admin Support Number:</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Helpline Call Number:</span>
+                <a href={`tel:${callNumber}`} className="text-sky-300 font-mono font-bold text-xs hover:underline flex items-center gap-1">
+                  <i className="fa-solid fa-phone text-[10px]"></i>
+                  {callNumber}
+                </a>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">WhatsApp Support Number:</span>
                 <span className="text-emerald-300 font-mono font-bold text-xs">{supportPhone}</span>
               </div>
               <div className="flex items-center justify-between">

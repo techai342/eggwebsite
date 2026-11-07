@@ -179,6 +179,7 @@ export const DEFAULT_PLATFORM_SETTINGS = {
     whatsappChannel: 'https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j',
     whatsappChannelUrl: 'https://whatsapp.com/channel/0029VbE0EnG0AgWAs0V6V80j',
     supportPhone: '+923412017923',
+    callNumber: '+923412017923',
     popupEnabled: true,
     communityPopupEnabled: true
   },
@@ -2589,12 +2590,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   }, [users, user, activeAssets, persistState, showToast, logActivity]);
 
   // Admin Action: Approve Withdrawal
-  const approveWithdrawal = useCallback((withdrawalId, txHash) => {
-    let index = withdrawals.findIndex((w) => w.id === withdrawalId);
+  const approveWithdrawal = useCallback(async (withdrawalId, txHash) => {
+    let index = withdrawals.findIndex((w) => String(w.id) === String(withdrawalId));
     let currentList = withdrawals;
 
     if (index === -1) {
-      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find((w) => w.id === withdrawalId);
+      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find((w) => String(w.id) === String(withdrawalId));
       if (defWd) {
         currentList = [defWd, ...withdrawals];
         index = 0;
@@ -2628,6 +2629,22 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setWithdrawals(updatedWithdrawals);
     persistState({ withdrawals: updatedWithdrawals });
 
+    // Sync to Supabase withdrawals table
+    try {
+      if (targetWd.id) {
+        await supabase
+          .from('withdrawals')
+          .update({
+            status: 'Completed',
+            tx_hash: hash,
+            processed_at: new Date().toISOString()
+          })
+          .eq('id', targetWd.id);
+      }
+    } catch (e) {
+      console.info('Supabase withdrawal approve sync notice:', e?.message || e);
+    }
+
     logActivity({
       action: 'APPROVE_WITHDRAWAL',
       category: 'ADMIN',
@@ -2643,12 +2660,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   }, [withdrawals, persistState, showToast, logActivity]);
 
   // Admin Action: Reject Withdrawal
-  const rejectWithdrawal = useCallback((withdrawalId, reason, refundBalance = true) => {
-    let index = withdrawals.findIndex((w) => w.id === withdrawalId);
+  const rejectWithdrawal = useCallback(async (withdrawalId, reason, refundBalance = true) => {
+    let index = withdrawals.findIndex((w) => String(w.id) === String(withdrawalId));
     let currentList = withdrawals;
 
     if (index === -1) {
-      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find((w) => w.id === withdrawalId);
+      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find((w) => String(w.id) === String(withdrawalId));
       if (defWd) {
         currentList = [defWd, ...withdrawals];
         index = 0;
@@ -2711,6 +2728,22 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     setWithdrawals(updatedWithdrawals);
     persistState(patchToPersist);
+
+    // Sync to Supabase withdrawals table
+    try {
+      if (targetWd.id) {
+        await supabase
+          .from('withdrawals')
+          .update({
+            status: 'Rejected',
+            reject_reason: updatedWd.rejectReason,
+            rejected_at: new Date().toISOString()
+          })
+          .eq('id', targetWd.id);
+      }
+    } catch (e) {
+      console.info('Supabase withdrawal reject sync notice:', e?.message || e);
+    }
 
     logActivity({
       action: 'REJECT_WITHDRAWAL',
@@ -3208,7 +3241,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     const qty = Number(targetDep.units || 1);
     const henPrice = Number(targetDep.unitPrice || platformSettings?.henUnitPrice || 500);
-    const dailyYield = qty * Number(platformSettings?.dailyEggYield || 1);
+    const dailyYieldPerUnit = Number(platformSettings?.dailyEggYield || ASSET_SPEC.dailyYieldPerUnit || 1);
+    const dailyYield = qty * dailyYieldPerUnit;
     const termDays = Number(platformSettings?.contractDurationDays || 120);
 
     // Create Active Livestock Contract
@@ -3224,7 +3258,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       daysRemaining: termDays,
       daysElapsed: 0,
       eggsHarvested: 0,
-      totalYieldCapacity: qty * Number(platformSettings?.dailyEggYield || 1) * termDays,
+      totalYieldCapacity: qty * dailyYieldPerUnit * termDays,
       purchaseDate: new Date().toISOString(),
       purchasedAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + termDays * 24 * 60 * 60 * 1000).toISOString(),
@@ -3294,6 +3328,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     // Replicate to Supabase
     try {
+      if (targetDep.dbId) {
+        await supabase
+          .from('deposit_requests')
+          .update({ status: 'Completed', updated_at: new Date().toISOString() })
+          .eq('id', targetDep.dbId);
+      }
       await supabase
         .from('deposit_requests')
         .update({ status: 'Completed', updated_at: new Date().toISOString() })
@@ -3304,9 +3344,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         asset_name: newAsset.name,
         units: newAsset.units,
         unit_cost: newAsset.unitCost,
-        daily_yield_per_unit: platformSettings?.dailyEggYield || 1,
+        daily_yield_per_unit: dailyYieldPerUnit,
         term_days: newAsset.termDays,
-        total_return_eggs: newAsset.units * (platformSettings?.dailyEggYield || 1) * newAsset.termDays,
+        total_return_eggs: newAsset.units * dailyYieldPerUnit * newAsset.termDays,
         gateway: targetDep.gateway,
         status: 'active',
         expires_at: new Date(Date.now() + newAsset.termDays * 24 * 60 * 60 * 1000).toISOString()
@@ -3378,6 +3418,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     persistState({ depositRequests: nextDeposits, transactions: nextTransactions });
 
     try {
+      if (targetDep.dbId) {
+        await supabase
+          .from('deposit_requests')
+          .update({ status: 'Rejected', admin_notes: rejReason, updated_at: new Date().toISOString() })
+          .eq('id', targetDep.dbId);
+      }
       await supabase
         .from('deposit_requests')
         .update({ status: 'Rejected', admin_notes: rejReason, updated_at: new Date().toISOString() })
