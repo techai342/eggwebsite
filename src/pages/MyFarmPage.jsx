@@ -124,9 +124,12 @@ export default function MyFarmPage() {
     setTimeout(() => setIsAudioPlaying(false), 1600);
   };
 
+  // Cooldown is active only when remaining time has not reached 00:00:00
+  const isCooldownEffective = Boolean(cooldownActive && remainingTimeStr !== '00:00:00');
+
   // Harvest handler
   const handleHarvest = () => {
-    if (cooldownActive) {
+    if (isCooldownEffective) {
       if (isAutoHarvestEnabled) {
         showToast('info', `🟢 Auto-Harvest is ON: Your fresh eggs will automatically deposit into your vault in ${remainingTimeStr}. No manual clicking needed!`);
       } else {
@@ -407,19 +410,19 @@ export default function MyFarmPage() {
                 </span>
               </div>
               <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
-                cooldownActive
+                isCooldownEffective
                   ? isAutoHarvestEnabled
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
                     : 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
                   : 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
               }`}>
-                {cooldownActive ? (isAutoHarvestEnabled ? 'Auto-Incubating' : 'Incubating (Manual)') : 'Harvest Ready'}
+                {isCooldownEffective ? (isAutoHarvestEnabled ? 'Auto-Incubating' : 'Incubating (Manual)') : 'Harvest Ready'}
               </span>
             </div>
 
             <div className="flex items-center justify-between gap-3 mb-2.5">
               <div className="font-mono text-xl sm:text-2xl font-black text-white tracking-widest drop-shadow">
-                {cooldownActive ? remainingTimeStr : '00:00:00'}
+                {isCooldownEffective ? remainingTimeStr : '00:00:00'}
               </div>
               <div className="text-right">
                 <span className="text-[8px] uppercase tracking-wider text-white/60 block">Est. Yield</span>
@@ -438,10 +441,10 @@ export default function MyFarmPage() {
                 totalHens <= 0
                   ? 'bg-white/15 text-white/40 cursor-not-allowed border border-white/10'
                   : isAutoHarvestEnabled
-                  ? cooldownActive
+                  ? isCooldownEffective
                     ? 'bg-gradient-to-r from-emerald-950 via-[#0d3b22] to-emerald-950 border-2 border-emerald-400 text-[#c9f36a] shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:brightness-110 cursor-pointer active:scale-98'
                     : 'bg-gradient-to-r from-[#c9f36a] via-lime-400 to-[#c9f36a] text-[#0d2c20] border-2 border-emerald-300 shadow-[0_0_25px_rgba(201,243,106,0.6)] cursor-pointer hover:scale-[1.01] active:scale-95 animate-pulse'
-                  : cooldownActive
+                  : isCooldownEffective
                   ? 'bg-gradient-to-r from-rose-950 via-[#3b0d15] to-rose-950 border-2 border-rose-500 text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.35)] hover:brightness-110 cursor-pointer active:scale-98'
                   : 'bg-gradient-to-r from-rose-600 via-red-500 to-rose-600 text-white border-2 border-rose-400 shadow-[0_0_25px_rgba(239,68,68,0.6)] cursor-pointer hover:scale-[1.01] active:scale-95 animate-pulse'
               }`}
@@ -451,10 +454,10 @@ export default function MyFarmPage() {
               } text-sm`}></i>
               <span>
                 {isAutoHarvestEnabled
-                  ? cooldownActive
+                  ? isCooldownEffective
                     ? `🟢 AUTO-HARVEST IN (${remainingTimeStr})`
                     : '🟢 AUTO-HARVEST READY • COLLECT NOW'
-                  : cooldownActive
+                  : isCooldownEffective
                   ? `🔴 AUTO-HARVEST OFF • MANUAL MODE (${remainingTimeStr})`
                   : `👉 CLICK TO HARVEST DAILY EGGS (+${dailyEggsCapacity} Eggs)`}
               </span>

@@ -1596,33 +1596,63 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       gateway: validGateway.name
     };
 
-    const updatedAssets = [...activeAssets, newAsset];
-    const updatedTransactions = [newTrx, ...transactions];
+    const instantEggs = dailyYield; // Day-1 instant yield: 1 Hen = 1 Egg immediately
+    const nextVault = Math.floor(Number(eggVault || 0) + instantEggs);
+    const nowIso = new Date().toISOString();
 
-    const patchState = { activeAssets: updatedAssets, transactions: updatedTransactions };
-    if (!lastHarvest) {
-      const nowIso = new Date().toISOString();
-      setLastHarvest(nowIso);
-      setCooldownActive(true);
-      patchState.lastHarvest = nowIso;
-      patchState.cooldownActive = true;
+    const instantYieldTrx = {
+      id: `TRX-YIELD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'PRODUCTION',
+      description: `Day-1 Instant Yield: +${instantEggs} Fresh Egg${instantEggs > 1 ? 's' : ''} (${qty}x Hen units acquired)`,
+      amount: instantEggs,
+      unit: 'Egg',
+      date: nowIso,
+      status: 'Completed'
+    };
+
+    const updatedAssets = [...activeAssets, newAsset];
+    const updatedTransactions = [instantYieldTrx, newTrx, ...transactions];
+
+    // Award Day-1 first egg immediately & initialize 24-hour countdown timer for next harvest
+    setEggVault(nextVault);
+    setLastHarvest(nowIso);
+    setCooldownActive(true);
+
+    const patchState = {
+      activeAssets: updatedAssets,
+      transactions: updatedTransactions,
+      eggVault: nextVault,
+      lastHarvest: nowIso,
+      cooldownActive: true
+    };
+
+    // Update current buyer's eggVault and activeHens in users list
+    let updatedUsersList = [...users];
+    const currentUserIdx = updatedUsersList.findIndex(
+      (u) =>
+        (user?.id && u.id === user.id) ||
+        (user?.username && u.username?.toLowerCase() === user.username.toLowerCase())
+    );
+    if (currentUserIdx !== -1) {
+      updatedUsersList[currentUserIdx] = {
+        ...updatedUsersList[currentUserIdx],
+        eggVault: nextVault,
+        activeHens: (Number(updatedUsersList[currentUserIdx].activeHens) || 0) + qty
+      };
     }
 
     // If current buyer has an upliner, reward +qty Free Eggs to that upliner (1 Hen = 1 Egg)
     if (user?.upliner && user.upliner !== 'SYSTEM' && user.upliner !== 'N/A') {
       const uplinerName = user.upliner;
-      const uplinerIdx = users.findIndex(
+      const uplinerIdx = updatedUsersList.findIndex(
         (u) =>
           u.username.toLowerCase() === uplinerName.toLowerCase() ||
           (u.referralCode && u.referralCode.toLowerCase() === uplinerName.toLowerCase())
       );
       if (uplinerIdx !== -1) {
-        const uplinerObj = users[uplinerIdx];
+        const uplinerObj = updatedUsersList[uplinerIdx];
         const nextEggs = (Number(uplinerObj.eggVault) || 0) + qty;
-        const updatedUsersList = [...users];
         updatedUsersList[uplinerIdx] = { ...uplinerObj, eggVault: nextEggs };
-        setUsers(updatedUsersList);
-        patchState.users = updatedUsersList;
 
         if (user.username.toLowerCase() === uplinerObj.username.toLowerCase()) {
           setEggVault(nextEggs);
@@ -1654,11 +1684,14 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       }
     }
 
+    setUsers(updatedUsersList);
+    patchState.users = updatedUsersList;
+
     setActiveAssets(updatedAssets);
     setTransactions(updatedTransactions);
     persistState(patchState);
 
-    // Asynchronously replicate asset purchase to Supabase
+    // Asynchronously replicate asset purchase & Day-1 instant yield to Supabase
     try {
       supabase.from('farm_assets').insert({
         username: user?.username || 'mrsaqib242',
@@ -1674,6 +1707,46 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       }).then(({ error }) => {
         if (error) console.info('Supabase farm_assets table sync notice:', error.message);
       }).catch(() => {});
+
+      // Sync buyer's egg_vault and active_hens to Supabase users table
+      supabase
+        .from('users')
+        .update({
+          egg_vault: nextVault,
+          active_hens: ((Number(user?.activeHens) || 0) + qty),
+          updated_at: nowIso
+        })
+        .eq('username', user?.username || 'mrsaqib242')
+        .then(() => {})
+        .catch(() => {});
+
+      // Insert record in harvest_logs for Day-1 yield
+      supabase
+        .from('harvest_logs')
+        .insert({
+          username: user?.username || 'mrsaqib242',
+          active_units: qty,
+          eggs_collected: instantEggs,
+          harvested_at: nowIso,
+          next_harvest_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        })
+        .then(() => {})
+        .catch(() => {});
+
+      // Insert instant yield transaction to Supabase
+      supabase
+        .from('transactions')
+        .insert({
+          username: user?.username || 'mrsaqib242',
+          type: 'PRODUCTION',
+          amount: instantEggs,
+          unit: 'EGG',
+          description: `Day-1 Instant Yield: +${instantEggs} Fresh Eggs (${qty}x Hen units acquired)`,
+          status: 'Completed',
+          date: nowIso
+        })
+        .then(() => {})
+        .catch(() => {});
     } catch (_) {}
 
     logActivity({
@@ -1681,11 +1754,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       category: 'TRANSACTION',
       userId: user?.id || user?.accountId,
       username: user?.username,
-      details: `Acquired ${qty}x ${ASSET_SPEC.name} Units via ${validGateway.name} (Rs. ${cost} PKR)`,
+      details: `Acquired ${qty}x ${ASSET_SPEC.name} Units via ${validGateway.name} (Rs. ${cost} PKR). Day-1 instant yield (+${instantEggs} Eggs) credited & 24h timer started!`,
       status: 'SUCCESS'
     });
 
-    const msg = `Successfully acquired ${qty} VIP Farm Units via ${validGateway.name}!`;
+    const msg = `Successfully acquired ${qty} VIP Hen${qty > 1 ? 's' : ''}! Day-1 Yield (+${instantEggs} Fresh Egg${instantEggs > 1 ? 's' : ''}) added to vault & 24h timer started!`;
     showToast('success', msg);
     return {
       success: true,
@@ -1693,9 +1766,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       cost,
       dailyYield,
       fullTermEggs,
+      instantEggs,
       message: msg
     };
-  }, [user, activeAssets, transactions, platformSettings, persistState, showToast, logActivity]);
+  }, [user, activeAssets, eggVault, transactions, users, platformSettings, persistState, showToast, logActivity]);
 
   // 24-Hour Egg Harvest Engine
   const harvestEggs = useCallback((currentTime = new Date()) => {
@@ -3456,7 +3530,22 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       patchToPersist.activeAssets = nextAssets;
     }
 
-    // Update target farmer's activeHens in users list
+    // Update target farmer's activeHens and award Day-1 instant egg yield in users list
+    const instantDay1Eggs = dailyYield;
+    const nowIso = new Date().toISOString();
+
+    const instantYieldTrx = {
+      id: `TRX-YIELD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'PRODUCTION',
+      description: `Day-1 Instant Yield: +${instantDay1Eggs} Fresh Egg${instantDay1Eggs > 1 ? 's' : ''} (${qty}x Hen units acquired)`,
+      amount: instantDay1Eggs,
+      unit: 'Egg',
+      date: nowIso,
+      status: 'Completed'
+    };
+    nextTransactions.unshift(instantYieldTrx);
+
+    let targetUpdatedVault = 0;
     const targetUserIdx = users.findIndex(
       (u) =>
         (targetDep.userId && u.id === targetDep.userId) ||
@@ -3465,12 +3554,23 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     if (targetUserIdx !== -1) {
       const targetUser = users[targetUserIdx];
+      targetUpdatedVault = (Number(targetUser.eggVault) || 0) + instantDay1Eggs;
       const updatedUser = {
         ...targetUser,
-        activeHens: (Number(targetUser.activeHens) || 0) + qty
+        activeHens: (Number(targetUser.activeHens) || 0) + qty,
+        eggVault: targetUpdatedVault
       };
       const nextUsers = [...users];
       nextUsers[targetUserIdx] = updatedUser;
+
+      if (isCurrentFarmer) {
+        setEggVault(targetUpdatedVault);
+        setLastHarvest(nowIso);
+        setCooldownActive(true);
+        patchToPersist.eggVault = targetUpdatedVault;
+        patchToPersist.lastHarvest = nowIso;
+        patchToPersist.cooldownActive = true;
+      }
 
       // Award +qty Free Eggs to upliner upon deposit approval!
       if (targetUser.upliner && targetUser.upliner !== 'SYSTEM' && targetUser.upliner !== 'N/A') {
@@ -3562,6 +3662,35 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         .eq('username', targetDep.username)
         .eq('type', 'BUY')
         .eq('status', 'Pending');
+
+      // Sync target farmer's egg_vault and active_hens to Supabase
+      if (targetUpdatedVault > 0) {
+        await supabase
+          .from('users')
+          .update({
+            egg_vault: targetUpdatedVault,
+            updated_at: nowIso
+          })
+          .eq('username', targetDep.username);
+
+        await supabase.from('harvest_logs').insert({
+          username: targetDep.username,
+          active_units: qty,
+          eggs_collected: instantDay1Eggs,
+          harvested_at: nowIso,
+          next_harvest_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        });
+
+        await supabase.from('transactions').insert({
+          username: targetDep.username,
+          type: 'PRODUCTION',
+          amount: instantDay1Eggs,
+          unit: 'EGG',
+          description: `Day-1 Instant Yield: +${instantDay1Eggs} Fresh Eggs (${qty}x Hen units acquired)`,
+          status: 'Completed',
+          date: nowIso
+        });
+      }
     } catch (e) {
       console.info('Supabase deposit approve sync note:', e?.message || e);
     }

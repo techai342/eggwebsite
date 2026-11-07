@@ -272,7 +272,7 @@ export default function BuyAssetPage() {
 
     setIsSubmitting(false);
     if (res.success) {
-      navigateTo('/dashboard');
+      navigateTo('/my-farm');
     }
   };
 
