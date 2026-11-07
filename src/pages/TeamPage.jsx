@@ -438,24 +438,29 @@ export default function TeamPage() {
             </span>
           </div>
 
-          {/* 1 Invite = 1 Egg Reward Announcement */}
-          <div className="mb-3 p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-[#c9f36a]/20 to-emerald-500/15 border border-amber-400/40 flex items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-lg shadow-inner">
+          {/* 1 Hen Bought = 1 Free Egg Reward Announcement */}
+          <div className="mb-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-[#c9f36a]/20 to-emerald-500/15 border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-xl shadow-inner shrink-0">
                 🥚
               </div>
               <div>
-                <h4 className="font-manrope font-black text-xs text-[#0d2c20] uppercase tracking-wider">
-                  Special Reward: 1 Invite = 1 Free Egg!
-                </h4>
-                <p className="text-[9px] text-[#15803d] font-bold mt-0.5">
-                  Har 1 dost ke register hone per aap ko 1 Anda foran aap ke Vault mein milega (2 Invites = 2 Eggs).
+                <div className="flex items-center gap-2">
+                  <h4 className="font-manrope font-black text-xs text-[#0d2c20] uppercase tracking-wider">
+                    Hen Purchase Reward: 1 Hen Bought = 1 Free Egg!
+                  </h4>
+                  <span className="bg-amber-400 text-amber-950 font-black text-[7.5px] px-2 py-0.5 rounded-full uppercase">
+                    1 Hen = 1 Egg
+                  </span>
+                </div>
+                <p className="text-[9px] text-[#15803d] font-bold mt-1 leading-snug">
+                  Jab aap ka referral <strong className="text-emerald-900 font-black">Hen khareedega</strong> to aap ko har hen par <strong className="text-amber-800 font-black">1 Anda Vault mein milega</strong> (2 Hens = 2 Eggs, 5 Hens = 5 Eggs, 10 Hens = 10 Eggs). <span className="text-rose-700 font-black">Sirf join karne par 0 anday</span>.
                 </p>
               </div>
             </div>
-            <div className="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-center shrink-0 shadow-xs">
-              <span className="text-[7.5px] uppercase font-bold text-slate-500 block">Invite Eggs</span>
-              <span className="font-mono font-black text-xs text-amber-700">+{referralStats?.level1Count ?? 0}</span>
+            <div className="px-3.5 py-2 rounded-xl bg-white border border-amber-300 text-center shrink-0 shadow-xs flex sm:flex-col items-center justify-between sm:justify-center gap-2 sm:gap-0">
+              <span className="text-[7.5px] uppercase font-black text-slate-500 block">Team Egg Rewards</span>
+              <span className="font-mono font-black text-base text-amber-700">+{referralStats?.referralEggRewards ?? 0}</span>
             </div>
           </div>
 
@@ -889,11 +894,17 @@ export default function TeamPage() {
                     <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between">
                       <div>
                         <span className="text-[7.5px] font-bold text-slate-500 uppercase block">
-                          Commission Credited to Your Wallet
+                          Your Rewards: Free Eggs + Cash Commission
                         </span>
-                        <span className="font-manrope font-black text-base text-[#15803d]">
-                          +Rs. {simulatedCommissionPkr.toFixed(2)} PKR
-                        </span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="font-manrope font-black text-sm text-amber-700 flex items-center gap-1">
+                            🥚 +{purchaseUnits} Free Eggs
+                          </span>
+                          <span className="text-slate-300 font-bold">|</span>
+                          <span className="font-manrope font-black text-sm text-[#15803d]">
+                            +Rs. {simulatedCommissionPkr.toFixed(2)} PKR
+                          </span>
+                        </div>
                       </div>
 
                       <span className="text-[8px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -1078,12 +1089,38 @@ export default function TeamPage() {
                       </div>
                     </div>
 
-                    {/* Middle Row: Metrics */}
-                    <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-[#edf2e8] text-[8px]">
+                    {/* Hen & Free Egg Reward Highlight Ribbon */}
+                    <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-[#c9f36a]/15 to-emerald-500/10 border border-amber-300/40 text-[8px]">
+                      <div className="flex items-center gap-1.5 text-[#0d2c20]">
+                        <span className="text-sm">🥚</span>
+                        {Number(member.assetsPurchased || 0) > 0 ? (
+                          <span className="font-bold">
+                            Is member ne <strong className="text-emerald-800 font-black">{member.assetsPurchased} Hens</strong> khareedi ➜ Aap ko mile <strong className="text-amber-800 font-black">+{member.assetsPurchased} Free Eggs</strong>!
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 font-medium">
+                            Is member ne 0 Hen khareedi ➜ <strong className="text-slate-700">0 Eggs (Sirf join par koi anda nahi)</strong>
+                          </span>
+                        )}
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full font-black text-[7.5px] uppercase tracking-wide ${Number(member.assetsPurchased || 0) > 0 ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
+                        {Number(member.assetsPurchased || 0) > 0 ? `+${member.assetsPurchased} Eggs` : '0 Eggs'}
+                      </span>
+                    </div>
+
+                    {/* Middle Row: Metrics (Hens, Eggs Earned, Commission, Volume) */}
+                    <div className="grid grid-cols-4 gap-1.5 pt-1 text-[8px]">
                       <div className="bg-white rounded-lg p-1.5 border border-[#e2ebd9]/70 text-center">
-                        <span className="text-slate-400 block font-bold uppercase">Assets</span>
+                        <span className="text-slate-400 block font-bold uppercase">Hens</span>
                         <span className="font-mono font-black text-[#0d2c20] text-[10px]">
-                          {member.assetsPurchased || 0} Hens
+                          {member.assetsPurchased || 0}
+                        </span>
+                      </div>
+
+                      <div className="bg-amber-50/70 rounded-lg p-1.5 border border-amber-200 text-center">
+                        <span className="text-amber-700 block font-bold uppercase">Eggs</span>
+                        <span className="font-mono font-black text-amber-800 text-[10px]">
+                          +{member.assetsPurchased || 0}
                         </span>
                       </div>
 
@@ -1095,7 +1132,7 @@ export default function TeamPage() {
                       </div>
 
                       <div className="bg-white rounded-lg p-1.5 border border-emerald-200 text-center">
-                        <span className="text-emerald-700 block font-bold uppercase">Earned</span>
+                        <span className="text-emerald-700 block font-bold uppercase">Cash</span>
                         <span className="font-mono font-black text-[#15803d] text-[10px] truncate block">
                           Rs. {Number(member.commissionEarnedPkr || 0).toFixed(2)}
                         </span>

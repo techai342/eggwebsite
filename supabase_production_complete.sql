@@ -389,5 +389,66 @@ ON CONFLICT (id) DO UPDATE SET
   egg_base_price = EXCLUDED.egg_base_price;
 
 -- ==============================================================================
+
+-- ------------------------------------------------------------------------------
+-- 15. Automatic Referral Hen Purchase Reward Trigger
+-- Rule:
+-- 1. Joining alone gives 0 eggs to upliner.
+-- 2. When a referred user acquires Hens (active farm_assets):
+--    - 1 Hen = 1 Free Egg credited to upliner's egg_vault!
+--    - 2 Hens = 2 Free Eggs, 5 Hens = 5 Free Eggs, 10 Hens = 10 Free Eggs
+--    - Automatically logs a REWARD transaction
+-- ------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.reward_upliner_on_hen_purchase()
+RETURNS TRIGGER AS $
+DECLARE
+  v_upliner_code VARCHAR(32);
+  v_upliner_username VARCHAR(64);
+BEGIN
+  -- 1. Get the buyer's upliner from users table
+  SELECT upliner_code INTO v_upliner_code
+  FROM public.users
+  WHERE username = NEW.username;
+
+  -- 2. If valid upliner exists (not SYSTEM / not N/A / not empty)
+  IF v_upliner_code IS NOT NULL AND v_upliner_code <> 'SYSTEM' AND v_upliner_code <> 'N/A' AND v_upliner_code <> '' THEN
+    -- Resolve upliner's username
+    SELECT username INTO v_upliner_username
+    FROM public.users
+    WHERE referral_code = v_upliner_code OR username = v_upliner_code
+    LIMIT 1;
+
+    IF v_upliner_username IS NOT NULL THEN
+      -- Credit +NEW.units (1 Hen = 1 Free Egg) to upliner's egg_vault
+      UPDATE public.users
+      SET egg_vault = COALESCE(egg_vault, 0) + NEW.units,
+          updated_at = NOW()
+      WHERE username = v_upliner_username;
+
+      -- Insert transaction ledger entry for the upliner
+      INSERT INTO public.transactions (username, type, amount, unit, description, status, date)
+      VALUES (
+        v_upliner_username,
+        'REWARD',
+        NEW.units,
+        'EGG',
+        'Referral Hen Reward: +' || NEW.units || ' Free Eggs (@' || NEW.username || ' purchased ' || NEW.units || ' Hens)',
+        'Completed',
+        NOW()
+      );
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_reward_upliner_on_farm_asset ON public.farm_assets;
+CREATE TRIGGER trg_reward_upliner_on_farm_asset
+AFTER INSERT ON public.farm_assets
+FOR EACH ROW
+WHEN (NEW.status = 'active')
+EXECUTE FUNCTION public.reward_upliner_on_hen_purchase();
+
 -- End of Script
 -- ==============================================================================

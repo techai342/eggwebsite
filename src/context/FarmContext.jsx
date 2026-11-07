@@ -1332,12 +1332,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       );
       if (uplinerIdx !== -1) {
         const uplinerUser = users[uplinerIdx];
-        const newUplinerEggs = (Number(uplinerUser.eggVault) || 0) + 1;
-        nextUsers[uplinerIdx] = {
-          ...uplinerUser,
-          eggVault: newUplinerEggs
-        };
-
+        // Joining alone gives 0 eggs (eggs are rewarded when member buys hens: 1 Hen = 1 Egg)
         setTeamMembers((prev) => [
           ...prev,
           {
@@ -1352,39 +1347,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
           }
         ]);
 
-        // Award +1 Egg to upliner in Supabase
-        try {
-          supabase
-            .from('users')
-            .update({
-              egg_vault: newUplinerEggs,
-              updated_at: new Date().toISOString()
-            })
-            .eq('username', uplinerUser.username)
-            .then(() => {})
-            .catch(() => {});
-
-          supabase
-            .from('transactions')
-            .insert({
-              username: uplinerUser.username,
-              type: 'REWARD',
-              amount: 1,
-              unit: 'EGG',
-              description: `Referral Invitation Reward: +1 Free Egg for inviting @${cleanUsername}`,
-              status: 'Completed',
-              date: new Date().toISOString()
-            })
-            .then(() => {})
-            .catch(() => {});
-        } catch (_) {}
-
         logActivity({
-          action: 'REFERRAL_REWARD',
+          action: 'REFERRAL_JOIN',
           category: 'AFFILIATE',
           userId: uplinerUser.id || uplinerUser.accountId,
           username: uplinerUser.username,
-          details: `Awarded +1 Free Egg to @${uplinerUser.username} for inviting @${cleanUsername}`,
+          details: `Farmer @${cleanUsername} joined via referral code of @${uplinerUser.username} (0 Hens bought yet - 0 eggs rewarded)`,
           status: 'SUCCESS'
         });
       }
@@ -1638,6 +1606,52 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       setCooldownActive(true);
       patchState.lastHarvest = nowIso;
       patchState.cooldownActive = true;
+    }
+
+    // If current buyer has an upliner, reward +qty Free Eggs to that upliner (1 Hen = 1 Egg)
+    if (user?.upliner && user.upliner !== 'SYSTEM' && user.upliner !== 'N/A') {
+      const uplinerName = user.upliner;
+      const uplinerIdx = users.findIndex(
+        (u) =>
+          u.username.toLowerCase() === uplinerName.toLowerCase() ||
+          (u.referralCode && u.referralCode.toLowerCase() === uplinerName.toLowerCase())
+      );
+      if (uplinerIdx !== -1) {
+        const uplinerObj = users[uplinerIdx];
+        const nextEggs = (Number(uplinerObj.eggVault) || 0) + qty;
+        const updatedUsersList = [...users];
+        updatedUsersList[uplinerIdx] = { ...uplinerObj, eggVault: nextEggs };
+        setUsers(updatedUsersList);
+        patchState.users = updatedUsersList;
+
+        if (user.username.toLowerCase() === uplinerObj.username.toLowerCase()) {
+          setEggVault(nextEggs);
+          patchState.eggVault = nextEggs;
+        }
+
+        try {
+          supabase
+            .from('users')
+            .update({ egg_vault: nextEggs, updated_at: new Date().toISOString() })
+            .eq('username', uplinerObj.username)
+            .then(() => {})
+            .catch(() => {});
+
+          supabase
+            .from('transactions')
+            .insert({
+              username: uplinerObj.username,
+              type: 'REWARD',
+              amount: qty,
+              unit: 'EGG',
+              description: `Referral Hen Reward: +${qty} Free Eggs (@${user.username} purchased ${qty} Hens)`,
+              status: 'Completed',
+              date: new Date().toISOString()
+            })
+            .then(() => {})
+            .catch(() => {});
+        } catch (_) {}
+      }
     }
 
     setActiveAssets(updatedAssets);
@@ -2238,7 +2252,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       activeTeamCount,
       totalDownlineUnits,
       totalDownlineVolumePkr,
-      referralEggRewards: level1Count // 1 direct invite = 1 egg
+      referralEggRewards: totalDownlineUnits // 1 Hen purchased by downline = 1 Free Egg
     };
   }, [teamMembers]);
 
@@ -2284,69 +2298,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     const patchToPersist = { teamMembers: updatedMembers };
 
-    // 1 Direct Invite = +1 Free Egg added to user's Egg Vault!
-    if (level === 1) {
-      const nextVault = (Number(eggVault) || 0) + 1;
-      setEggVault(nextVault);
-      patchToPersist.eggVault = nextVault;
-
-      const rewardTrx = {
-        id: `TRX-REF-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        type: 'REWARD',
-        amount: 1,
-        unit: 'EGG',
-        description: `Direct Referral Reward: +1 Free Egg for inviting @${cleanUsername}`,
-        status: 'Completed',
-        date: new Date().toISOString()
-      };
-      const updatedTxs = [rewardTrx, ...transactions];
-      setTransactions(updatedTxs);
-      patchToPersist.transactions = updatedTxs;
-
-      // Sync +1 Egg to Supabase users table
-      if (user?.username) {
-        try {
-          supabase
-            .from('users')
-            .update({
-              egg_vault: nextVault,
-              updated_at: new Date().toISOString()
-            })
-            .eq('username', user.username)
-            .then(() => {})
-            .catch(() => {});
-
-          supabase
-            .from('transactions')
-            .insert({
-              username: user.username,
-              type: 'REWARD',
-              amount: 1,
-              unit: 'EGG',
-              description: `Direct Referral Reward: +1 Free Egg for inviting @${cleanUsername}`,
-              status: 'Completed',
-              date: new Date().toISOString()
-            })
-            .then(() => {})
-            .catch(() => {});
-        } catch (_) {}
-      }
-
-      logActivity({
-        action: 'REFERRAL_REWARD',
-        category: 'AFFILIATE',
-        userId: user?.id || user?.accountId,
-        username: user?.username,
-        details: `Earned +1 Free Egg for inviting direct farmer @${cleanUsername}`,
-        status: 'SUCCESS'
-      });
-    }
-
     persistState(patchToPersist);
 
-    const msg = level === 1
-      ? `Successfully registered ${cleanUsername}! You earned +1 Free Egg in your vault!`
-      : `Successfully registered ${cleanUsername} as Level ${level} downline!`;
+    logActivity({
+      action: 'DOWNLINE_REGISTER',
+      category: 'AFFILIATE',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: `Registered downline farmer @${cleanUsername} (Level ${level}) - 0 Hens purchased yet`,
+      status: 'SUCCESS'
+    });
+
+    const msg = `Successfully registered ${cleanUsername} as Level ${level} downline! (Hen buy karne par free eggs milenge)`;
     showToast('success', msg);
     return { success: true, member: newMember, message: msg };
   }, [teamMembers, user, eggVault, transactions, persistState, showToast, logActivity]);
@@ -2396,6 +2359,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const updatedMembers = [...currentList];
     updatedMembers[memberIndex] = updatedMember;
 
+    // 1 Hen Bought = 1 Free Egg awarded to upliner!
+    const eggReward = qty;
+    const newEggVault = (Number(eggVault) || 0) + eggReward;
+
     const commissionTrx = {
       id: `TRX-COMM-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       type: 'COMMISSION',
@@ -2414,27 +2381,95 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       }
     };
 
-    const updatedTransactions = [commissionTrx, ...transactions];
+    const eggRewardTrx = {
+      id: `TRX-EGG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'REWARD',
+      description: `Referral Hen Reward: +${eggReward} Free Eggs (${targetMember.username} purchased ${qty} Hens)`,
+      amount: eggReward,
+      unit: 'EGG',
+      date: new Date().toISOString(),
+      status: 'Completed',
+      metadata: {
+        downlineUsername: targetMember.username,
+        unitsPurchased: qty
+      }
+    };
+
+    const updatedTransactions = [eggRewardTrx, commissionTrx, ...transactions];
 
     setTeamMembers(updatedMembers);
     setBalance(newBalance);
+    setEggVault(newEggVault);
     setTransactions(updatedTransactions);
 
     persistState({
       teamMembers: updatedMembers,
       balance: newBalance,
+      eggVault: newEggVault,
       transactions: updatedTransactions
     });
 
-    const msg = `💰 Received Rs. ${commission.toFixed(2)} PKR affiliate commission from ${targetMember.username} (Level ${targetMember.tierLevel})!`;
+    // Sync to Supabase users table & transactions
+    if (user?.username) {
+      try {
+        supabase
+          .from('users')
+          .update({
+            egg_vault: newEggVault,
+            balance_pkr: newBalance,
+            updated_at: new Date().toISOString()
+          })
+          .eq('username', user.username)
+          .then(() => {})
+          .catch(() => {});
+
+        supabase
+          .from('transactions')
+          .insert([
+            {
+              username: user.username,
+              type: 'REWARD',
+              amount: eggReward,
+              unit: 'EGG',
+              description: `Referral Hen Reward: +${eggReward} Free Eggs (${targetMember.username} purchased ${qty} Hens)`,
+              status: 'Completed',
+              date: new Date().toISOString()
+            },
+            {
+              username: user.username,
+              type: 'COMMISSION',
+              amount: commission,
+              unit: 'PKR',
+              description: `Level ${targetMember.tierLevel} Affiliate Commission (${(rate * 100).toFixed(2)}%) from ${targetMember.username} (${qty}x Hen)`,
+              status: 'Completed',
+              date: new Date().toISOString()
+            }
+          ])
+          .then(() => {})
+          .catch(() => {});
+      } catch (_) {}
+    }
+
+    logActivity({
+      action: 'REFERRAL_HEN_REWARD',
+      category: 'AFFILIATE',
+      userId: user?.id || user?.accountId,
+      username: user?.username,
+      details: `Earned +${eggReward} Free Eggs and Rs. ${commission.toFixed(2)} PKR commission from @${targetMember.username} (${qty} Hens bought)`,
+      status: 'SUCCESS'
+    });
+
+    const msg = `🎉 @${targetMember.username} bought ${qty} Hens! You earned +${eggReward} Free Eggs & Rs. ${commission.toFixed(2)} PKR commission!`;
     showToast('success', msg);
 
     return {
       success: true,
       commission,
+      eggReward,
       newBalance,
+      newEggVault,
       member: updatedMember,
-      transaction: commissionTrx,
+      transactions: [eggRewardTrx, commissionTrx],
       message: msg
     };
   }, [teamMembers, balance, transactions, user, platformSettings, persistState, showToast]);
@@ -3426,6 +3461,53 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       };
       const nextUsers = [...users];
       nextUsers[targetUserIdx] = updatedUser;
+
+      // Award +qty Free Eggs to upliner upon deposit approval!
+      if (targetUser.upliner && targetUser.upliner !== 'SYSTEM' && targetUser.upliner !== 'N/A') {
+        const uplinerIdx = nextUsers.findIndex(
+          (u) =>
+            u.username.toLowerCase() === targetUser.upliner.toLowerCase() ||
+            (u.referralCode && u.referralCode.toLowerCase() === targetUser.upliner.toLowerCase())
+        );
+        if (uplinerIdx !== -1) {
+          const uplinerUser = nextUsers[uplinerIdx];
+          const nextUplinerEggs = (Number(uplinerUser.eggVault) || 0) + qty;
+          nextUsers[uplinerIdx] = {
+            ...uplinerUser,
+            eggVault: nextUplinerEggs
+          };
+
+          // If current logged-in user is the upliner, update live vault state
+          if (user && user.username.toLowerCase() === uplinerUser.username.toLowerCase()) {
+            setEggVault(nextUplinerEggs);
+            patchToPersist.eggVault = nextUplinerEggs;
+          }
+
+          try {
+            supabase
+              .from('users')
+              .update({ egg_vault: nextUplinerEggs, updated_at: new Date().toISOString() })
+              .eq('username', uplinerUser.username)
+              .then(() => {})
+              .catch(() => {});
+
+            supabase
+              .from('transactions')
+              .insert({
+                username: uplinerUser.username,
+                type: 'REWARD',
+                amount: qty,
+                unit: 'EGG',
+                description: `Referral Hen Reward: +${qty} Free Eggs (@${targetUser.username} bought ${qty} Hens)`,
+                status: 'Completed',
+                date: new Date().toISOString()
+              })
+              .then(() => {})
+              .catch(() => {});
+          } catch (_) {}
+        }
+      }
+
       setUsers(nextUsers);
       patchToPersist.users = nextUsers;
     }
