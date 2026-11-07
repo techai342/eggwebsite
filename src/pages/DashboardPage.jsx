@@ -25,7 +25,9 @@ export default function DashboardPage() {
     VERIFIED_MERCHANTS,
     referralStats,
     platformSettings,
-    getWhatsAppSupportUrl
+    getWhatsAppSupportUrl,
+    isAutoHarvestEnabled,
+    toggleAutoHarvest
   } = useFarm();
 
   // Modals state
@@ -967,26 +969,42 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={handleHarvestClick}
-                      className="relative w-[76px] h-[76px] rounded-full bg-gradient-to-br from-[#082013] via-[#0d2c20] to-[#153d2b] border-[3px] border-[#c9f36a] shadow-[0_4px_16px_rgba(201,243,106,0.45),inset_0_2px_6px_rgba(201,243,106,0.3)] flex flex-col items-center justify-center select-none cursor-pointer active:scale-95 transition-transform z-10"
-                      title="Harvest Daily Yield"
+                      className={`relative w-[76px] h-[76px] rounded-full border-[3px] flex flex-col items-center justify-center select-none cursor-pointer active:scale-95 transition-all z-10 ${
+                        isAutoHarvestEnabled
+                          ? 'bg-gradient-to-br from-[#082013] via-[#0d2c20] to-[#153d2b] border-[#c9f36a] shadow-[0_4px_16px_rgba(201,243,106,0.45),inset_0_2px_6px_rgba(201,243,106,0.3)]'
+                          : 'bg-gradient-to-br from-[#20080d] via-[#2c0d12] to-[#3d151c] border-rose-500 shadow-[0_4px_16px_rgba(244,63,94,0.45),inset_0_2px_6px_rgba(244,63,94,0.3)]'
+                      }`}
+                      title={isAutoHarvestEnabled ? 'Auto-Harvest Active (Green)' : 'Manual Harvest Mode (Red)'}
                     >
                       <img src={henImg} className="w-6 h-6 object-contain eco-animal-breath" alt="Hen" />
-                      <span className="text-[6.5px] font-manrope font-black text-[#c9f36a] tracking-widest uppercase mt-0.5 drop-shadow">
-                        {cooldownActive ? 'COOLDOWN' : 'HARVEST'}
+                      <span className={`text-[6.5px] font-manrope font-black tracking-widest uppercase mt-0.5 drop-shadow ${
+                        isAutoHarvestEnabled ? 'text-[#c9f36a]' : 'text-rose-300'
+                      }`}>
+                        {cooldownActive ? (isAutoHarvestEnabled ? 'AUTO 24H' : 'MANUAL') : 'HARVEST'}
                       </span>
                     </button>
                   </div>
 
-                  {/* Automated Callout Capsule */}
+                  {/* Automated Callout Capsule with 1-Tap Toggle (Green = ON, Red = OFF) */}
                   <div
-                    onClick={handleHarvestClick}
-                    className="mt-2 inline-flex items-center gap-1.5 bg-[#e4ede0] border border-[#16a34a]/30 px-2.5 py-0.5 rounded-full shadow-sm cursor-pointer hover:bg-emerald-100 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleAutoHarvest();
+                    }}
+                    className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full shadow-sm cursor-pointer transition-all border-2 active:scale-95 ${
+                      isAutoHarvestEnabled
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 hover:bg-emerald-100 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                        : 'bg-rose-50 border-rose-500 text-rose-800 hover:bg-rose-100 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
+                    }`}
+                    title="Click to toggle Auto-Harvest ON (Green) / OFF (Red)"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a] animate-ping"></span>
-                    <span className="font-manrope font-black text-[8px] text-[#0d2c20] tracking-wider uppercase">
-                      {cooldownActive ? `🤖 AUTO-HARVEST IN ${remainingTimeStr}` : '🤖 AUTO-HARVEST READY • 24H YIELD'}
+                    <span className={`w-2 h-2 rounded-full ${isAutoHarvestEnabled ? 'bg-emerald-500 animate-ping' : 'bg-rose-500 animate-ping'}`}></span>
+                    <span className="font-manrope font-black text-[8.5px] tracking-wider uppercase">
+                      {isAutoHarvestEnabled
+                        ? `🟢 AUTO-HARVEST ON (${remainingTimeStr})`
+                        : `🔴 AUTO-HARVEST OFF • MANUAL`}
                     </span>
-                    <i className="fa-solid fa-robot text-[#16a34a] text-[8.5px]"></i>
+                    <i className={`fa-solid ${isAutoHarvestEnabled ? 'fa-robot text-emerald-600' : 'fa-hand text-rose-600'} text-[9px]`}></i>
                   </div>
                 </div>
 
@@ -1963,9 +1981,16 @@ export default function DashboardPage() {
           </div>
 
           <div className="text-center max-w-xs space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-[#c9f36a] border border-[#c9f36a]/30 text-[9px] font-black uppercase mb-1">
-              <i className="fa-solid fa-robot"></i>
-              <span>Auto-Play Yield Engine Active</span>
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase mb-1 cursor-pointer transition-all active:scale-95 ${
+              isAutoHarvestEnabled
+                ? 'bg-emerald-500/20 text-[#c9f36a] border-emerald-400/40 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                : 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
+            }`}
+            onClick={() => toggleAutoHarvest()}
+            title="Click to toggle Auto-Harvest ON/OFF"
+            >
+              <i className={`fa-solid ${isAutoHarvestEnabled ? 'fa-robot text-[#c9f36a]' : 'fa-hand text-rose-400'}`}></i>
+              <span>{isAutoHarvestEnabled ? '🟢 Auto-Harvest: ON (Green)' : '🔴 Auto-Harvest: OFF (Red)'}</span>
             </div>
             <h3 className="font-manrope font-black text-white text-base tracking-widest uppercase">
               Harvest Cooldown Active
@@ -1982,8 +2007,12 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          <p className="text-[9.5px] text-white/60 text-center max-w-xs font-medium">
-            💡 Auto-Deposit Active: You don't need to manually click. Fresh eggs will automatically deposit into your vault every 24 hours!
+          <p className={`text-[9.5px] text-center max-w-xs font-medium ${
+            isAutoHarvestEnabled ? 'text-emerald-300/80' : 'text-rose-300/80'
+          }`}>
+            {isAutoHarvestEnabled
+              ? '💡 Auto-Deposit Active: You don\'t need to manually click. Fresh eggs will automatically deposit into your vault every 24 hours!'
+              : '⚠️ Manual Mode: Auto-deposit is paused. You must manually click to collect eggs when the timer completes.'}
           </p>
 
           {/* Action buttons */}

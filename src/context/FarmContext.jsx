@@ -236,7 +236,8 @@ const DEFAULT_INITIAL_STATE = {
   supportMessages: [],
   depositRequests: [],
   lastHarvest: null,
-  cooldownActive: false
+  cooldownActive: false,
+  isAutoHarvestEnabled: true
 };
 
 // Safe localStorage loader supporting corruption resilience & automatic dummy data sanitization
@@ -357,7 +358,8 @@ function loadInitialState() {
           supportMessages: initialSupportMsgs,
           depositRequests: initialDepositReqs,
           lastHarvest: parsed.lastHarvest || null,
-          cooldownActive: parsed.cooldownActive !== undefined ? Boolean(parsed.cooldownActive) : false
+          cooldownActive: parsed.cooldownActive !== undefined ? Boolean(parsed.cooldownActive) : false,
+          isAutoHarvestEnabled: parsed.isAutoHarvestEnabled !== undefined ? Boolean(parsed.isAutoHarvestEnabled) : true
         };
 
         // Write sanitized state back to localStorage immediately
@@ -395,6 +397,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   const [depositRequests, setDepositRequests] = useState(initial.depositRequests || []);
   const [lastHarvest, setLastHarvest] = useState(initial.lastHarvest);
   const [cooldownActive, setCooldownActive] = useState(initial.cooldownActive);
+  const [isAutoHarvestEnabled, setIsAutoHarvestEnabled] = useState(initial.isAutoHarvestEnabled !== undefined ? initial.isAutoHarvestEnabled : true);
   const [toasts, setToasts] = useState([]);
 
   // Persist combined snapshot to both localStorage keys
@@ -416,7 +419,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         supportMessages: patch.supportMessages !== undefined ? patch.supportMessages : supportMessages,
         depositRequests: patch.depositRequests !== undefined ? patch.depositRequests : depositRequests,
         lastHarvest: patch.lastHarvest !== undefined ? patch.lastHarvest : lastHarvest,
-        cooldownActive: patch.cooldownActive !== undefined ? patch.cooldownActive : cooldownActive
+        cooldownActive: patch.cooldownActive !== undefined ? patch.cooldownActive : cooldownActive,
+        isAutoHarvestEnabled: patch.isAutoHarvestEnabled !== undefined ? patch.isAutoHarvestEnabled : isAutoHarvestEnabled
       };
       const raw = JSON.stringify(snapshot);
       window.localStorage.setItem(STORAGE_KEY_PRIMARY, raw);
@@ -431,7 +435,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     } catch (err) {
       console.warn('Error saving state to localStorage:', err);
     }
-  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, users, platformSettings, activityLogs, supportMessages, depositRequests, lastHarvest, cooldownActive]);
+  }, [user, credentials, balance, eggVault, activeAssets, transactions, withdrawals, teamMembers, users, platformSettings, activityLogs, supportMessages, depositRequests, lastHarvest, cooldownActive, isAutoHarvestEnabled]);
 
   // Initial sync check on mount
   useEffect(() => {
@@ -1883,6 +1887,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
   // Auto-Harvest 24h Background Watcher & Offline Catch-Up Engine
   useEffect(() => {
+    if (!isAutoHarvestEnabled) return;
     if (!activeAssets || activeAssets.length === 0) return;
     const activeUnits = activeAssets
       .filter((a) => (Number(a.daysRemaining) || 120) > 0 && a.status !== 'completed')
@@ -1890,6 +1895,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     if (activeUnits <= 0) return;
 
     const checkAndAutoHarvest = () => {
+      if (!isAutoHarvestEnabled) return;
       const now = Date.now();
       let lastTime = lastHarvest ? new Date(lastHarvest).getTime() : null;
 
@@ -1912,7 +1918,21 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     checkAndAutoHarvest();
     const timer = setInterval(checkAndAutoHarvest, 5000);
     return () => clearInterval(timer);
-  }, [lastHarvest, activeAssets, triggerAutoHarvest]);
+  }, [isAutoHarvestEnabled, lastHarvest, activeAssets, triggerAutoHarvest]);
+
+  // Toggle Auto-Harvest Mode (Green = ON, Red = OFF)
+  const toggleAutoHarvest = useCallback((forcedVal) => {
+    setIsAutoHarvestEnabled((prev) => {
+      const nextVal = typeof forcedVal === 'boolean' ? forcedVal : !prev;
+      persistState({ isAutoHarvestEnabled: nextVal });
+      if (nextVal) {
+        showToast('success', '🟢 Auto-Harvest ENABLED: Your eggs will auto-collect every 24h!');
+      } else {
+        showToast('warning', '🔴 Auto-Harvest DISABLED: Switched to manual collection mode.');
+      }
+      return nextVal;
+    });
+  }, [persistState, showToast]);
 
   // Egg Liquidation & P2P Cashout
   const sellEggs = useCallback(({ storeId, storeName, rate, eggs, method, accountTitle, accountNumber, bankName }) => {
@@ -3663,7 +3683,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     buyFarmAsset,
     harvestEggs,
     triggerAutoHarvest,
-    autoHarvestActive: true,
+    autoHarvestActive: isAutoHarvestEnabled,
+    isAutoHarvestEnabled,
+    setIsAutoHarvestEnabled,
+    toggleAutoHarvest,
     resetCooldown,
     sellEggs,
     registerDownline,
@@ -3737,6 +3760,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     buyFarmAsset,
     harvestEggs,
     triggerAutoHarvest,
+    isAutoHarvestEnabled,
+    toggleAutoHarvest,
     resetCooldown,
     sellEggs,
     registerDownline,

@@ -54,6 +54,8 @@ export default function MyFarmPage() {
     harvestEggs,
     triggerAutoHarvest,
     autoHarvestActive,
+    isAutoHarvestEnabled,
+    toggleAutoHarvest,
     cooldownActive,
     cooldownHoursRemaining,
     lastHarvest,
@@ -125,7 +127,11 @@ export default function MyFarmPage() {
   // Harvest handler
   const handleHarvest = () => {
     if (cooldownActive) {
-      showToast('info', `🤖 Auto-Harvest is Active! Your fresh eggs will automatically deposit into your vault in ${remainingTimeStr}. You don't need to manually click!`);
+      if (isAutoHarvestEnabled) {
+        showToast('info', `🟢 Auto-Harvest is ON: Your fresh eggs will automatically deposit into your vault in ${remainingTimeStr}. No manual clicking needed!`);
+      } else {
+        showToast('warning', `🔴 Auto-Harvest is OFF: Cooldown active (${remainingTimeStr}). Once ready, click to harvest your daily eggs.`);
+      }
       return;
     }
     if (totalHens <= 0) {
@@ -328,35 +334,86 @@ export default function MyFarmPage() {
           </div>
 
           {/* 24-HOUR AUTOMATED HARVEST ACTION ENGINE */}
-          <div className="bg-white/10 border border-white/15 rounded-2xl p-3 backdrop-blur-md">
-            {/* Auto-Harvest Engine Status Header */}
-            <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9f36a] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c9f36a]"></span>
+          <div className={`border rounded-2xl p-3.5 backdrop-blur-md transition-all shadow-lg ${
+            isAutoHarvestEnabled
+              ? 'bg-[#082215]/90 border-emerald-500/50 shadow-[0_4px_25px_rgba(16,185,129,0.15)]'
+              : 'bg-[#22080c]/90 border-rose-500/50 shadow-[0_4px_25px_rgba(244,63,94,0.15)]'
+          }`}>
+            {/* Auto-Harvest Engine Interactive Switch Row (Green = ON, Red = OFF) */}
+            <div className={`flex items-center justify-between mb-3 pb-2.5 border-b transition-colors ${
+              isAutoHarvestEnabled ? 'border-emerald-500/30' : 'border-rose-500/30'
+            }`}>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                    isAutoHarvestEnabled ? 'bg-emerald-400' : 'bg-rose-500'
+                  }`}></span>
+                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                    isAutoHarvestEnabled ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
+                  }`}></span>
                 </span>
-                <span className="text-[9px] font-black uppercase text-[#c9f36a] tracking-wider flex items-center gap-1">
-                  <i className="fa-solid fa-robot text-[10px]"></i>
-                  Auto-Play Harvest: Active
-                </span>
+                <div>
+                  <span className={`text-[10px] font-manrope font-black tracking-wider uppercase flex items-center gap-1.5 ${
+                    isAutoHarvestEnabled ? 'text-[#c9f36a]' : 'text-rose-300'
+                  }`}>
+                    <i className={`fa-solid ${isAutoHarvestEnabled ? 'fa-robot text-[#c9f36a]' : 'fa-hand text-rose-400'} text-xs`}></i>
+                    <span>Auto-Harvest:</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black border ${
+                      isAutoHarvestEnabled
+                        ? 'bg-emerald-500/25 text-emerald-300 border-emerald-400/50'
+                        : 'bg-rose-500/25 text-rose-300 border-rose-500/50'
+                    }`}>
+                      {isAutoHarvestEnabled ? '🟢 ON' : '🔴 OFF'}
+                    </span>
+                  </span>
+                  <span className={`text-[7.5px] block font-medium mt-0.5 ${
+                    isAutoHarvestEnabled ? 'text-emerald-200/80' : 'text-rose-200/80'
+                  }`}>
+                    {isAutoHarvestEnabled
+                      ? 'Eggs auto-deposit into vault every 24h'
+                      : 'Manual mode: Click harvest button to collect'}
+                  </span>
+                </div>
               </div>
-              <span className="text-[7.5px] text-white/90 font-bold bg-[#c9f36a]/20 text-[#c9f36a] px-2 py-0.5 rounded-full border border-[#c9f36a]/30">
-                100% Automated
-              </span>
+
+              {/* Clickable Mode Switch Button (Green ON / Red OFF) */}
+              <button
+                type="button"
+                onClick={() => toggleAutoHarvest()}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 transition-all cursor-pointer active:scale-95 shadow-md ${
+                  isAutoHarvestEnabled
+                    ? 'bg-emerald-950 border-emerald-400 text-[#c9f36a] shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:bg-emerald-900'
+                    : 'bg-rose-950 border-rose-500 text-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.4)] hover:bg-rose-900'
+                }`}
+                title={isAutoHarvestEnabled ? 'Click to turn OFF (Red)' : 'Click to turn ON (Green)'}
+                aria-label="Toggle Auto Harvest"
+              >
+                <span className="text-[9px] font-black uppercase tracking-wider">
+                  {isAutoHarvestEnabled ? 'ON' : 'OFF'}
+                </span>
+                <div className={`w-7 h-3.5 rounded-full p-0.5 flex transition-all ${
+                  isAutoHarvestEnabled ? 'bg-emerald-500 justify-end' : 'bg-rose-900 justify-start'
+                }`}>
+                  <div className="w-2.5 h-2.5 rounded-full bg-white shadow-xs"></div>
+                </div>
+              </button>
             </div>
 
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
-                <i className="fa-solid fa-clock-rotate-left text-[#c9f36a] text-xs"></i>
+                <i className={`fa-solid fa-clock-rotate-left text-xs ${isAutoHarvestEnabled ? 'text-[#c9f36a]' : 'text-rose-400'}`}></i>
                 <span className="text-[8.5px] font-manrope font-black tracking-wider uppercase text-white">
                   24-Hour Production Countdown
                 </span>
               </div>
               <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
-                cooldownActive ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                cooldownActive
+                  ? isAutoHarvestEnabled
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                    : 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
+                  : 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
               }`}>
-                {cooldownActive ? 'Incubating' : 'Harvest Ready'}
+                {cooldownActive ? (isAutoHarvestEnabled ? 'Auto-Incubating' : 'Incubating (Manual)') : 'Harvest Ready'}
               </span>
             </div>
 
@@ -366,28 +423,48 @@ export default function MyFarmPage() {
               </div>
               <div className="text-right">
                 <span className="text-[8px] uppercase tracking-wider text-white/60 block">Est. Yield</span>
-                <span className="text-xs font-black text-[#c9f36a]">+{dailyEggsCapacity} Fresh Eggs</span>
+                <span className={`text-xs font-black ${isAutoHarvestEnabled ? 'text-[#c9f36a]' : 'text-rose-300'}`}>
+                  +{dailyEggsCapacity} Fresh Eggs
+                </span>
               </div>
             </div>
 
-            {/* Primary Harvest CTA Button */}
+            {/* Primary Harvest CTA Button (Green when ON, Red when OFF) */}
             <button
               type="button"
               onClick={handleHarvest}
               disabled={totalHens <= 0}
-              className={`w-full py-3.5 px-4 rounded-xl font-manrope font-black text-xs tracking-wider uppercase shadow-lg transition-all flex items-center justify-center gap-2 ${
+              className={`w-full py-3.5 px-4 rounded-xl font-manrope font-black text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center gap-2 ${
                 totalHens <= 0
                   ? 'bg-white/15 text-white/40 cursor-not-allowed border border-white/10'
+                  : isAutoHarvestEnabled
+                  ? cooldownActive
+                    ? 'bg-gradient-to-r from-emerald-950 via-[#0d3b22] to-emerald-950 border-2 border-emerald-400 text-[#c9f36a] shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:brightness-110 cursor-pointer active:scale-98'
+                    : 'bg-gradient-to-r from-[#c9f36a] via-lime-400 to-[#c9f36a] text-[#0d2c20] border-2 border-emerald-300 shadow-[0_0_25px_rgba(201,243,106,0.6)] cursor-pointer hover:scale-[1.01] active:scale-95 animate-pulse'
                   : cooldownActive
-                  ? 'bg-white/10 hover:bg-white/15 text-white/80 border border-white/20 cursor-pointer active:scale-98'
-                  : 'bg-gradient-to-r from-[#c9f36a] via-lime-400 to-[#c9f36a] text-[#0d2c20] hover:scale-[1.01] active:scale-95 shadow-[#c9f36a]/20 cursor-pointer animate-pulse'
+                  ? 'bg-gradient-to-r from-rose-950 via-[#3b0d15] to-rose-950 border-2 border-rose-500 text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.35)] hover:brightness-110 cursor-pointer active:scale-98'
+                  : 'bg-gradient-to-r from-rose-600 via-red-500 to-rose-600 text-white border-2 border-rose-400 shadow-[0_0_25px_rgba(239,68,68,0.6)] cursor-pointer hover:scale-[1.01] active:scale-95 animate-pulse'
               }`}
             >
-              <i className="fa-solid fa-robot text-sm"></i>
-              <span>{cooldownActive ? `Auto-Harvest in (${remainingTimeStr})` : 'Harvest Daily Eggs (Auto-Ready)'}</span>
+              <i className={`fa-solid ${
+                isAutoHarvestEnabled ? 'fa-robot' : 'fa-hand'
+              } text-sm`}></i>
+              <span>
+                {isAutoHarvestEnabled
+                  ? cooldownActive
+                    ? `🟢 AUTO-HARVEST IN (${remainingTimeStr})`
+                    : '🟢 AUTO-HARVEST READY • COLLECT NOW'
+                  : cooldownActive
+                  ? `🔴 AUTO-HARVEST OFF • MANUAL MODE (${remainingTimeStr})`
+                  : `👉 CLICK TO HARVEST DAILY EGGS (+${dailyEggsCapacity} Eggs)`}
+              </span>
             </button>
-            <p className="text-[8px] text-white/60 text-center mt-2 font-medium">
-              💡 Automated Yield: Eggs auto-deposit into your vault every 24h even if you don't click.
+            <p className={`text-[8.5px] text-center mt-2.5 font-medium ${
+              isAutoHarvestEnabled ? 'text-emerald-300/80' : 'text-rose-300/80'
+            }`}>
+              {isAutoHarvestEnabled
+                ? '🟢 Auto-Harvest ON: Eggs auto-deposit into your vault every 24h even if you don\'t click.'
+                : '🔴 Auto-Harvest OFF: Eggs will NOT auto-deposit. You must manually click when timer completes.'}
             </p>
           </div>
         </div>
