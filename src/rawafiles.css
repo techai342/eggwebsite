@@ -11,11 +11,18 @@ html {
   -webkit-text-size-adjust: 100% !important;
   text-size-adjust: 100% !important;
   overflow-x: hidden;
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100%;
 }
 
 body {
   overflow-x: hidden;
-  touch-action: manipulation;
+  overflow-y: visible !important;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  touch-action: pan-y manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -33,7 +40,7 @@ body {
   align-items: flex-start;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  overflow: visible !important;
   font-family: 'DM Sans', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -48,8 +55,8 @@ body {
   box-shadow: 0 12px 40px rgba(13, 44, 32, 0.12);
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  overscroll-behavior-y: contain;
+  overflow: visible !important;
+  overscroll-behavior-y: auto !important;
 }
 
 /* Subtle ambient farm mesh background */
@@ -592,11 +599,13 @@ body {
   z-index: 1000000 !important;
   opacity: 0 !important;
   visibility: hidden !important;
+  pointer-events: none !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 .tc-sidebar-overlay.active {
   opacity: 1 !important;
   visibility: visible !important;
+  pointer-events: auto !important;
 }
 
 .tc-sidebar {
@@ -2011,6 +2020,7 @@ a:active:not(.disabled),
     justify-content: center !important;
     min-height: 100vh;
     width: 100%;
+    overflow: visible !important;
   }
 
   .app-full-page,
@@ -2024,6 +2034,8 @@ a:active:not(.disabled),
     box-shadow: 0 0 60px rgba(13, 44, 32, 0.08) !important;
     border-left: 1px solid rgba(21, 61, 43, 0.1);
     border-right: 1px solid rgba(21, 61, 43, 0.1);
+    overflow: visible !important;
+    overscroll-behavior-y: auto !important;
   }
 
   /* Hide mobile bottom navigation bar on tablet, laptop & desktop */
@@ -2045,12 +2057,12 @@ a:active:not(.disabled),
 
 /* Custom sleek, visible scrollbar for laptop & desktop browsing */
 @media (min-width: 768px) {
-  html {
+  html, body {
     scrollbar-color: #28734a #eef2ea;
   }
   ::-webkit-scrollbar {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
   }
   ::-webkit-scrollbar-track {
     background: #eef2ea;
