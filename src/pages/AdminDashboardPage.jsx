@@ -99,7 +99,7 @@ function UserBalanceModal({ targetUser, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="rounded-2xl w-full max-w-md bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#081a10] border border-amber-400/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative overflow-hidden text-white">
+      <div className="rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#081a10] border border-amber-400/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative text-white">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-amber-400/20 pb-3 mb-4">
           <div className="flex items-center gap-2.5">
@@ -251,7 +251,7 @@ function RejectWithdrawalModal({ withdrawal, onClose, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="rounded-2xl w-full max-w-md bg-gradient-to-b from-[#180a0a] via-[#100808] to-[#0d2c20] border border-rose-500/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(225,29,72,0.3)] relative overflow-hidden text-white">
+      <div className="rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#180a0a] via-[#100808] to-[#0d2c20] border border-rose-500/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(225,29,72,0.3)] relative text-white">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-rose-500/20 pb-3 mb-4">
           <div className="flex items-center gap-2.5">
@@ -387,7 +387,7 @@ function RejectDepositModal({ deposit, onClose, onConfirm }) {
 
   return (
     <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-[#120808] border border-rose-500/50 rounded-3xl p-5 max-w-md w-full shadow-2xl relative space-y-4">
+      <div className="bg-[#120808] border border-rose-500/50 rounded-3xl p-5 max-w-md w-full shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-3 border-b border-rose-500/30">
           <div className="flex items-center gap-2 text-rose-400">
             <i className="fa-solid fa-triangle-exclamation text-lg"></i>

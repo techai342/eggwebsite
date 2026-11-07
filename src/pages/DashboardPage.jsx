@@ -1588,9 +1588,9 @@ export default function DashboardPage() {
                 <span className="text-[10px] font-bold text-[#16a34a]">Swipe Cards ➔</span>
               </div>
 
-              <div className="flex items-stretch gap-3 overflow-x-auto no-scrollbar pb-1">
+              <div className="flex items-stretch gap-3 overflow-x-auto no-scrollbar pb-1 snap-x snap-mandatory scroll-smooth" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {/* 1. Sonica FORM STORE */}
-                <div className="flex-1 min-w-[270px] sm:min-w-[290px] bg-gradient-to-b from-white to-[#fafbf7] border border-[#28734a]/20 hover:border-amber-400 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                <div className="flex-1 min-w-[270px] sm:min-w-[290px] snap-start bg-gradient-to-b from-white to-[#fafbf7] border border-[#28734a]/20 hover:border-amber-400 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-2">
                       <span className="text-[9.5px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md uppercase tracking-wider">
@@ -1650,7 +1650,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 2. Usmaina Poltry Farm */}
-                <div className="flex-1 min-w-[270px] sm:min-w-[290px] bg-gradient-to-b from-white to-[#fafbf7] border border-[#28734a]/20 hover:border-emerald-400 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                <div className="flex-1 min-w-[270px] sm:min-w-[290px] snap-start bg-gradient-to-b from-white to-[#fafbf7] border border-[#28734a]/20 hover:border-emerald-400 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-2">
                       <span className="text-[9.5px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-md uppercase tracking-wider">
@@ -1710,7 +1710,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 3. Syed poultry farm */}
-                <div className="flex-1 min-w-[270px] sm:min-w-[290px] bg-gradient-to-b from-white to-[#fafbf7] border border-[#28734a]/20 hover:border-teal-400 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                <div className="flex-1 min-w-[270px] sm:min-w-[290px] snap-start bg-gradient-to-b from-white to-[#fafbf7] border border-[#28734a]/20 hover:border-teal-400 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-2">
                       <span className="text-[9.5px] font-black bg-teal-100 text-teal-900 border border-teal-300 px-2 py-0.5 rounded-md uppercase tracking-wider">

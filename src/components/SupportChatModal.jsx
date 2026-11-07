@@ -90,7 +90,8 @@ export default function SupportChatModal({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[10000000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
+      style={{ zIndex: 9999999 }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="support-modal-title"

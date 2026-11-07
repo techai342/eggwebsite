@@ -4,6 +4,24 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
+   0. GLOBAL SMOOTH RESPONSIVE & MOBILE ERGONOMICS
+   -------------------------------------------------------------------------- */
+html {
+  scroll-behavior: smooth !important;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------------------------------------------------------------------------
    1. DESKTOP CANVAS & 480px RESPONSIVE APP SHELL
    -------------------------------------------------------------------------- */
 .app-desktop-canvas {
@@ -15,6 +33,7 @@
   align-items: flex-start;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   font-family: 'DM Sans', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -29,6 +48,8 @@
   box-shadow: 0 12px 40px rgba(13, 44, 32, 0.12);
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
 }
 
 /* Subtle ambient farm mesh background */
@@ -924,7 +945,7 @@
   justify-content: space-between !important;
   align-items: center !important;
   padding: 0 10px !important;
-  z-index: 999999 !important;
+  z-index: 999 !important;
   box-sizing: border-box !important;
 }
 
