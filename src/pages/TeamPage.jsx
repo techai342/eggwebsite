@@ -438,6 +438,27 @@ export default function TeamPage() {
             </span>
           </div>
 
+          {/* 1 Invite = 1 Egg Reward Announcement */}
+          <div className="mb-3 p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-[#c9f36a]/20 to-emerald-500/15 border border-amber-400/40 flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-lg shadow-inner">
+                🥚
+              </div>
+              <div>
+                <h4 className="font-manrope font-black text-xs text-[#0d2c20] uppercase tracking-wider">
+                  Special Reward: 1 Invite = 1 Free Egg!
+                </h4>
+                <p className="text-[9px] text-[#15803d] font-bold mt-0.5">
+                  Har 1 dost ke register hone per aap ko 1 Anda foran aap ke Vault mein milega (2 Invites = 2 Eggs).
+                </p>
+              </div>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-center shrink-0 shadow-xs">
+              <span className="text-[7.5px] uppercase font-bold text-slate-500 block">Invite Eggs</span>
+              <span className="font-mono font-black text-xs text-amber-700">+{referralStats?.level1Count ?? 0}</span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-2.5">
             {/* Card 1: Total Invited */}
             <div className="bg-white border border-[#28734a]/20 rounded-2xl p-3 flex flex-col justify-between shadow-xs">

@@ -1322,14 +1322,22 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       createdAt: new Date().toISOString()
     };
 
-    // If a referral code was passed, add downline tracking
+    // If a referral code was passed, add downline tracking and award +1 Free Egg to upliner!
+    let nextUsers = [...users];
     if (referralCode?.trim()) {
-      const uplinerUser = users.find(
+      const uplinerIdx = users.findIndex(
         (u) =>
           u.username.toLowerCase() === referralCode.trim().toLowerCase() ||
           (u.referralCode && u.referralCode.toLowerCase() === referralCode.trim().toLowerCase())
       );
-      if (uplinerUser) {
+      if (uplinerIdx !== -1) {
+        const uplinerUser = users[uplinerIdx];
+        const newUplinerEggs = (Number(uplinerUser.eggVault) || 0) + 1;
+        nextUsers[uplinerIdx] = {
+          ...uplinerUser,
+          eggVault: newUplinerEggs
+        };
+
         setTeamMembers((prev) => [
           ...prev,
           {
@@ -1343,10 +1351,46 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             commissionEarnedPkr: 0
           }
         ]);
+
+        // Award +1 Egg to upliner in Supabase
+        try {
+          supabase
+            .from('users')
+            .update({
+              egg_vault: newUplinerEggs,
+              updated_at: new Date().toISOString()
+            })
+            .eq('username', uplinerUser.username)
+            .then(() => {})
+            .catch(() => {});
+
+          supabase
+            .from('transactions')
+            .insert({
+              username: uplinerUser.username,
+              type: 'REWARD',
+              amount: 1,
+              unit: 'EGG',
+              description: `Referral Invitation Reward: +1 Free Egg for inviting @${cleanUsername}`,
+              status: 'Completed',
+              date: new Date().toISOString()
+            })
+            .then(() => {})
+            .catch(() => {});
+        } catch (_) {}
+
+        logActivity({
+          action: 'REFERRAL_REWARD',
+          category: 'AFFILIATE',
+          userId: uplinerUser.id || uplinerUser.accountId,
+          username: uplinerUser.username,
+          details: `Awarded +1 Free Egg to @${uplinerUser.username} for inviting @${cleanUsername}`,
+          status: 'SUCCESS'
+        });
       }
     }
 
-    const updatedUsers = [...users, newUserRecord];
+    const updatedUsers = [...nextUsers, newUserRecord];
     setUsers(updatedUsers);
 
     // Auto login with fresh zero balances
@@ -2193,7 +2237,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       totalCommissionEarned,
       activeTeamCount,
       totalDownlineUnits,
-      totalDownlineVolumePkr
+      totalDownlineVolumePkr,
+      referralEggRewards: level1Count // 1 direct invite = 1 egg
     };
   }, [teamMembers]);
 
@@ -2236,12 +2281,75 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     const updatedMembers = [newMember, ...currentList];
     setTeamMembers(updatedMembers);
-    persistState({ teamMembers: updatedMembers });
 
-    const msg = `Successfully registered ${cleanUsername} as Level ${level} downline!`;
+    const patchToPersist = { teamMembers: updatedMembers };
+
+    // 1 Direct Invite = +1 Free Egg added to user's Egg Vault!
+    if (level === 1) {
+      const nextVault = (Number(eggVault) || 0) + 1;
+      setEggVault(nextVault);
+      patchToPersist.eggVault = nextVault;
+
+      const rewardTrx = {
+        id: `TRX-REF-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        type: 'REWARD',
+        amount: 1,
+        unit: 'EGG',
+        description: `Direct Referral Reward: +1 Free Egg for inviting @${cleanUsername}`,
+        status: 'Completed',
+        date: new Date().toISOString()
+      };
+      const updatedTxs = [rewardTrx, ...transactions];
+      setTransactions(updatedTxs);
+      patchToPersist.transactions = updatedTxs;
+
+      // Sync +1 Egg to Supabase users table
+      if (user?.username) {
+        try {
+          supabase
+            .from('users')
+            .update({
+              egg_vault: nextVault,
+              updated_at: new Date().toISOString()
+            })
+            .eq('username', user.username)
+            .then(() => {})
+            .catch(() => {});
+
+          supabase
+            .from('transactions')
+            .insert({
+              username: user.username,
+              type: 'REWARD',
+              amount: 1,
+              unit: 'EGG',
+              description: `Direct Referral Reward: +1 Free Egg for inviting @${cleanUsername}`,
+              status: 'Completed',
+              date: new Date().toISOString()
+            })
+            .then(() => {})
+            .catch(() => {});
+        } catch (_) {}
+      }
+
+      logActivity({
+        action: 'REFERRAL_REWARD',
+        category: 'AFFILIATE',
+        userId: user?.id || user?.accountId,
+        username: user?.username,
+        details: `Earned +1 Free Egg for inviting direct farmer @${cleanUsername}`,
+        status: 'SUCCESS'
+      });
+    }
+
+    persistState(patchToPersist);
+
+    const msg = level === 1
+      ? `Successfully registered ${cleanUsername}! You earned +1 Free Egg in your vault!`
+      : `Successfully registered ${cleanUsername} as Level ${level} downline!`;
     showToast('success', msg);
     return { success: true, member: newMember, message: msg };
-  }, [teamMembers, user, persistState, showToast]);
+  }, [teamMembers, user, eggVault, transactions, persistState, showToast, logActivity]);
 
   // Downline Purchase Simulation Action
   const simulateDownlinePurchase = useCallback(({ memberId, username, units = 1 }) => {

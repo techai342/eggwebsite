@@ -1176,8 +1176,8 @@ export default function DashboardPage() {
                       <h4 className="font-manrope font-black text-xs text-[#0d2c20] uppercase tracking-wider leading-none">
                         Squad Referral Pass
                       </h4>
-                      <span className="text-[8px] font-bold text-[#15803d] tracking-widest uppercase block mt-0.5">
-                        Instant Rewards Active
+                      <span className="text-[8px] font-black text-amber-600 tracking-wider uppercase block mt-0.5 flex items-center gap-1">
+                        <i className="fa-solid fa-gift text-[9px] text-amber-500"></i> 1 Invite = +1 Free Egg in Vault!
                       </span>
                     </div>
                   </div>
@@ -1185,6 +1185,27 @@ export default function DashboardPage() {
                     <i className="fa-solid fa-gift text-[8px]"></i>
                     <span>Lifetime Bonus</span>
                   </span>
+                </div>
+
+                {/* 1 Invite = 1 Egg Direct Reward Incentive Banner */}
+                <div className="bg-gradient-to-r from-amber-500/15 via-[#c9f36a]/20 to-emerald-500/15 border border-amber-400/40 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🥚</span>
+                    <div>
+                      <span className="text-[10px] font-black text-[#0d2c20] uppercase tracking-wider block">
+                        Invite Reward: 1 Invite = 1 Free Egg!
+                      </span>
+                      <span className="text-[8px] text-[#15803d] font-bold block">
+                        Har 1 user invite karein aur 1 Anda foran apne Vault mein payein (2 Invites = 2 Eggs)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-[7.5px] uppercase font-bold text-slate-500 block">Bonus Eggs:</span>
+                    <span className="text-xs font-black text-amber-700 font-mono">
+                      +{referralStats?.level1Count ?? 0} Eggs
+                    </span>
+                  </div>
                 </div>
 
                 {/* Code Box with 1-Tap Copy & WhatsApp Share */}
