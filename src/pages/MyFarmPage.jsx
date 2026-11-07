@@ -147,9 +147,9 @@ export default function MyFarmPage() {
       showBack={true}
       onBack={() => navigateTo('/dashboard')}
     >
-      <div className="px-3.5 pt-2 pb-8 space-y-4">
+      <div className="px-3.5 md:px-6 lg:px-8 pt-2 md:pt-4 pb-8 space-y-4 md:space-y-6 max-w-7xl mx-auto">
         {/* Top Breadcrumb & Live Paddock Beacon */}
-        <div className="flex items-center justify-between gap-3 bg-white/95 backdrop-blur-md border border-[#e2ede0] rounded-2xl p-2.5 shadow-sm">
+        <div className="flex items-center justify-between gap-3 bg-white/95 backdrop-blur-md border border-[#e2ede0] rounded-2xl p-2.5 md:p-3.5 shadow-sm">
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
@@ -162,12 +162,12 @@ export default function MyFarmPage() {
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                <h2 className="font-manrope font-black text-xs text-[#0d2c20] tracking-wide uppercase leading-none truncate">
+                <h2 className="font-manrope font-black text-xs md:text-sm text-[#0d2c20] tracking-wide uppercase leading-none truncate">
                   My Farm &amp; Laying Flock
                 </h2>
               </div>
-              <span className="text-[8px] font-extrabold text-[#28734a] uppercase tracking-wider block mt-1 leading-none">
-                VIP Pasture Management
+              <span className="text-[8px] md:text-[9.5px] font-extrabold text-[#28734a] uppercase tracking-wider block mt-1 leading-none">
+                VIP Pasture Management • 120-Day Production Cycle
               </span>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function MyFarmPage() {
           <button
             type="button"
             onClick={handleHenAudio}
-            className={`flex-shrink-0 px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all ${
+            className={`flex-shrink-0 px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
               isAudioPlaying
                 ? 'bg-amber-400 text-slate-900 border-amber-500 scale-105 shadow-md'
                 : 'bg-emerald-50 hover:bg-emerald-100 text-[#153d2b] border-[#c9f36a]/60 shadow-sm active:scale-95'
@@ -183,11 +183,62 @@ export default function MyFarmPage() {
             title="Hear Pasture Flock Cluck"
           >
             <i className={`fa-solid ${isAudioPlaying ? 'fa-volume-high animate-bounce' : 'fa-volume-low'} text-xs`}></i>
-            <span className="text-[8.5px] font-manrope font-black tracking-wider uppercase">
+            <span className="text-[8.5px] md:text-[9px] font-manrope font-black tracking-wider uppercase">
               {isAudioPlaying ? 'Clucking...' : 'Flock Voice'}
             </span>
           </button>
         </div>
+
+        {/* ============================================================== */}
+        {/* FLOCK METRIC KPI CARDS                                         */}
+        {/* ============================================================== */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4">
+          <div className="bg-white rounded-2xl border border-[#e2ede0] p-3.5 shadow-sm">
+            <span className="text-[7.5px] md:text-[8.5px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
+              Active Hens
+            </span>
+            <strong className="text-base md:text-xl font-black text-[#153d2b] block mt-1 leading-none font-manrope">
+              {totalHens} <span className="text-[9px] font-normal text-slate-400">Units</span>
+            </strong>
+            <span className="text-[7px] md:text-[8px] font-bold text-emerald-600 uppercase block mt-1">120-Day Cycle</span>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-[#e2ede0] p-3.5 shadow-sm">
+            <span className="text-[7.5px] md:text-[8.5px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
+              Daily Yield
+            </span>
+            <strong className="text-base md:text-xl font-black text-[#0d2c20] block mt-1 leading-none font-manrope">
+              +{dailyEggsCapacity} <span className="text-[9px] font-normal text-slate-400">Eggs</span>
+            </strong>
+            <span className="text-[7px] md:text-[8px] font-bold text-[#28734a] uppercase block mt-1">Every 24h</span>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-[#e2ede0] p-3.5 shadow-sm">
+            <span className="text-[7.5px] md:text-[8.5px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
+              Egg Vault
+            </span>
+            <strong className="text-base md:text-xl font-black text-amber-600 block mt-1 leading-none font-manrope">
+              {Math.floor(Number(eggVault || 0)).toLocaleString()} <span className="text-[9px] font-normal text-slate-400">Eggs</span>
+            </strong>
+            <span className="text-[7px] md:text-[8px] font-bold text-amber-700 uppercase block mt-1">Liquid Ready</span>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-[#e2ede0] p-3.5 shadow-sm">
+            <span className="text-[7.5px] md:text-[8.5px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
+              Est. Monthly
+            </span>
+            <strong className="text-base md:text-xl font-black text-[#153d2b] block mt-1 leading-none font-manrope truncate">
+              Rs. {estMonthlyRevenue.toLocaleString()}
+            </strong>
+            <span className="text-[7px] md:text-[8px] font-bold text-emerald-600 uppercase block mt-1 truncate">@ Rs. 32/Egg</span>
+          </div>
+        </div>
+
+        {/* RESPONSIVE 2-COLUMN MAIN CONTENT GRID ON LAPTOP / DESKTOP */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 items-start">
+          
+          {/* LEFT COLUMN: PASTURE ARENA HERO & ACTIVE COOP BATCHES */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-4 md:space-y-6">
 
         {/* ============================================================== */}
         {/* INTERACTIVE PASTURE ARENA HERO                                 */}
@@ -335,91 +386,7 @@ export default function MyFarmPage() {
           </div>
         </div>
 
-        {/* ============================================================== */}
-        {/* FLOCK METRIC KPI CARDS                                         */}
-        {/* ============================================================== */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div className="bg-white rounded-2xl border border-[#e2ede0] p-3 shadow-sm">
-            <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
-              Active Hens
-            </span>
-            <strong className="text-base font-black text-[#153d2b] block mt-1 leading-none font-manrope">
-              {totalHens} <span className="text-[9px] font-normal text-slate-400">Units</span>
-            </strong>
-            <span className="text-[7px] font-bold text-emerald-600 uppercase block mt-1">120-Day Cycle</span>
-          </div>
 
-          <div className="bg-white rounded-2xl border border-[#e2ede0] p-3 shadow-sm">
-            <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
-              Daily Yield
-            </span>
-            <strong className="text-base font-black text-[#0d2c20] block mt-1 leading-none font-manrope">
-              +{dailyEggsCapacity} <span className="text-[9px] font-normal text-slate-400">Eggs</span>
-            </strong>
-            <span className="text-[7px] font-bold text-[#28734a] uppercase block mt-1">Every 24h</span>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-[#e2ede0] p-3 shadow-sm">
-            <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
-              Egg Vault
-            </span>
-            <strong className="text-base font-black text-amber-600 block mt-1 leading-none font-manrope">
-              {Math.floor(Number(eggVault || 0)).toLocaleString()}
-            </strong>
-            <span className="text-[7px] font-bold text-amber-700 uppercase block mt-1">Liquid Ready</span>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-[#e2ede0] p-3 shadow-sm">
-            <span className="text-[7.5px] font-extrabold text-slate-400 uppercase tracking-widest block leading-none">
-              Est. Monthly
-            </span>
-            <strong className="text-base font-black text-[#153d2b] block mt-1 leading-none font-manrope truncate">
-              Rs. {estMonthlyRevenue.toLocaleString()}
-            </strong>
-            <span className="text-[7px] font-bold text-emerald-600 uppercase block mt-1 truncate">@ Rs. 32/Egg</span>
-          </div>
-        </div>
-
-        {/* ============================================================== */}
-        {/* QUICK ACTION DOCK                                              */}
-        {/* ============================================================== */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => navigateTo('/buy-asset')}
-            className="p-3.5 rounded-2xl bg-gradient-to-r from-[#153d2b] to-[#28734a] text-white flex items-center justify-between shadow-md hover:shadow-lg active:scale-95 transition-all text-left group"
-          >
-            <div>
-              <span className="text-[8px] font-black text-[#c9f36a] uppercase tracking-wider block">
-                Expand Flock
-              </span>
-              <strong className="text-xs font-manrope font-black text-white block mt-0.5">
-                + Buy More Hens
-              </strong>
-            </div>
-            <div className="w-8 h-8 rounded-xl bg-white/10 group-hover:bg-white/20 flex items-center justify-center text-xs text-[#c9f36a] transition-all">
-              <i className="fa-solid fa-plus"></i>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigateTo('/sell-egg')}
-            className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 flex items-center justify-between shadow-md hover:shadow-lg active:scale-95 transition-all text-left group"
-          >
-            <div>
-              <span className="text-[8px] font-black text-slate-900 uppercase tracking-wider block">
-                Cashout Eggs
-              </span>
-              <strong className="text-xs font-manrope font-black text-slate-950 block mt-0.5">
-                Sell to Merchants
-              </strong>
-            </div>
-            <div className="w-8 h-8 rounded-xl bg-black/10 group-hover:bg-black/20 flex items-center justify-center text-xs text-slate-900 transition-all">
-              <i className="fa-solid fa-arrow-right"></i>
-            </div>
-          </button>
-        </div>
 
         {/* ============================================================== */}
         {/* ACTIVE COOP BATCHES ROSTER                                     */}
@@ -559,6 +526,121 @@ export default function MyFarmPage() {
             )}
           </div>
         </div>
+
+      </div>
+
+      {/* RIGHT COLUMN: FAST ACTIONS, REVENUE PROJECTION & WELLNESS HUD */}
+      <div className="lg:col-span-5 xl:col-span-4 space-y-4 md:space-y-6">
+        
+        {/* FAST ACTIONS DOCK */}
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
+          <button
+            type="button"
+            onClick={() => navigateTo('/buy-asset')}
+            className="p-4 rounded-2xl bg-gradient-to-r from-[#153d2b] to-[#28734a] text-white flex items-center justify-between shadow-md hover:shadow-lg active:scale-95 transition-all text-left group cursor-pointer"
+          >
+            <div>
+              <span className="text-[8px] md:text-[9px] font-black text-[#c9f36a] uppercase tracking-wider block">
+                Expand Flock
+              </span>
+              <strong className="text-xs md:text-sm font-manrope font-black text-white block mt-0.5">
+                + Buy More Hens
+              </strong>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-white/10 group-hover:bg-white/20 flex items-center justify-center text-sm text-[#c9f36a] transition-all">
+              <i className="fa-solid fa-plus"></i>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigateTo('/sell-egg')}
+            className="p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 flex items-center justify-between shadow-md hover:shadow-lg active:scale-95 transition-all text-left group cursor-pointer"
+          >
+            <div>
+              <span className="text-[8px] md:text-[9px] font-black text-slate-900 uppercase tracking-wider block">
+                Cashout Eggs
+              </span>
+              <strong className="text-xs md:text-sm font-manrope font-black text-slate-950 block mt-0.5">
+                Sell to Merchants
+              </strong>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-black/10 group-hover:bg-black/20 flex items-center justify-center text-sm text-slate-900 transition-all">
+              <i className="fa-solid fa-arrow-right"></i>
+            </div>
+          </button>
+        </div>
+
+        {/* FINANCIAL FORECAST & REVENUE PROJECTION CARD */}
+        <div className="bg-white rounded-3xl border border-[#e2ede0] p-4 md:p-5 shadow-sm space-y-3.5">
+          <div className="flex items-center justify-between border-b border-[#e2ede0] pb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-sm text-amber-700">
+                <i className="fa-solid fa-chart-line"></i>
+              </div>
+              <div>
+                <h3 className="font-manrope font-black text-xs md:text-sm text-[#0d2c20] uppercase tracking-wide">
+                  Flock Financial Projections
+                </h3>
+                <span className="text-[8px] md:text-[9px] font-bold text-slate-400 block">
+                  Based on {totalHens} active hens @ Rs. 32 avg. egg rate
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            <div className="p-3 rounded-2xl bg-[#fafdf9] border border-[#e5efe3] flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-600">Daily Production</span>
+              <span className="font-mono font-black text-xs md:text-sm text-[#153d2b]">+{dailyEggsCapacity} Eggs / day</span>
+            </div>
+            <div className="p-3 rounded-2xl bg-[#fafdf9] border border-[#e5efe3] flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-600">Est. 30-Day Harvest</span>
+              <span className="font-mono font-black text-xs md:text-sm text-[#15803d]">{estMonthlyEggs} Eggs</span>
+            </div>
+            <div className="p-3 rounded-2xl bg-[#fafdf9] border border-[#e5efe3] flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-600">Est. Monthly Revenue</span>
+              <span className="font-mono font-black text-xs md:text-sm text-emerald-700">Rs. {estMonthlyRevenue.toLocaleString()}</span>
+            </div>
+            <div className="p-3 rounded-2xl bg-[#f0f7ee] border border-[#c9e4c5] flex items-center justify-between">
+              <span className="text-xs font-black text-[#0d2c20]">120-Day Total Yield Value</span>
+              <span className="font-mono font-black text-xs md:text-sm text-[#153d2b]">Rs. {totalLifecycleRevenue.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* PASTURE WELLNESS & CLIMATE TELEMETRY */}
+        <div className="bg-gradient-to-br from-[#0d2c20] to-[#082013] text-white rounded-3xl p-4 md:p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+            <div className="flex items-center gap-2">
+              <i className="fa-solid fa-leaf text-[#c9f36a]"></i>
+              <h4 className="font-manrope font-black text-xs uppercase tracking-wide text-white">
+                Pasture Wellness HUD
+              </h4>
+            </div>
+            <span className="text-[8px] font-black uppercase text-[#c9f36a] bg-[#c9f36a]/20 px-2 py-0.5 rounded-full border border-[#c9f36a]/40">
+              Certified Organic
+            </span>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-white/70">Coop Temperature:</span>
+              <span className="font-bold text-[#c9f36a]">Optimal 24°C</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-white/70">Bio-Security &amp; Hygiene:</span>
+              <span className="font-bold text-emerald-400">100% Safe (Grade A)</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-white/70">Feeding Protocol:</span>
+              <span className="font-bold text-white">Automated Micro-Nutrients</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
 
         {/* Harvest Celebration Modal */}
         {isCelebrationOpen && (

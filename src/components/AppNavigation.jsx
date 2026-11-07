@@ -15,9 +15,17 @@ export function AppHeader({
   onBack,
   onMenuToggle,
   onChatClick,
-  variant = 'canopy'
+  variant = 'canopy',
+  currentRoute = '/dashboard'
 }) {
-  const { navigateTo, user, getWhatsAppSupportUrl } = useFarm();
+  const { navigateTo, user, balance, eggVault, activeAssets, logout, getWhatsAppSupportUrl } = useFarm();
+
+  const activeFlockCount = (activeAssets || []).filter((a) => {
+    const term = Number(a.termDays) || 120;
+    const elapsed = a.daysElapsed !== undefined ? Number(a.daysElapsed) : 0;
+    const remaining = a.daysRemaining !== undefined ? Number(a.daysRemaining) : (term - elapsed);
+    return remaining > 0 && a.status !== 'completed';
+  }).reduce((sum, a) => sum + (Number(a.units) || 0), 0);
 
   const handleBack = () => {
     if (onBack) {
@@ -105,93 +113,227 @@ export function AppHeader({
     );
   }
 
-  // Default Signature Canopy Arched Header
+  // Default Signature Canopy Arched Header + Laptop/Desktop Executive Navbar
   return (
-    <header className="canopy-header">
-      <div className="canopy-header-glow-top"></div>
-      <div className="canopy-header-glow-bottom"></div>
+    <>
+      {/* 1. MOBILE CANOPY ARCHED HEADER (< 768px) */}
+      <header className="canopy-header md:hidden">
+        <div className="canopy-header-glow-top"></div>
+        <div className="canopy-header-glow-bottom"></div>
 
-      <div className="relative z-10 flex items-center justify-between gap-2">
-        {/* Left Section: Back Button or Menu Button */}
-        <div className="flex items-center gap-2">
-          {showBack && (
+        <div className="relative z-10 flex items-center justify-between gap-2">
+          {/* Left Section: Back Button or Menu Button */}
+          <div className="flex items-center gap-2">
+            {showBack && (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-black/40 border border-[#c9f36a]/40 text-[#c9f36a] hover:bg-[#c9f36a]/20 active:scale-95 transition-all shadow-sm"
+                title="Go Back"
+                aria-label="Go Back"
+              >
+                <i className="fa-solid fa-arrow-left text-xs"></i>
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={handleBack}
+              onClick={onMenuToggle}
               className="flex items-center justify-center w-8 h-8 rounded-full bg-black/40 border border-[#c9f36a]/40 text-[#c9f36a] hover:bg-[#c9f36a]/20 active:scale-95 transition-all shadow-sm"
-              title="Go Back"
-              aria-label="Go Back"
+              title="Navigation Menu"
+              aria-label="Open Navigation Menu"
             >
-              <i className="fa-solid fa-arrow-left text-xs"></i>
+              <i className="fa-solid fa-bars-staggered text-xs"></i>
             </button>
-          )}
 
-          <button
-            type="button"
-            onClick={onMenuToggle}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-black/40 border border-[#c9f36a]/40 text-[#c9f36a] hover:bg-[#c9f36a]/20 active:scale-95 transition-all shadow-sm"
-            title="Navigation Menu"
-            aria-label="Open Navigation Menu"
-          >
-            <i className="fa-solid fa-bars-staggered text-xs"></i>
-          </button>
-
-          {/* Brand Name Capsule */}
-          <div
-            onClick={() => navigateTo('/dashboard')}
-            className="cursor-pointer flex items-center gap-2 bg-black/35 backdrop-blur-md border border-[#c9f36a]/30 px-3 py-1.5 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.25)]"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9f36a] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c9f36a]"></span>
-            </span>
-            <span className="font-manrope font-black text-[10.5px] sm:text-[11px] tracking-wider uppercase text-white drop-shadow-sm truncate max-w-[155px]">
-              {title}
-            </span>
+            {/* Brand Name Capsule */}
+            <div
+              onClick={() => navigateTo('/dashboard')}
+              className="cursor-pointer flex items-center gap-2 bg-black/35 backdrop-blur-md border border-[#c9f36a]/30 px-3 py-1.5 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.25)]"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9f36a] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c9f36a]"></span>
+              </span>
+              <span className="font-manrope font-black text-[10.5px] sm:text-[11px] tracking-wider uppercase text-white drop-shadow-sm truncate max-w-[155px]">
+                {title}
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Right Section: Admin Launcher, FARM CLOUD status badge & Live Chat Trigger */}
-        <div className="flex items-center gap-2">
-          {/* Golden Crown Super Admin Launcher Button */}
-          {user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com') && (
+          {/* Right Section: Admin Launcher, FARM CLOUD status badge & Live Chat Trigger */}
+          <div className="flex items-center gap-2">
+            {/* Golden Crown Super Admin Launcher Button */}
+            {user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com') && (
+              <button
+                type="button"
+                onClick={() => navigateTo('/admin')}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-[#082013] font-black text-[9.5px] uppercase tracking-wider shadow-[0_2px_10px_rgba(245,158,11,0.35)] hover:brightness-110 active:scale-95 transition-all border border-amber-200"
+                title="Super Admin Cockpit"
+                aria-label="Admin Panel"
+              >
+                <i className="fa-solid fa-crown text-[10px] text-[#082013]"></i>
+                <span className="hidden xs:inline">Admin Panel</span>
+              </button>
+            )}
+
+            {/* Live Farm Cloud Status Beacon */}
+            <div className="hidden xs:flex items-center gap-1.5 bg-gradient-to-r from-[#c9f36a]/20 to-emerald-500/15 border border-[#c9f36a]/40 px-2.5 py-1 rounded-full shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="font-manrope font-black text-[8.5px] text-[#c9f36a] uppercase tracking-wider">
+                FARM CLOUD
+              </span>
+            </div>
+
+            {/* Live Chat Headset Trigger */}
             <button
               type="button"
-              onClick={() => navigateTo('/admin')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-[#082013] font-black text-[9.5px] uppercase tracking-wider shadow-[0_2px_10px_rgba(245,158,11,0.35)] hover:brightness-110 active:scale-95 transition-all border border-amber-200"
-              title="Super Admin Cockpit"
-              aria-label="Admin Panel"
+              onClick={handleChat}
+              className="relative flex items-center justify-center w-8 h-8 rounded-full bg-black/40 border border-[#c9f36a]/50 text-[#c9f36a] hover:bg-[#c9f36a]/20 active:scale-90 transition-all shadow-sm"
+              title="Live Support Chat"
+              aria-label="Live Support"
             >
-              <i className="fa-solid fa-crown text-[10px] text-[#082013]"></i>
-              <span className="hidden xs:inline">Admin Panel</span>
+              <i className="fa-solid fa-headset text-xs"></i>
+              <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border border-[#0d2c20]"></span>
+              </span>
             </button>
-          )}
+          </div>
+        </div>
+      </header>
 
-          {/* Live Farm Cloud Status Beacon */}
-          <div className="hidden xs:flex items-center gap-1.5 bg-gradient-to-r from-[#c9f36a]/20 to-emerald-500/15 border border-[#c9f36a]/40 px-2.5 py-1 rounded-full shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="font-manrope font-black text-[8.5px] text-[#c9f36a] uppercase tracking-wider">
-              FARM CLOUD
-            </span>
+      {/* 2. LAPTOP / DESKTOP EXECUTIVE NAVIGATION BAR (>= 768px) */}
+      <header className="hidden md:block bg-gradient-to-r from-[#071c10] via-[#0d2c20] to-[#071c10] border-b-2 border-[#c9f36a]/30 shadow-md text-white">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-3 flex items-center justify-between gap-4">
+          
+          {/* Brand Identity & Back */}
+          <div className="flex items-center gap-3">
+            {showBack && (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 border border-[#c9f36a]/40 text-[#c9f36a] flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-sm"
+                title="Go Back"
+              >
+                <i className="fa-solid fa-arrow-left text-xs"></i>
+              </button>
+            )}
+
+            <div
+              onClick={() => navigateTo('/dashboard')}
+              className="flex items-center gap-3 cursor-pointer group"
+            >
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-lime-500/20 border-2 border-[#c9f36a]/60 p-1 flex items-center justify-center shadow-inner group-hover:scale-105 transition-all">
+                <img src={henImg} alt="Hen Logo" className="w-full h-full object-contain drop-shadow" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-manrope font-black text-base lg:text-lg text-white tracking-wide uppercase group-hover:text-[#c9f36a] transition-colors">
+                    {title}
+                  </h1>
+                  <span className="flex items-center gap-1 bg-[#c9f36a]/20 border border-[#c9f36a]/50 text-[#c9f36a] text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#c9f36a] animate-pulse"></span>
+                    <span>FARM CLOUD</span>
+                  </span>
+                </div>
+                <span className="text-[9px] font-extrabold text-emerald-300/80 tracking-widest uppercase block">
+                  VIP Digital Poultry &amp; Egg Yield Engine
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Live Chat Headset Trigger */}
-          <button
-            type="button"
-            onClick={handleChat}
-            className="relative flex items-center justify-center w-8 h-8 rounded-full bg-black/40 border border-[#c9f36a]/50 text-[#c9f36a] hover:bg-[#c9f36a]/20 active:scale-90 transition-all shadow-sm"
-            title="Live Support Chat"
-            aria-label="Live Support"
-          >
-            <i className="fa-solid fa-headset text-xs"></i>
-            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border border-[#0d2c20]"></span>
-            </span>
-          </button>
+          {/* Desktop Navigation Links */}
+          <nav className="flex items-center gap-1 lg:gap-2">
+            {[
+              { label: 'Home', path: '/dashboard', icon: 'fa-house-chimney', active: currentRoute === '/dashboard' || currentRoute === '/' || currentRoute === '/home' },
+              { label: 'My Farm', path: '/my-farm', icon: 'fa-egg', active: currentRoute === '/my-farm' || currentRoute === '/farm' },
+              { label: 'Buy Hens', path: '/buy-asset', icon: 'fa-cart-shopping', active: currentRoute === '/buy-asset' || currentRoute === '/deposit' || currentRoute === '/buy' },
+              { label: 'Sell Eggs', path: '/sell-egg', icon: 'fa-hand-holding-dollar', active: currentRoute === '/sell-egg' || currentRoute === '/withdraw' || currentRoute === '/sale' },
+              { label: 'My Team', path: '/team', icon: 'fa-users', active: currentRoute === '/team' },
+              { label: 'Security', path: '/change-password', icon: 'fa-shield-halved', active: currentRoute === '/change-password' || currentRoute === '/profile' }
+            ].map((link) => (
+              <a
+                key={link.path}
+                href={`#${link.path}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateTo(link.path);
+                }}
+                className={`px-3.5 py-2 rounded-xl font-manrope font-extrabold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                  link.active
+                    ? 'bg-[#c9f36a] text-[#082013] font-black shadow-md'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <i className={`fa-solid ${link.icon} text-xs ${link.active ? 'text-[#082013]' : 'text-emerald-400'}`}></i>
+                <span>{link.label}</span>
+              </a>
+            ))}
+
+            {/* Admin Panel Launcher */}
+            {user?.isLoggedIn && (user?.role === 'admin' || user?.email === 'admin@gmail.com') && (
+              <button
+                type="button"
+                onClick={() => navigateTo('/admin')}
+                className="ml-1 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-[#082013] font-manrope font-black text-xs uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all border border-amber-200 flex items-center gap-1.5 cursor-pointer"
+                title="Super Admin Cockpit"
+              >
+                <i className="fa-solid fa-crown text-xs text-[#082013]"></i>
+                <span>Admin Panel</span>
+              </button>
+            )}
+          </nav>
+
+          {/* User Telemetry & Quick Action */}
+          <div className="flex items-center gap-2.5">
+            <div className="hidden xl:flex items-center gap-3 bg-black/40 border border-emerald-500/30 rounded-2xl px-3.5 py-1.5 text-xs">
+              <div>
+                <span className="text-[7.5px] uppercase tracking-wider text-slate-400 block font-bold">Liquid PKR</span>
+                <span className="font-mono font-black text-emerald-400 block">Rs. {Number(balance || 0).toLocaleString()}</span>
+              </div>
+              <div className="w-[1px] h-6 bg-white/15"></div>
+              <div>
+                <span className="text-[7.5px] uppercase tracking-wider text-slate-400 block font-bold">Egg Vault</span>
+                <span className="font-mono font-black text-amber-300 block">{Math.floor(Number(eggVault || 0)).toLocaleString()} Eggs</span>
+              </div>
+              <div className="w-[1px] h-6 bg-white/15"></div>
+              <div>
+                <span className="text-[7.5px] uppercase tracking-wider text-slate-400 block font-bold">Flock</span>
+                <span className="font-mono font-black text-[#c9f36a] block">{activeFlockCount} Hens</span>
+              </div>
+            </div>
+
+            {/* Live Chat Support Trigger */}
+            <button
+              type="button"
+              onClick={handleChat}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/50 text-[#c9f36a] text-xs font-manrope font-extrabold flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+              title="24/7 Official Live Support Desk"
+            >
+              <i className="fa-solid fa-headset text-sm"></i>
+              <span className="hidden lg:inline">Live Support</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            </button>
+
+            {/* Logout button */}
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigateTo('/login');
+              }}
+              className="w-9 h-9 rounded-xl bg-white/10 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-white/15 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-sm"
+              title="Log Out Account"
+            >
+              <i className="fa-solid fa-power-off text-xs"></i>
+            </button>
+          </div>
+
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 }
 
@@ -624,6 +766,7 @@ export function AppShell({
             onBack={onBack}
             onMenuToggle={() => setIsSidebarOpen(true)}
             onChatClick={() => setIsSupportOpen(true)}
+            currentRoute={currentRoute}
           />
         )}
 
@@ -647,15 +790,11 @@ export function AppShell({
           <button
             type="button"
             onClick={() => setIsSupportOpen(true)}
-            style={{
-              bottom: 'calc(4.85rem + env(safe-area-inset-bottom, 0px))',
-              right: 'max(1rem, calc(50vw - 230px))'
-            }}
-            className="fixed z-40 w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 via-[#16a34a] to-[#15803d] text-white shadow-[0_4px_20px_rgba(22,163,74,0.5)] border-2 border-[#c9f36a] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+            className="tc-support-beacon fixed z-40 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-r from-emerald-500 via-[#16a34a] to-[#15803d] text-white shadow-[0_4px_25px_rgba(22,163,74,0.6)] border-2 border-[#c9f36a] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer group"
             title="24/7 Official Live Support Desk"
             aria-label="Open Live Support Desk"
           >
-            <i className="fa-solid fa-headset text-lg group-hover:rotate-12 transition-transform"></i>
+            <i className="fa-solid fa-headset text-lg md:text-xl group-hover:rotate-12 transition-transform"></i>
             <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9f36a] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#c9f36a] border-2 border-[#082013]"></span>
