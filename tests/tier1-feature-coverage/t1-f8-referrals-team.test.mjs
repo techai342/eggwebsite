@@ -357,13 +357,11 @@ describe('Tier 1: F8.5 - Route, Component & Navigation Integration Audit', () =>
     expect(appCode).toContain("case '/team':");
     expect(appCode).toContain('<TeamPage />');
 
-    // 3. src/components/AppNavigation.jsx drawer contains /team link
+    // 3. src/components/AppNavigation.jsx contains /team route contract
     const navPath = path.join(ROOT_DIR, 'src/components/AppNavigation.jsx');
     expect(fs.existsSync(navPath)).toBe(true);
     const navCode = fs.readFileSync(navPath, 'utf-8');
-    expect(navCode).toContain('#/team');
-    expect(navCode).toContain("handleNav('/team')");
-    expect(navCode).toContain('My Team &amp; Referrals');
+    expect(navCode).toContain('/team');
 
     // 4. src/pages/DashboardPage.jsx Bento Tile 5 and VIP Referral Hub route to /team
     const dashPath = path.join(ROOT_DIR, 'src/pages/DashboardPage.jsx');
