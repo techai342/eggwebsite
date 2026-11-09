@@ -59,6 +59,7 @@ export default function MyFarmPage() {
     cooldownActive,
     cooldownHoursRemaining,
     lastHarvest,
+    readyFlockStats,
     navigateTo,
     showToast
   } = useFarm();
@@ -88,19 +89,24 @@ export default function MyFarmPage() {
   const estMonthlyRevenue = estMonthlyEggs * 32; // Average egg rate Rs. 32
   const totalLifecycleRevenue = totalHens * (ASSET_SPEC.totalYieldPerUnit || 120) * 32;
 
-  // Real-time second-by-second countdown timer
+  // Real-time second-by-second countdown timer (anchored to nearest batch unlock)
   useEffect(() => {
     const updateClock = () => {
-      if (!lastHarvest || !cooldownActive) {
+      // If there are ready eggs right now, timer shows 00:00:00 (ready to harvest!)
+      if (readyFlockStats?.hasReadyEggs) {
+        setRemainingTimeStr('00:00:00');
+        return;
+      }
+
+      const targetMs = readyFlockStats?.nearestNextTime
+        ? new Date(readyFlockStats.nearestNextTime).getTime()
+        : (lastHarvest ? new Date(lastHarvest).getTime() + 24 * 60 * 60 * 1000 : null);
+
+      if (!targetMs || isNaN(targetMs)) {
         setRemainingTimeStr('24:00:00');
         return;
       }
-      const last = new Date(lastHarvest).getTime();
-      if (isNaN(last)) {
-        setRemainingTimeStr('24:00:00');
-        return;
-      }
-      const diffMs = (24 * 60 * 60 * 1000) - (Date.now() - last);
+      const diffMs = targetMs - Date.now();
       if (diffMs <= 0) {
         setRemainingTimeStr('00:00:00');
         return;
@@ -115,7 +121,7 @@ export default function MyFarmPage() {
     updateClock();
     const interval = setInterval(updateClock, 1000);
     return () => clearInterval(interval);
-  }, [lastHarvest, cooldownActive, cooldownHoursRemaining]);
+  }, [readyFlockStats, lastHarvest, cooldownActive]);
 
   // Handle Hen Sound
   const handleHenAudio = () => {
@@ -124,12 +130,16 @@ export default function MyFarmPage() {
     setTimeout(() => setIsAudioPlaying(false), 1600);
   };
 
-  // Cooldown is active only when remaining time has not reached 00:00:00
-  const isCooldownEffective = Boolean(cooldownActive && remainingTimeStr !== '00:00:00');
+  // Cooldown is active only when there are no ready eggs and timer is still ticking
+  const isCooldownEffective = Boolean(!readyFlockStats?.hasReadyEggs && remainingTimeStr !== '00:00:00');
 
-  // Harvest handler
-  const handleHarvest = () => {
-    if (isCooldownEffective) {
+  // Harvest handler (Supports whole-flock or individual batch collection)
+  const handleHarvest = (targetAssetId = null) => {
+    if (totalHens <= 0) {
+      showToast('warning', 'No active hens in your coop. Adopt hens first to harvest daily eggs!');
+      return;
+    }
+    if (isCooldownEffective && !targetAssetId) {
       if (isAutoHarvestEnabled) {
         showToast('info', `🟢 Auto-Harvest is ON: Your fresh eggs will automatically deposit into your vault in ${remainingTimeStr}. No manual clicking needed!`);
       } else {
@@ -137,11 +147,7 @@ export default function MyFarmPage() {
       }
       return;
     }
-    if (totalHens <= 0) {
-      showToast('warning', 'No active hens in your coop. Adopt hens first to harvest daily eggs!');
-      return;
-    }
-    const res = harvestEggs();
+    const res = harvestEggs(new Date(), targetAssetId);
     if (res.success) {
       setCollectedCount(res.eggsCollected || dailyEggsCapacity);
       setIsCelebrationOpen(true);
@@ -414,9 +420,11 @@ export default function MyFarmPage() {
                   ? isAutoHarvestEnabled
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
                     : 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
-                  : 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
+                  : 'bg-emerald-500/20 text-[#c9f36a] border border-[#c9f36a]/50 animate-pulse'
               }`}>
-                {isCooldownEffective ? (isAutoHarvestEnabled ? 'Auto-Incubating' : 'Incubating (Manual)') : 'Harvest Ready'}
+                {isCooldownEffective 
+                  ? (isAutoHarvestEnabled ? 'Auto-Incubating' : 'Incubating (Cooldown)') 
+                  : `🟢 ${readyFlockStats?.readyEggs || dailyEggsCapacity} Eggs Ready to Harvest!`}
               </span>
             </div>
 
@@ -425,9 +433,13 @@ export default function MyFarmPage() {
                 {isCooldownEffective ? remainingTimeStr : '00:00:00'}
               </div>
               <div className="text-right">
-                <span className="text-[8px] uppercase tracking-wider text-white/60 block">Est. Yield</span>
-                <span className={`text-xs font-black ${isAutoHarvestEnabled ? 'text-[#c9f36a]' : 'text-rose-300'}`}>
-                  +{dailyEggsCapacity} Fresh Eggs
+                <span className="text-[8px] uppercase tracking-wider text-white/60 block">
+                  {isCooldownEffective ? 'Next Batch Yield' : 'Ready to Collect'}
+                </span>
+                <span className={`text-xs font-black ${
+                  !isCooldownEffective ? 'text-[#c9f36a]' : isAutoHarvestEnabled ? 'text-emerald-300' : 'text-rose-300'
+                }`}>
+                  +{!isCooldownEffective ? (readyFlockStats?.readyEggs || dailyEggsCapacity) : dailyEggsCapacity} Fresh Eggs
                 </span>
               </div>
             </div>
@@ -435,31 +447,27 @@ export default function MyFarmPage() {
             {/* Primary Harvest CTA Button (Green when ON, Red when OFF) */}
             <button
               type="button"
-              onClick={handleHarvest}
+              onClick={() => handleHarvest()}
               disabled={totalHens <= 0}
               className={`w-full py-3.5 px-4 rounded-xl font-manrope font-black text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center gap-2 ${
                 totalHens <= 0
                   ? 'bg-white/15 text-white/40 cursor-not-allowed border border-white/10'
+                  : !isCooldownEffective
+                  ? 'bg-gradient-to-r from-[#c9f36a] via-emerald-400 to-[#c9f36a] text-[#0d2c20] border-2 border-emerald-300 shadow-[0_0_25px_rgba(201,243,106,0.6)] cursor-pointer hover:scale-[1.01] active:scale-95 animate-pulse'
                   : isAutoHarvestEnabled
-                  ? isCooldownEffective
-                    ? 'bg-gradient-to-r from-emerald-950 via-[#0d3b22] to-emerald-950 border-2 border-emerald-400 text-[#c9f36a] shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:brightness-110 cursor-pointer active:scale-98'
-                    : 'bg-gradient-to-r from-[#c9f36a] via-lime-400 to-[#c9f36a] text-[#0d2c20] border-2 border-emerald-300 shadow-[0_0_25px_rgba(201,243,106,0.6)] cursor-pointer hover:scale-[1.01] active:scale-95 animate-pulse'
-                  : isCooldownEffective
-                  ? 'bg-gradient-to-r from-rose-950 via-[#3b0d15] to-rose-950 border-2 border-rose-500 text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.35)] hover:brightness-110 cursor-pointer active:scale-98'
-                  : 'bg-gradient-to-r from-rose-600 via-red-500 to-rose-600 text-white border-2 border-rose-400 shadow-[0_0_25px_rgba(239,68,68,0.6)] cursor-pointer hover:scale-[1.01] active:scale-95 animate-pulse'
+                  ? 'bg-gradient-to-r from-emerald-950 via-[#0d3b22] to-emerald-950 border-2 border-emerald-400 text-[#c9f36a] shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:brightness-110 cursor-pointer active:scale-98'
+                  : 'bg-gradient-to-r from-rose-950 via-[#3b0d15] to-rose-950 border-2 border-rose-500 text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.35)] hover:brightness-110 cursor-pointer active:scale-98'
               }`}
             >
               <i className={`fa-solid ${
-                isAutoHarvestEnabled ? 'fa-robot' : 'fa-hand'
+                !isCooldownEffective ? 'fa-basket-shopping text-emerald-950' : isAutoHarvestEnabled ? 'fa-robot' : 'fa-hand'
               } text-sm`}></i>
               <span>
-                {isAutoHarvestEnabled
-                  ? isCooldownEffective
-                    ? `🟢 AUTO-HARVEST IN (${remainingTimeStr})`
-                    : '🟢 AUTO-HARVEST READY • COLLECT NOW'
-                  : isCooldownEffective
-                  ? `🔴 AUTO-HARVEST OFF • MANUAL MODE (${remainingTimeStr})`
-                  : `👉 CLICK TO HARVEST DAILY EGGS (+${dailyEggsCapacity} Eggs)`}
+                {!isCooldownEffective
+                  ? `👉 CLICK TO HARVEST ${readyFlockStats?.readyEggs || dailyEggsCapacity} READY EGGS NOW!`
+                  : isAutoHarvestEnabled
+                  ? `🟢 AUTO-HARVEST IN (${remainingTimeStr})`
+                  : `🔴 COOLDOWN ACTIVE • NEXT EGG IN (${remainingTimeStr})`}
               </span>
             </button>
             <p className={`text-[8.5px] text-center mt-2.5 font-medium ${
@@ -515,19 +523,38 @@ export default function MyFarmPage() {
                 const isCompleted = daysRemaining === 0 || asset.status === 'completed';
                 const expiryDate = new Date(purchaseTs + totalDays * 24 * 60 * 60 * 1000);
 
+                // Individual batch harvest cycle calculation
+                const batchAnchor = asset.lastHarvest || asset.lastHarvestAt || asset.last_harvest_at || asset.purchaseDate || asset.purchasedAt;
+                const purchaseDateObj = new Date(purchaseTs);
+                const batchLastMs = batchAnchor ? new Date(batchAnchor).getTime() : purchaseTs;
+                const batchNextMs = batchLastMs + 24 * 60 * 60 * 1000;
+                const isBatchReady = Date.now() >= batchNextMs && !isCompleted;
+                const batchDiffMs = Math.max(0, batchNextMs - Date.now());
+
+                const purchaseTimeStr = purchaseDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const nextTimeStr = new Date(batchNextMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const bHours = Math.floor(batchDiffMs / (1000 * 60 * 60));
+                const bMins = Math.floor((batchDiffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const bSecs = Math.floor((batchDiffMs % (1000 * 60)) / 1000);
+                const pad = (n) => String(n).padStart(2, '0');
+                const batchCountdownStr = `${pad(bHours)}:${pad(bMins)}:${pad(bSecs)}`;
+
                 return (
                   <div
                     key={asset.id || idx}
                     className={`p-3.5 rounded-2xl border transition-all space-y-2.5 ${
                       isCompleted
                         ? 'bg-slate-50 border-slate-200 opacity-90'
+                        : isBatchReady
+                        ? 'bg-gradient-to-br from-emerald-50/90 via-white to-[#f0f9ed] border-emerald-400 shadow-md ring-1 ring-emerald-300'
                         : 'bg-gradient-to-br from-[#fbfdf9] via-white to-[#f4f8f3] border-[#dce9d9] shadow-xs hover:border-[#153d2b]/40'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5">
                         <div className={`w-10 h-10 rounded-2xl p-1 flex items-center justify-center flex-shrink-0 shadow-sm border ${
-                          isCompleted ? 'bg-slate-100 border-slate-300' : 'bg-emerald-50 border-emerald-300/80'
+                          isCompleted ? 'bg-slate-100 border-slate-300' : isBatchReady ? 'bg-emerald-100 border-emerald-400' : 'bg-emerald-50 border-emerald-300/80'
                         }`}>
                           <img src={henImg} alt="Hen" className="w-full h-full object-contain" />
                         </div>
@@ -542,13 +569,15 @@ export default function MyFarmPage() {
                             <span className={`text-[7.5px] font-black px-1.5 py-0.5 rounded uppercase ${
                               isCompleted
                                 ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                : 'bg-[#c9f36a]/30 text-[#0d2c20] border border-[#c9f36a]/60 animate-pulse'
+                                : isBatchReady
+                                ? 'bg-emerald-500 text-white border border-emerald-400 animate-pulse'
+                                : 'bg-[#c9f36a]/30 text-[#0d2c20] border border-[#c9f36a]/60'
                             }`}>
-                              {isCompleted ? '✓ 120d Completed' : '🟢 Laying Active'}
+                              {isCompleted ? '✓ 120d Completed' : isBatchReady ? '🟢 Egg Ready!' : '⏳ Incubating'}
                             </span>
                           </div>
                           <span className="text-[8px] text-slate-400 block mt-0.5">
-                            Adopted via {asset.gateway || 'Easypaisa'} • {new Date(purchaseTs).toLocaleDateString()}
+                            Adopted via {asset.gateway || 'Easypaisa'} • {new Date(purchaseTs).toLocaleDateString()} at {purchaseTimeStr}
                           </span>
                         </div>
                       </div>
@@ -586,6 +615,32 @@ export default function MyFarmPage() {
                         <span>Harvested: <strong className="text-emerald-700">{eggsHarvested}</strong> / {totalEggsMax} Eggs</span>
                         <span>Term Ends: {expiryDate.toLocaleDateString()}</span>
                       </div>
+                    </div>
+
+                    {/* Dynamic 24h Harvest Anchor & Direct Collect Button */}
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[8px]">
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <i className="fa-solid fa-clock text-emerald-600"></i>
+                        <span>Anchor: <strong className="text-slate-800">{purchaseTimeStr}</strong> (24h Cycle)</span>
+                      </div>
+
+                      {!isCompleted && (
+                        isBatchReady ? (
+                          <button
+                            type="button"
+                            onClick={() => handleHarvest(asset.id)}
+                            className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black text-[8px] uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer animate-pulse"
+                          >
+                            <i className="fa-solid fa-egg text-[8px]"></i>
+                            <span>Collect {units} Egg{units > 1 ? 's' : ''} Now</span>
+                          </button>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-bold text-[7.5px] flex items-center gap-1">
+                            <i className="fa-solid fa-hourglass-half text-amber-600 text-[7px]"></i>
+                            <span>Egg at {nextTimeStr} ({batchCountdownStr})</span>
+                          </span>
+                        )
+                      )}
                     </div>
                   </div>
                 );

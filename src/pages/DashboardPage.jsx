@@ -16,6 +16,7 @@ export default function DashboardPage() {
     cooldownActive,
     cooldownHoursRemaining,
     lastHarvest,
+    readyFlockStats,
     navigateTo,
     analytics,
     transactions,
@@ -65,21 +66,24 @@ export default function DashboardPage() {
     );
   }, [depositRequests, user]);
 
-  // Live countdown clock state for cooldown modal
+  // Live countdown clock state for cooldown modal & central hub
   const [remainingTimeStr, setRemainingTimeStr] = useState('24:00:00');
 
   useEffect(() => {
     const updateClock = () => {
-      if (!lastHarvest || !cooldownActive) {
+      if (readyFlockStats?.hasReadyEggs) {
+        setRemainingTimeStr('00:00:00');
+        return;
+      }
+      const targetMs = readyFlockStats?.nearestNextTime
+        ? new Date(readyFlockStats.nearestNextTime).getTime()
+        : (lastHarvest ? new Date(lastHarvest).getTime() + 24 * 60 * 60 * 1000 : null);
+
+      if (!targetMs || isNaN(targetMs)) {
         setRemainingTimeStr('24:00:00');
         return;
       }
-      const last = new Date(lastHarvest).getTime();
-      if (isNaN(last)) {
-        setRemainingTimeStr('24:00:00');
-        return;
-      }
-      const diffMs = (24 * 60 * 60 * 1000) - (Date.now() - last);
+      const diffMs = targetMs - Date.now();
       if (diffMs <= 0) {
         setRemainingTimeStr('00:00:00');
         return;
@@ -94,7 +98,7 @@ export default function DashboardPage() {
     updateClock();
     const interval = setInterval(updateClock, 1000);
     return () => clearInterval(interval);
-  }, [lastHarvest, cooldownActive, cooldownHoursRemaining]);
+  }, [readyFlockStats, lastHarvest, cooldownActive]);
 
   // P2P trade animation step loop
   useEffect(() => {
@@ -110,9 +114,9 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [VERIFIED_MERCHANTS]);
 
-  // Harvest Action Controller
+  // Harvest Action Controller (Checks ready flock batches)
   const handleHarvestClick = () => {
-    if (cooldownActive) {
+    if (!readyFlockStats?.hasReadyEggs && cooldownActive && remainingTimeStr !== '00:00:00') {
       setIsCooldownModalOpen(true);
       return;
     }
@@ -988,9 +992,9 @@ export default function DashboardPage() {
                     >
                       <img src={henImg} className="w-6 h-6 object-contain eco-animal-breath" alt="Hen" />
                       <span className={`text-[6.5px] font-manrope font-black tracking-widest uppercase mt-0.5 drop-shadow ${
-                        isAutoHarvestEnabled ? 'text-[#c9f36a]' : 'text-rose-300'
+                        readyFlockStats?.hasReadyEggs ? 'text-[#c9f36a] animate-pulse' : isAutoHarvestEnabled ? 'text-[#c9f36a]' : 'text-rose-300'
                       }`}>
-                        {cooldownActive ? (isAutoHarvestEnabled ? 'AUTO 24H' : 'MANUAL') : 'HARVEST'}
+                        {readyFlockStats?.hasReadyEggs ? `COLLECT +${readyFlockStats.readyEggs}` : cooldownActive ? (isAutoHarvestEnabled ? 'AUTO 24H' : 'MANUAL') : 'HARVEST'}
                       </span>
                     </button>
                   </div>
@@ -1002,19 +1006,27 @@ export default function DashboardPage() {
                       toggleAutoHarvest();
                     }}
                     className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full shadow-sm cursor-pointer transition-all border-2 active:scale-95 ${
-                      isAutoHarvestEnabled
+                      readyFlockStats?.hasReadyEggs
+                        ? 'bg-emerald-100 border-emerald-500 text-emerald-900 shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-pulse'
+                        : isAutoHarvestEnabled
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-800 hover:bg-emerald-100 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
                         : 'bg-rose-50 border-rose-500 text-rose-800 hover:bg-rose-100 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
                     }`}
                     title="Click to toggle Auto-Harvest ON (Green) / OFF (Red)"
                   >
-                    <span className={`w-2 h-2 rounded-full ${isAutoHarvestEnabled ? 'bg-emerald-500 animate-ping' : 'bg-rose-500 animate-ping'}`}></span>
+                    <span className={`w-2 h-2 rounded-full ${
+                      readyFlockStats?.hasReadyEggs ? 'bg-emerald-500 animate-ping' : isAutoHarvestEnabled ? 'bg-emerald-500 animate-ping' : 'bg-rose-500 animate-ping'
+                    }`}></span>
                     <span className="font-manrope font-black text-[8.5px] tracking-wider uppercase">
-                      {isAutoHarvestEnabled
+                      {readyFlockStats?.hasReadyEggs
+                        ? `🟢 ${readyFlockStats.readyEggs} EGGS READY TO COLLECT!`
+                        : isAutoHarvestEnabled
                         ? `🟢 AUTO-HARVEST ON (${remainingTimeStr})`
                         : `🔴 AUTO-HARVEST OFF • MANUAL`}
                     </span>
-                    <i className={`fa-solid ${isAutoHarvestEnabled ? 'fa-robot text-emerald-600' : 'fa-hand text-rose-600'} text-[9px]`}></i>
+                    <i className={`fa-solid ${
+                      readyFlockStats?.hasReadyEggs ? 'fa-egg text-emerald-600' : isAutoHarvestEnabled ? 'fa-robot text-emerald-600' : 'fa-hand text-rose-600'
+                    } text-[9px]`}></i>
                   </div>
                 </div>
 

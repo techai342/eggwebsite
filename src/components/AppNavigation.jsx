@@ -564,6 +564,29 @@ export function AppSidebar({ isOpen, onClose, onOpenSupport }) {
 
           <li className="tc-menu-item">
             <a
+              href="#/team"
+              onClick={(e) => { e.preventDefault(); handleNav('/team'); }}
+              className="tc-menu-link"
+              style={{
+                background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.10), rgba(201, 243, 106, 0.05))',
+                borderLeft: '3px solid #10b981',
+              }}
+            >
+              <div className="tc-menu-link-left">
+                <div className="tc-menu-icon-box" style={{ background: '#d1fae5', color: '#059669' }}>
+                  <i className="fa-solid fa-users text-[13px]"></i>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-extrabold text-emerald-900 text-[13px]">My Team &amp; Referrals</span>
+                  <span className="text-[10px] text-emerald-600 font-medium">Referral Hub &amp; Downline</span>
+                </div>
+              </div>
+              <i className="fa-solid fa-chevron-right text-[11px] text-emerald-400"></i>
+            </a>
+          </li>
+
+          <li className="tc-menu-item">
+            <a
               href="#/change-password"
               onClick={(e) => { e.preventDefault(); handleNav('/change-password'); }}
               className="tc-menu-link"

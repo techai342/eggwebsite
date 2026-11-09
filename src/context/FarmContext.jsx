@@ -543,6 +543,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
                 Math.ceil((new Date(a.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
               ),
               purchaseDate: a.purchased_at,
+              purchasedAt: a.purchased_at,
+              lastHarvest: a.last_harvest_at || a.purchased_at,
+              lastHarvestAt: a.last_harvest_at || a.purchased_at,
               gateway: a.gateway
             }));
             setActiveAssets(formattedAssets);
@@ -1059,21 +1062,85 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     return newLog;
   }, [user]);
 
-  // Cooldown calculation helper
+  // Per-batch dynamic harvest telemetry: checks each batch's individual 24h cycle
+  const readyFlockStats = useMemo(() => {
+    const now = Date.now();
+    let readyEggs = 0;
+    let readyBatchesCount = 0;
+    let minDiffMs = Infinity;
+    let nearestNextTime = null;
+
+    const flock = (activeAssets || []).filter((a) => {
+      const term = Number(a.termDays) || 120;
+      const elapsed = a.daysElapsed !== undefined ? Number(a.daysElapsed) : 0;
+      const remaining = a.daysRemaining !== undefined ? Number(a.daysRemaining) : (term - elapsed);
+      return remaining > 0 && a.status !== 'completed';
+    });
+
+    if (flock.length === 0) {
+      return {
+        readyEggs: 0,
+        readyBatchesCount: 0,
+        minDiffMs: 0,
+        nearestNextTime: null,
+        hasReadyEggs: false,
+        totalActiveHens: 0
+      };
+    }
+
+    flock.forEach((asset) => {
+      const units = Number(asset.units) || 1;
+      const rate = Number(asset.dailyYieldPerUnit) || 1;
+      const anchor = asset.lastHarvest || asset.lastHarvestAt || asset.last_harvest_at || asset.purchaseDate || asset.purchasedAt || lastHarvest;
+      const last = anchor ? new Date(anchor).getTime() : 0;
+
+      if (!isNaN(last) && last > 0) {
+        const next = last + 24 * 60 * 60 * 1000;
+        if (now >= next) {
+          readyEggs += units * rate;
+          readyBatchesCount += 1;
+        } else {
+          const diff = next - now;
+          if (diff < minDiffMs) {
+            minDiffMs = diff;
+            nearestNextTime = new Date(next).toISOString();
+          }
+        }
+      } else {
+        readyEggs += units * rate;
+        readyBatchesCount += 1;
+      }
+    });
+
+    return {
+      readyEggs,
+      readyBatchesCount,
+      minDiffMs: minDiffMs === Infinity ? 0 : minDiffMs,
+      nearestNextTime,
+      hasReadyEggs: readyEggs > 0,
+      totalActiveHens: flock.reduce((sum, a) => sum + (Number(a.units) || 1), 0)
+    };
+  }, [activeAssets, lastHarvest]);
+
+  // Cooldown calculation helper (Per-batch aware)
   const cooldownHoursRemaining = useMemo(() => {
+    if (readyFlockStats.hasReadyEggs) return 0;
+    if (readyFlockStats.minDiffMs > 0 && readyFlockStats.minDiffMs < Infinity) {
+      return Math.ceil(readyFlockStats.minDiffMs / (1000 * 60 * 60));
+    }
     if (!lastHarvest && !cooldownActive) return 0;
     if (lastHarvest) {
       const last = new Date(lastHarvest).getTime();
       if (!isNaN(last)) {
         const now = Date.now();
         const hoursPassed = (now - last) / (1000 * 60 * 60);
-        if (hoursPassed < 24) {
+        if (hoursPassed < 24 && hoursPassed >= 0) {
           return Math.ceil(Math.max(1, 24 - hoursPassed));
         }
       }
     }
     return cooldownActive ? 24 : 0;
-  }, [cooldownActive, lastHarvest]);
+  }, [readyFlockStats, cooldownActive, lastHarvest]);
 
   // Farmer & Super Admin Authentication
   const login = useCallback(async (usernameOrEmail, password) => {
@@ -1633,6 +1700,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const dailyYield = qty * dailyYieldPerUnit;
     const fullTermEggs = qty * totalYieldPerUnit;
 
+    const nowIso = new Date().toISOString();
+
     const newAsset = {
       id: `ASSET-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name: ASSET_SPEC.name,
@@ -1646,8 +1715,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       daysElapsed: 0,
       eggsHarvested: 0,
       totalYieldCapacity: fullTermEggs,
-      purchaseDate: new Date().toISOString(),
-      purchasedAt: new Date().toISOString(),
+      purchaseDate: nowIso,
+      purchasedAt: nowIso,
+      lastHarvest: nowIso,
+      lastHarvestAt: nowIso,
       expiresAt: new Date(Date.now() + termDays * 24 * 60 * 60 * 1000).toISOString(),
       gateway: validGateway.name,
       status: 'active'
@@ -1659,14 +1730,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       description: `Purchased ${qty}x ${ASSET_SPEC.name} Units`,
       amount: cost,
       unit: 'PKR',
-      date: new Date().toISOString(),
+      date: nowIso,
       status: 'Completed',
       gateway: validGateway.name
     };
 
     const instantEggs = dailyYield; // Day-1 instant yield: 1 Hen = 1 Egg immediately
     const nextVault = Math.floor(Number(eggVault || 0) + instantEggs);
-    const nowIso = new Date().toISOString();
 
     const instantYieldTrx = {
       id: `TRX-YIELD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -1683,14 +1753,16 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     // Award Day-1 first egg immediately & initialize 24-hour countdown timer for next harvest
     setEggVault(nextVault);
-    setLastHarvest(nowIso);
+    if (!lastHarvest) {
+      setLastHarvest(nowIso);
+    }
     setCooldownActive(true);
 
     const patchState = {
       activeAssets: updatedAssets,
       transactions: updatedTransactions,
       eggVault: nextVault,
-      lastHarvest: nowIso,
+      lastHarvest: lastHarvest || nowIso,
       cooldownActive: true
     };
 
@@ -1761,7 +1833,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     // Asynchronously replicate asset purchase & Day-1 instant yield to Supabase
     try {
-      supabase.from('farm_assets').insert({
+      const assetPayload = {
         username: user?.username || 'mrsaqib242',
         asset_name: ASSET_SPEC.name,
         units: qty,
@@ -1771,10 +1843,20 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         total_return_eggs: totalYieldPerUnit,
         gateway: validGateway.name,
         status: 'active',
+        purchased_at: nowIso,
         expires_at: new Date(Date.now() + termDays * 24 * 60 * 60 * 1000).toISOString()
-      }).then(({ error }) => {
-        if (error) console.info('Supabase farm_assets table sync notice:', error.message);
-      }).catch(() => {});
+      };
+
+      // Try inserting with last_harvest_at; if column doesn't exist yet, insert without it
+      supabase
+        .from('farm_assets')
+        .insert({ ...assetPayload, last_harvest_at: nowIso })
+        .then(({ error }) => {
+          if (error && error.message?.includes('last_harvest_at')) {
+            supabase.from('farm_assets').insert(assetPayload).then(() => {}).catch(() => {});
+          }
+        })
+        .catch(() => {});
 
       // Sync buyer's egg_vault and active_hens to Supabase users table
       supabase
@@ -1839,8 +1921,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     };
   }, [user, activeAssets, eggVault, transactions, users, platformSettings, persistState, showToast, logActivity]);
 
-  // 24-Hour Egg Harvest Engine
-  const harvestEggs = useCallback((currentTime = new Date()) => {
+  // 24-Hour Egg Harvest Engine (Per-Batch & Whole-Flock Aware)
+  const harvestEggs = useCallback((currentTime = new Date(), targetAssetId = null) => {
     if (user?.status === 'Blocked') {
       const msg = 'Account is blocked. Please contact customer support.';
       showToast('error', msg);
@@ -1852,36 +1934,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     }
 
     const current = new Date(currentTime);
-
-    if (cooldownActive && lastHarvest) {
-      const last = new Date(lastHarvest).getTime();
-      const curTime = current.getTime();
-      const hoursPassed = (curTime - last) / (1000 * 60 * 60);
-      if (hoursPassed < 24) {
-        const remainingHours = Math.ceil(Math.max(1, 24 - hoursPassed));
-        const msg = `Harvest cooldown active. Please wait ${remainingHours} hour(s) before next collection.`;
-        showToast('warning', msg);
-        return {
-          success: false,
-          eggsCollected: 0,
-          message: msg
-        };
-      }
-    } else if (lastHarvest) {
-      const last = new Date(lastHarvest).getTime();
-      const curTime = current.getTime();
-      const hoursPassed = (curTime - last) / (1000 * 60 * 60);
-      if (hoursPassed < 24 && hoursPassed >= 0) {
-        const remainingHours = Math.ceil(Math.max(1, 24 - hoursPassed));
-        const msg = `Harvest cooldown active. Please wait ${remainingHours} hour(s) before next collection.`;
-        showToast('warning', msg);
-        return {
-          success: false,
-          eggsCollected: 0,
-          message: msg
-        };
-      }
-    }
+    const currentMs = current.getTime();
 
     const activeFlock = activeAssets.filter((a) => {
       const term = Number(a.termDays) || 120;
@@ -1901,31 +1954,71 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       };
     }
 
-    // Exactly 1 egg per active hen unit daily (2 hens = 2 eggs, 10 hens = 10 eggs)
-    const eggsYield = totalActiveUnits * (Number(platformSettings?.dailyEggYield) || ASSET_SPEC.dailyYieldPerUnit || 1);
-    const newVault = Math.floor(Number(eggVault || 0) + eggsYield);
+    // Evaluate readiness per individual batch
+    const evaluated = activeFlock.map((asset) => {
+      const anchor = asset.lastHarvest || asset.lastHarvestAt || asset.last_harvest_at || asset.purchaseDate || asset.purchasedAt || lastHarvest;
+      const lastMs = anchor ? new Date(anchor).getTime() : 0;
+      const nextMs = (lastMs && !isNaN(lastMs)) ? (lastMs + 24 * 60 * 60 * 1000) : 0;
+      const isReady = currentMs >= nextMs;
+      const diffMs = Math.max(0, nextMs - currentMs);
+      return {
+        asset,
+        lastMs,
+        nextMs,
+        isReady,
+        diffMs
+      };
+    });
+
+    let targetsToHarvest = evaluated;
+    if (targetAssetId) {
+      targetsToHarvest = evaluated.filter((e) => String(e.asset.id) === String(targetAssetId));
+      if (targetsToHarvest.length === 0) {
+        const msg = 'Selected batch not found or already matured.';
+        showToast('error', msg);
+        return { success: false, eggsCollected: 0, message: msg };
+      }
+    }
+
+    const readyBatches = targetsToHarvest.filter((e) => e.isReady);
+
+    if (readyBatches.length === 0) {
+      const sortedUpcoming = [...targetsToHarvest].sort((a, b) => a.diffMs - b.diffMs);
+      const earliest = sortedUpcoming[0];
+      const totalSecs = Math.floor(earliest.diffMs / 1000);
+      const remHours = Math.ceil(Math.max(1, totalSecs / 3600));
+      const nextDate = new Date(earliest.nextMs);
+      const timeStr = nextDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const msg = `Harvest cooldown active. Please wait ${remHours} hour(s) before next collection. (Next egg ready at ${timeStr})`;
+      showToast('warning', msg);
+      return {
+        success: false,
+        eggsCollected: 0,
+        message: msg,
+        nextUnlockTime: nextDate.toISOString(),
+        remainingHours: remHours
+      };
+    }
+
+    const dailyRate = Number(platformSettings?.dailyEggYield) || ASSET_SPEC.dailyYieldPerUnit || 1;
     const isoTime = current.toISOString();
+    let totalHarvestYield = 0;
+    const readyAssetIdSet = new Set(readyBatches.map((e) => String(e.asset.id)));
 
-    const newTrx = {
-      id: `HRV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      type: 'HARVEST',
-      description: `Collected 24h daily harvest from ${totalActiveUnits} active hens`,
-      amount: eggsYield,
-      unit: 'Egg',
-      date: isoTime,
-      status: 'Completed'
-    };
-
-    const updatedTransactions = [newTrx, ...transactions];
-
-    // Progress 120-Day lifecycle for each active hen unit
+    // Progress cycle for ready batches
     const updatedAssets = activeAssets.map((asset) => {
+      if (!readyAssetIdSet.has(String(asset.id))) {
+        return asset;
+      }
+
       const term = Number(asset.termDays) || 120;
       const currentElapsed = asset.daysElapsed !== undefined ? Number(asset.daysElapsed) : Math.max(0, term - (Number(asset.daysRemaining) || term));
       const nextElapsed = Math.min(term, currentElapsed + 1);
       const nextRemaining = Math.max(0, term - nextElapsed);
       const units = Number(asset.units) || 1;
-      const harvestYield = units * (Number(asset.dailyYieldPerUnit) || Number(platformSettings?.dailyEggYield) || 1);
+      const harvestYield = units * (Number(asset.dailyYieldPerUnit) || dailyRate);
+      totalHarvestYield += harvestYield;
+
       const prevHarvested = asset.eggsHarvested !== undefined ? Number(asset.eggsHarvested) : (currentElapsed * units);
       const nextHarvested = prevHarvested + harvestYield;
       const isMatured = nextRemaining === 0 || nextElapsed >= term;
@@ -1938,9 +2031,25 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         daysElapsed: nextElapsed,
         daysRemaining: nextRemaining,
         eggsHarvested: nextHarvested,
+        lastHarvest: isoTime,
+        lastHarvestAt: isoTime,
         status: isMatured ? 'completed' : (asset.status || 'active')
       };
     });
+
+    const newVault = Math.floor(Number(eggVault || 0) + totalHarvestYield);
+
+    const newTrx = {
+      id: `HRV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'HARVEST',
+      description: `Collected 24h daily harvest from ${readyBatches.reduce((s, b) => s + (Number(b.asset.units) || 1), 0)} active hens`,
+      amount: totalHarvestYield,
+      unit: 'Egg',
+      date: isoTime,
+      status: 'Completed'
+    };
+
+    const updatedTransactions = [newTrx, ...transactions];
 
     setActiveAssets(updatedAssets);
     setEggVault(newVault);
@@ -1956,15 +2065,41 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       transactions: updatedTransactions
     });
 
-    // Asynchronously replicate harvest event to Supabase
+    // Replicate per-batch harvest to Supabase
     try {
+      readyBatches.forEach(async (e) => {
+        const dbId = Number(e.asset.id);
+        if (!isNaN(dbId) && dbId > 0) {
+          supabase
+            .from('farm_assets')
+            .update({ last_harvest_at: isoTime })
+            .eq('id', dbId)
+            .then(() => {})
+            .catch(() => {});
+        }
+      });
+
+      if (user?.username) {
+        supabase
+          .from('users')
+          .update({
+            egg_vault: newVault,
+            last_harvest_at: isoTime,
+            updated_at: isoTime
+          })
+          .eq('username', user.username)
+          .then(() => {})
+          .catch(() => {});
+      }
+
       supabase.from('harvest_logs').insert({
         username: user?.username || 'mrsaqib242',
-        active_units: totalActiveUnits,
-        eggs_collected: eggsYield,
+        active_units: readyBatches.reduce((s, b) => s + (Number(b.asset.units) || 1), 0),
+        eggs_collected: totalHarvestYield,
+        harvested_at: isoTime,
         next_harvest_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       }).then(({ error }) => {
-        if (error) console.info('Supabase harvest_logs table sync notice:', error.message);
+        if (error) console.info('Supabase harvest_logs sync notice:', error.message);
       }).catch(() => {});
     } catch (_) {}
 
@@ -1973,19 +2108,19 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       category: 'TRANSACTION',
       userId: user?.id || user?.accountId,
       username: user?.username,
-      details: `Collected 24h daily harvest of ${eggsYield} fresh eggs`,
+      details: `Collected 24h daily harvest of ${totalHarvestYield} fresh eggs`,
       status: 'SUCCESS'
     });
 
-    const msg = `Harvested ${eggsYield} fresh eggs into your vault!`;
+    const msg = `Harvested ${totalHarvestYield} fresh eggs into your vault!`;
     showToast('success', msg);
     return {
       success: true,
-      eggsCollected: eggsYield,
+      eggsCollected: totalHarvestYield,
       eggVault: newVault,
       message: msg
     };
-  }, [user, activeAssets, cooldownActive, lastHarvest, eggVault, transactions, persistState, showToast, logActivity]);
+  }, [user, activeAssets, cooldownActive, lastHarvest, eggVault, transactions, platformSettings, persistState, showToast, logActivity]);
 
   const resetCooldown = useCallback(() => {
     const expiredTimestamp = new Date(Date.now() - 25 * 3600 * 1000).toISOString();
@@ -3638,6 +3773,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const dailyYield = qty * dailyYieldPerUnit;
     const termDays = Number(platformSettings?.contractDurationDays || 120);
 
+    const nowIso = new Date().toISOString();
+
     // Create Active Livestock Contract
     const newAsset = {
       id: `ASSET-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -3652,8 +3789,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       daysElapsed: 0,
       eggsHarvested: 0,
       totalYieldCapacity: qty * dailyYieldPerUnit * termDays,
-      purchaseDate: new Date().toISOString(),
-      purchasedAt: new Date().toISOString(),
+      purchaseDate: nowIso,
+      purchasedAt: nowIso,
+      lastHarvest: nowIso,
+      lastHarvestAt: nowIso,
       expiresAt: new Date(Date.now() + termDays * 24 * 60 * 60 * 1000).toISOString(),
       gateway: targetDep.gateway,
       status: 'active'
@@ -3698,7 +3837,6 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     // Update target farmer's activeHens and award Day-1 instant egg yield in users list
     const instantDay1Eggs = dailyYield;
-    const nowIso = new Date().toISOString();
 
     const instantYieldTrx = {
       id: `TRX-YIELD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -3731,10 +3869,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
       if (isCurrentFarmer) {
         setEggVault(targetUpdatedVault);
-        setLastHarvest(nowIso);
+        if (!lastHarvest) {
+          setLastHarvest(nowIso);
+        }
         setCooldownActive(true);
         patchToPersist.eggVault = targetUpdatedVault;
-        patchToPersist.lastHarvest = nowIso;
+        patchToPersist.lastHarvest = lastHarvest || nowIso;
         patchToPersist.cooldownActive = true;
       }
 
@@ -3805,7 +3945,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         .update({ status: 'Completed', updated_at: new Date().toISOString() })
         .eq('request_id', targetDep.id);
 
-      await supabase.from('farm_assets').insert({
+      const assetPayload = {
         username: targetDep.username,
         asset_name: newAsset.name,
         units: newAsset.units,
@@ -3815,8 +3955,19 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         total_return_eggs: newAsset.units * dailyYieldPerUnit * newAsset.termDays,
         gateway: targetDep.gateway,
         status: 'active',
+        purchased_at: nowIso,
         expires_at: new Date(Date.now() + newAsset.termDays * 24 * 60 * 60 * 1000).toISOString()
-      });
+      };
+
+      supabase
+        .from('farm_assets')
+        .insert({ ...assetPayload, last_harvest_at: nowIso })
+        .then(({ error }) => {
+          if (error && error.message?.includes('last_harvest_at')) {
+            supabase.from('farm_assets').insert(assetPayload).then(() => {}).catch(() => {});
+          }
+        })
+        .catch(() => {});
 
       // Update matching BUY transaction in Supabase to Completed
       await supabase
@@ -4046,6 +4197,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               Math.ceil((new Date(a.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
             ),
             purchaseDate: a.purchased_at,
+            purchasedAt: a.purchased_at,
+            lastHarvest: a.last_harvest_at || a.purchased_at,
+            lastHarvestAt: a.last_harvest_at || a.purchased_at,
             gateway: a.gateway
           }));
           setActiveAssets(formattedAssets);
@@ -4279,6 +4433,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     cooldownActive,
     setCooldownActive,
     cooldownHoursRemaining,
+    readyFlockStats,
     currentRoute,
     setCurrentRoute,
     navigateTo,
@@ -4357,6 +4512,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     lastHarvest,
     cooldownActive,
     cooldownHoursRemaining,
+    readyFlockStats,
     currentRoute,
     navigateTo,
     toasts,
