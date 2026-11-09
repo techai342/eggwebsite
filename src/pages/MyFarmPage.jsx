@@ -342,7 +342,8 @@ export default function MyFarmPage() {
             </div>
           </div>
 
-          {/* 24-HOUR AUTOMATED HARVEST ACTION ENGINE */}
+          {/* Top 24-Hour Production Countdown card hidden from UI as requested; timers now displayed below each batch */}
+          {false && (
           <div className={`border rounded-2xl p-3.5 backdrop-blur-md transition-all shadow-lg ${
             isAutoHarvestEnabled
               ? 'bg-[#082215]/90 border-emerald-500/50 shadow-[0_4px_25px_rgba(16,185,129,0.15)]'
@@ -478,6 +479,7 @@ export default function MyFarmPage() {
                 : '🔴 Auto-Harvest OFF: Eggs will NOT auto-deposit. You must manually click when timer completes.'}
             </p>
           </div>
+          )}
         </div>
 
 
@@ -617,29 +619,45 @@ export default function MyFarmPage() {
                       </div>
                     </div>
 
-                    {/* Dynamic 24h Harvest Anchor & Direct Collect Button */}
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[8px]">
-                      <div className="flex items-center gap-1.5 text-slate-500">
-                        <i className="fa-solid fa-clock text-emerald-600"></i>
-                        <span>Anchor: <strong className="text-slate-800">{purchaseTimeStr}</strong> (24h Cycle)</span>
-                      </div>
-
-                      {!isCompleted && (
+                    {/* Dynamic 24h Production Countdown & Harvest Action under each Batch */}
+                    <div className="pt-2 border-t border-slate-100">
+                      {!isCompleted ? (
                         isBatchReady ? (
                           <button
                             type="button"
                             onClick={() => handleHarvest(asset.id)}
-                            className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black text-[8px] uppercase tracking-wider shadow-sm hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer animate-pulse"
+                            className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#c9f36a] via-emerald-400 to-[#c9f36a] text-[#0d2c20] font-manrope font-black text-xs uppercase tracking-wider shadow-md hover:brightness-105 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer animate-pulse border border-emerald-300"
                           >
-                            <i className="fa-solid fa-egg text-[8px]"></i>
-                            <span>Collect {units} Egg{units > 1 ? 's' : ''} Now</span>
+                            <i className="fa-solid fa-basket-shopping text-sm text-emerald-950"></i>
+                            <span>👉 CLICK TO HARVEST {units} READY EGG{units > 1 ? 'S' : ''} NOW!</span>
                           </button>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-bold text-[7.5px] flex items-center gap-1">
-                            <i className="fa-solid fa-hourglass-half text-amber-600 text-[7px]"></i>
-                            <span>Egg at {nextTimeStr} ({batchCountdownStr})</span>
-                          </span>
+                          <div className="bg-[#0b2819] rounded-xl p-2.5 text-white flex items-center justify-between shadow-inner border border-emerald-500/30">
+                            <div>
+                              <div className="flex items-center gap-1.5 text-[8.5px] font-bold text-white/70">
+                                <i className="fa-solid fa-clock-rotate-left text-[#c9f36a] text-xs"></i>
+                                <span className="uppercase tracking-wider">24-Hour Production Countdown</span>
+                              </div>
+                              <span className="text-[8px] text-emerald-300 block mt-0.5">
+                                Anchor: {purchaseTimeStr} • Next Egg at: <strong>{nextTimeStr}</strong>
+                              </span>
+                            </div>
+
+                            <div className="text-right">
+                              <span className="font-mono text-sm sm:text-base font-black text-[#c9f36a] tracking-widest block drop-shadow">
+                                {batchCountdownStr}
+                              </span>
+                              <span className="text-[7.5px] text-white/60 uppercase tracking-tight">
+                                +{units} Egg Yield in 24h
+                              </span>
+                            </div>
+                          </div>
                         )
+                      ) : (
+                        <div className="flex items-center justify-between text-[8px] text-slate-400 bg-slate-50 py-1.5 px-2 rounded-lg border border-slate-200">
+                          <span>Batch Production Cycle Completed</span>
+                          <span className="font-bold text-amber-700">120 Days Full Term</span>
+                        </div>
                       )}
                     </div>
                   </div>
