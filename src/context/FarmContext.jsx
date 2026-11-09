@@ -2533,7 +2533,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const origin = typeof window !== 'undefined' && window.location?.origin
       ? window.location.origin
       : 'https://eggwebsite-xi.vercel.app';
-    return `${origin}/#/team?ref=${referralCode}`;
+    return `${origin}/#/register?ref=${encodeURIComponent(referralCode)}`;
   }, [referralCode]);
 
   const referralStats = useMemo(() => {
@@ -4342,15 +4342,47 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   }, [user]);
 
   // Routing Helper & State (Hash + Path support for SPA zero-config routing)
+  const extractReferralParam = () => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      let ref = urlParams.get('ref');
+      if (!ref && window.location.hash.includes('?')) {
+        const hashQuery = window.location.hash.split('?')[1];
+        const hashParams = new URLSearchParams(hashQuery);
+        ref = hashParams.get('ref');
+      }
+      if (!ref && window.location.hash.includes('ref=')) {
+        const match = window.location.hash.match(/[?&#]ref=([^&#]+)/);
+        if (match && match[1]) ref = match[1];
+      }
+      return ref ? decodeURIComponent(ref.trim()) : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
   const getInitialRoute = () => {
     if (typeof window === 'undefined') return '/';
+    const ref = extractReferralParam();
     const hash = window.location.hash.replace(/^#\/?/, '/');
+    const path = window.location.pathname;
+
+    // If referral link opened anywhere (hash or search), immediately route to Register page
+    if (ref && !hash.startsWith('/register') && !path.startsWith('/register')) {
+      const target = `/register?ref=${encodeURIComponent(ref)}`;
+      if (window.location.hash !== '#' + target) {
+        window.location.hash = '#' + target;
+      }
+      return target;
+    }
+
     if (hash && hash !== '/') {
       return hash.startsWith('/') ? hash : '/' + hash;
     }
-    const path = window.location.pathname;
-    if (path && path !== '/' && path !== '/index.html') {
-      return path;
+    const currentPath = window.location.pathname;
+    if (currentPath && currentPath !== '/' && currentPath !== '/index.html') {
+      return currentPath;
     }
     return '/';
   };
@@ -4379,13 +4411,25 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handleRouteChange = () => {
+      const ref = extractReferralParam();
       const hash = window.location.hash.replace(/^#\/?/, '/');
+      const path = window.location.pathname;
+
+      if (ref && !hash.startsWith('/register') && !path.startsWith('/register')) {
+        const target = `/register?ref=${encodeURIComponent(ref)}`;
+        if (window.location.hash !== '#' + target) {
+          window.location.hash = '#' + target;
+        }
+        setCurrentRoute(target);
+        return;
+      }
+
       if (hash && hash !== '/') {
         setCurrentRoute(hash.startsWith('/') ? hash : '/' + hash);
       } else {
-        const path = window.location.pathname;
-        if (path && path !== '/' && path !== '/index.html') {
-          setCurrentRoute(path);
+        const currentPath = window.location.pathname;
+        if (currentPath && currentPath !== '/' && currentPath !== '/index.html') {
+          setCurrentRoute(currentPath);
         } else {
           setCurrentRoute('/');
         }

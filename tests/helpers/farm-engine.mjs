@@ -410,7 +410,7 @@ export class FarmEngine {
     const origin = typeof window !== 'undefined' && window.location?.origin
       ? window.location.origin
       : 'https://alkram-meta-eggs.digital';
-    return `${origin}/#/team?ref=${this.referralCode}`;
+    return `${origin}/#/register?ref=${this.referralCode}`;
   }
 
   get referralStats() {

@@ -18,7 +18,7 @@ import logoImg from '../assets/logo.webp';
  * - Link to /login for existing accounts
  */
 export default function RegisterPage() {
-  const { registerUser, navigateTo, showToast } = useFarm();
+  const { registerUser, navigateTo, showToast, currentRoute } = useFarm();
 
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -32,7 +32,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Extract referral code from URL query (?ref=...) or hash (/#/register?ref=...)
+  // Extract referral code from URL query (?ref=...), hash (/#/register?ref=...), or currentRoute
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -43,14 +43,22 @@ export default function RegisterPage() {
           const hashParams = new URLSearchParams(hashQuery);
           ref = hashParams.get('ref');
         }
+        if (!ref && window.location.hash.includes('ref=')) {
+          const match = window.location.hash.match(/[?&#]ref=([^&#]+)/);
+          if (match && match[1]) ref = match[1];
+        }
+        if (!ref && currentRoute && currentRoute.includes('ref=')) {
+          const match = currentRoute.match(/[?&#]ref=([^&#]+)/);
+          if (match && match[1]) ref = match[1];
+        }
         if (ref) {
-          setReferralCode(ref.trim());
+          setReferralCode(decodeURIComponent(ref.trim()));
         }
       }
     } catch {
       // Ignore URL parsing errors
     }
-  }, []);
+  }, [currentRoute]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

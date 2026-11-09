@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '../..');
 
 describe('Tier 1: F8.1 - Referral Code & Link Normalization', () => {
-  it('TC-T1-F8.1-01: Referral code generation (mrsaqib242) and referral link URL structure (/#/team?ref=mrsaqib242)', () => {
+  it('TC-T1-F8.1-01: Referral code generation (mrsaqib242) and referral link URL structure (/#/register?ref=mrsaqib242)', () => {
     const storage = new MockLocalStorage();
     const engine = new FarmEngine(storage);
 
@@ -21,14 +21,14 @@ describe('Tier 1: F8.1 - Referral Code & Link Normalization', () => {
     expect(engine.referralCode).toBe('mrsaqib242');
     expect(engine.user.referralCode).toBe('mrsaqib242');
 
-    // Verify link structure conforms to /#/team?ref=mrsaqib242
+    // Verify link structure conforms to /#/register?ref=mrsaqib242
     const link = engine.referralLink;
-    expect(link).toContain('/#/team?ref=mrsaqib242');
+    expect(link).toContain('/#/register?ref=mrsaqib242');
 
     // Verify dynamic fallback if user referralCode is updated
     engine.user.referralCode = 'farmer_vip_007';
     expect(engine.referralCode).toBe('farmer_vip_007');
-    expect(engine.referralLink).toContain('/#/team?ref=farmer_vip_007');
+    expect(engine.referralLink).toContain('/#/register?ref=farmer_vip_007');
   });
 
   it('TC-T1-F8.1-02: Clean initial state verification (empty teamMembers: [], 0 total commissions earned, default seed balance)', () => {

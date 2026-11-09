@@ -142,7 +142,7 @@ export default function DashboardPage() {
     const origin = typeof window !== 'undefined' && window.location?.origin
       ? window.location.origin
       : 'https://eggwebsite-xi.vercel.app';
-    const refLink = `${origin}/#/team?ref=${username}`;
+    const refLink = `${origin}/#/register?ref=${encodeURIComponent(username)}`;
     const shareMessage = `🌟 Welcome to ${siteTitle} 🌟\n\n🔑 Your Invitation Code: ${username}\n\n🌐 Register & Join Our Farm:\n👉 ${refLink} 👈\n\n🚀 Start your smart digital ${siteTitle} farming journey today & earn daily harvest yields!\n💡 Click the link above or enter Invitation Code "${username}" during registration.`;
 
     if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
@@ -163,7 +163,7 @@ export default function DashboardPage() {
     const origin = typeof window !== 'undefined' && window.location?.origin
       ? window.location.origin
       : 'https://eggwebsite-xi.vercel.app';
-    const refLink = `${origin}/#/team?ref=${username}`;
+    const refLink = `${origin}/#/register?ref=${encodeURIComponent(username)}`;
     const msg = `🌟 Welcome to ${siteTitle} 🌟\n\n🔑 Your Invitation Code: ${username}\n\n🌐 Register & Join Our Farm:\n👉 ${refLink} 👈\n\n🚀 Start your smart digital ${siteTitle} farming journey today & earn daily harvest yields!`;
     return `https://wa.me/?text=${encodeURIComponent(msg)}`;
   }, [user]);
