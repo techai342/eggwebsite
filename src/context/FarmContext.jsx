@@ -548,16 +548,24 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             setActiveAssets(formattedAssets);
           }
 
-          // Fetch user's withdrawals
-          const { data: dbWds } = await supabase
-            .from('withdrawals')
-            .select('*')
-            .eq('username', user.username)
-            .order('date', { ascending: false });
+          // Fetch user's withdrawals (All withdrawals if Admin, own for regular Farmer)
+          const isAdminUser =
+            user?.role === 'admin' ||
+            user?.username === 'admin' ||
+            user?.email === 'admin@gmail.com' ||
+            credentials?.email === 'admin@gmail.com' ||
+            credentials?.username === 'admin';
+
+          let wdQuery = supabase.from('withdrawals').select('*');
+          if (!isAdminUser && user?.username) {
+            wdQuery = wdQuery.eq('username', user.username);
+          }
+          const { data: dbWds } = await wdQuery.order('date', { ascending: false });
 
           if (Array.isArray(dbWds) && isMounted) {
             const formattedWds = dbWds.map((w) => ({
               id: String(w.id),
+              dbId: w.id,
               store: w.store_name,
               eggs: Number(w.eggs_liquidated),
               rate: Number(w.rate),
@@ -567,8 +575,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               accountNumber: w.account_number,
               bankName: w.bank_name,
               date: w.date,
-              status: w.status || 'Completed',
-              username: w.username
+              status: w.status || 'Pending',
+              username: w.username,
+              userId: w.user_id,
+              txHash: w.tx_hash,
+              rejectReason: w.reject_reason
             }));
             setWithdrawals((prev) => {
               const map = new Map();
@@ -2154,8 +2165,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const newVault = eggVault - qty;
     const newBalance = balance + pkrNet;
 
+    const localId = `WD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const withdrawalRecord = {
-      id: `WD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: localId,
+      dbId: null,
       store: merchant.name,
       eggs: qty,
       rate: effectiveRate,
@@ -2165,7 +2178,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       accountNumber,
       bankName: bankName || null,
       date: new Date().toISOString(),
-      status: 'Completed',
+      status: 'Pending',
       username: user?.username || 'mrsaqib242',
       userId: user?.id || 'usr_saqib'
     };
@@ -2173,11 +2186,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const newTrx = {
       id: `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       type: 'SELL',
-      description: `Sold ${qty} eggs to ${merchant.name} via ${payoutMethod.name} (@ Rs. ${effectiveRate})`,
+      description: `Sold ${qty} eggs to ${merchant.name} via ${payoutMethod.name} (@ Rs. ${effectiveRate}) - Pending Admin Disbursement`,
       amount: pkrNet,
       unit: 'PKR',
       date: new Date().toISOString(),
-      status: 'Completed'
+      status: 'Pending'
     };
 
     const updatedWithdrawals = [withdrawalRecord, ...withdrawals];
@@ -2195,35 +2208,64 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       transactions: updatedTransactions
     });
 
-    // Asynchronously replicate withdrawal to Supabase
+    // Asynchronously replicate pending withdrawal to Supabase
     try {
-      supabase.from('withdrawals').insert({
-        username: user?.username || 'mrsaqib242',
-        store_id: String(merchant.id),
-        store_name: merchant.name,
-        eggs_liquidated: qty,
-        rate: effectiveRate,
-        amount_pkr: pkrNet,
-        method: payoutMethod.name,
-        account_title: accountTitle,
-        account_number: accountNumber,
-        bank_name: bankName || null,
-        status: 'Completed'
-      }).then(({ error }) => {
-        if (error) console.info('Supabase withdrawals table sync notice:', error.message);
-      }).catch(() => {});
+      supabase
+        .from('withdrawals')
+        .insert({
+          username: user?.username || 'mrsaqib242',
+          store_id: String(merchant.id),
+          store_name: merchant.name,
+          eggs_liquidated: qty,
+          rate: effectiveRate,
+          amount_pkr: pkrNet,
+          method: payoutMethod.name,
+          account_title: accountTitle,
+          account_number: accountNumber,
+          bank_name: bankName || null,
+          status: 'Pending'
+        })
+        .select()
+        .single()
+        .then(({ data: insWd, error }) => {
+          if (!error && insWd?.id) {
+            withdrawalRecord.dbId = insWd.id;
+            withdrawalRecord.id = String(insWd.id);
+            setWithdrawals((prev) => {
+              const next = (prev || []).map((w) =>
+                w.id === localId ? { ...w, id: String(insWd.id), dbId: insWd.id } : w
+              );
+              persistState({ withdrawals: next });
+              return next;
+            });
+          }
+        })
+        .catch(() => {});
 
-      supabase.from('transactions').insert({
-        username: user?.username || 'mrsaqib242',
-        type: 'SELL',
-        amount: pkrNet,
-        unit: 'PKR',
-        description: `Sold ${qty} eggs to ${merchant.name} via ${payoutMethod.name} (@ Rs. ${effectiveRate})`,
-        status: 'Completed',
-        date: new Date().toISOString()
-      }).then(({ error }) => {
-        if (error) console.info('Supabase transactions table sync notice:', error.message);
-      }).catch(() => {});
+      // Deduct eggs in Supabase users table
+      supabase
+        .from('users')
+        .update({
+          egg_vault: newVault,
+          updated_at: new Date().toISOString()
+        })
+        .eq('username', user?.username || 'mrsaqib242')
+        .then(() => {})
+        .catch(() => {});
+
+      supabase
+        .from('transactions')
+        .insert({
+          username: user?.username || 'mrsaqib242',
+          type: 'SELL',
+          amount: pkrNet,
+          unit: 'PKR',
+          description: `Sold ${qty} eggs to ${merchant.name} via ${payoutMethod.name} (@ Rs. ${effectiveRate})`,
+          status: 'Pending',
+          date: new Date().toISOString()
+        })
+        .then(() => {})
+        .catch(() => {});
     } catch (_) {}
 
     logActivity({
@@ -2231,11 +2273,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       category: 'TRANSACTION',
       userId: user?.id || user?.accountId,
       username: user?.username,
-      details: `Sold ${qty} eggs to ${merchant.name} for Rs. ${pkrNet} PKR via ${payoutMethod.name}`,
+      details: `Sold ${qty} eggs to ${merchant.name} for Rs. ${pkrNet} PKR via ${payoutMethod.name} (Pending Disbursement)`,
       status: 'SUCCESS'
     });
 
-    const msg = `Successfully sold ${qty} eggs for Rs. ${pkrNet.toFixed(2)} PKR!`;
+    const msg = `Egg sell request for ${qty} eggs (Rs. ${pkrNet.toFixed(2)} PKR) submitted! Admin will verify and disburse payment to your ${payoutMethod.name} account.`;
     showToast('success', msg);
     return {
       success: true,
@@ -2808,11 +2850,15 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
   // Admin Action: Approve Withdrawal
   const approveWithdrawal = useCallback(async (withdrawalId, txHash) => {
-    let index = withdrawals.findIndex((w) => String(w.id) === String(withdrawalId));
+    let index = withdrawals.findIndex(
+      (w) => String(w.id) === String(withdrawalId) || (w.dbId && String(w.dbId) === String(withdrawalId))
+    );
     let currentList = withdrawals;
 
     if (index === -1) {
-      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find((w) => String(w.id) === String(withdrawalId));
+      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find(
+        (w) => String(w.id) === String(withdrawalId) || (w.dbId && String(w.dbId) === String(withdrawalId))
+      );
       if (defWd) {
         currentList = [defWd, ...withdrawals];
         index = 0;
@@ -2837,6 +2883,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       ...targetWd,
       status: 'Completed',
       txHash: hash,
+      approvedAt: new Date().toISOString(),
       processedAt: new Date().toISOString()
     };
 
@@ -2848,7 +2895,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     // Sync to Supabase withdrawals table
     try {
-      if (targetWd.id) {
+      const targetDbId = targetWd.dbId || (!isNaN(Number(targetWd.id)) ? Number(targetWd.id) : null);
+      if (targetDbId) {
         await supabase
           .from('withdrawals')
           .update({
@@ -2856,7 +2904,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             tx_hash: hash,
             processed_at: new Date().toISOString()
           })
-          .eq('id', targetWd.id);
+          .eq('id', targetDbId);
+      }
+
+      if (targetWd.username) {
+        supabase
+          .from('transactions')
+          .update({ status: 'Completed' })
+          .eq('username', targetWd.username)
+          .eq('type', 'SELL')
+          .eq('status', 'Pending')
+          .then(() => {})
+          .catch(() => {});
       }
     } catch (e) {
       console.info('Supabase withdrawal approve sync notice:', e?.message || e);
@@ -2878,11 +2937,15 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
   // Admin Action: Reject Withdrawal
   const rejectWithdrawal = useCallback(async (withdrawalId, reason, refundBalance = true) => {
-    let index = withdrawals.findIndex((w) => String(w.id) === String(withdrawalId));
+    let index = withdrawals.findIndex(
+      (w) => String(w.id) === String(withdrawalId) || (w.dbId && String(w.dbId) === String(withdrawalId))
+    );
     let currentList = withdrawals;
 
     if (index === -1) {
-      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find((w) => String(w.id) === String(withdrawalId));
+      const defWd = DEFAULT_INITIAL_WITHDRAWALS.find(
+        (w) => String(w.id) === String(withdrawalId) || (w.dbId && String(w.dbId) === String(withdrawalId))
+      );
       if (defWd) {
         currentList = [defWd, ...withdrawals];
         index = 0;
@@ -2911,6 +2974,40 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     updatedWithdrawals[index] = updatedWd;
 
     const patchToPersist = { withdrawals: updatedWithdrawals };
+
+    // When admin rejects egg cashout, refund eggs to eggVault (and PKR balance if applicable)
+    const eggsToRefund = Number(targetWd.eggs) || 0;
+    if (eggsToRefund > 0) {
+      if (
+        user &&
+        ((targetWd.userId && user.id === targetWd.userId) ||
+          (targetWd.username && String(user.username).toLowerCase() === String(targetWd.username).toLowerCase()))
+      ) {
+        setEggVault((prev) => {
+          const nextVault = (Number(prev) || 0) + eggsToRefund;
+          patchToPersist.eggVault = nextVault;
+          return nextVault;
+        });
+      }
+      if (targetWd.username) {
+        supabase
+          .from('users')
+          .select('egg_vault')
+          .eq('username', targetWd.username)
+          .single()
+          .then(({ data: uData }) => {
+            if (uData) {
+              const restoredVault = (Number(uData.egg_vault) || 0) + eggsToRefund;
+              supabase
+                .from('users')
+                .update({ egg_vault: restoredVault, updated_at: new Date().toISOString() })
+                .eq('username', targetWd.username)
+                .then(() => {});
+            }
+          })
+          .catch(() => {});
+      }
+    }
 
     if (refundBalance === true) {
       const refundPkr = Number(targetWd.amountPkr) || 0;
@@ -2948,7 +3045,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     // Sync to Supabase withdrawals table
     try {
-      if (targetWd.id) {
+      const targetDbId = targetWd.dbId || (!isNaN(Number(targetWd.id)) ? Number(targetWd.id) : null);
+      if (targetDbId) {
         await supabase
           .from('withdrawals')
           .update({
@@ -2956,7 +3054,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             reject_reason: updatedWd.rejectReason,
             rejected_at: new Date().toISOString()
           })
-          .eq('id', targetWd.id);
+          .eq('id', targetDbId);
+      }
+
+      if (targetWd.username) {
+        supabase
+          .from('transactions')
+          .update({ status: 'Rejected' })
+          .eq('username', targetWd.username)
+          .eq('type', 'SELL')
+          .eq('status', 'Pending')
+          .then(() => {})
+          .catch(() => {});
       }
     } catch (e) {
       console.info('Supabase withdrawal reject sync notice:', e?.message || e);
@@ -3885,16 +3994,24 @@ export function FarmProvider({ children, includeToastContainer = true }) {
           setActiveAssets(formattedAssets);
         }
 
-        // 3. Fetch user withdrawals
-        const { data: dbWds } = await supabase
-          .from('withdrawals')
-          .select('*')
-          .eq('username', user.username)
-          .order('date', { ascending: false });
+        // 3. Fetch withdrawals (All for Admin, own for regular Farmer)
+        const isAdminUser =
+          user?.role === 'admin' ||
+          user?.username === 'admin' ||
+          user?.email === 'admin@gmail.com' ||
+          credentials?.email === 'admin@gmail.com' ||
+          credentials?.username === 'admin';
+
+        let wdQuery = supabase.from('withdrawals').select('*');
+        if (!isAdminUser && user?.username) {
+          wdQuery = wdQuery.eq('username', user.username);
+        }
+        const { data: dbWds } = await wdQuery.order('date', { ascending: false });
 
         if (Array.isArray(dbWds)) {
           const formattedWds = dbWds.map((w) => ({
             id: String(w.id),
+            dbId: w.id,
             store: w.store_name,
             eggs: Number(w.eggs_liquidated),
             rate: Number(w.rate),
@@ -3904,8 +4021,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             accountNumber: w.account_number,
             bankName: w.bank_name,
             date: w.date,
-            status: w.status || 'Completed',
-            username: w.username
+            status: w.status || 'Pending',
+            username: w.username,
+            userId: w.user_id,
+            txHash: w.tx_hash,
+            rejectReason: w.reject_reason
           }));
           setWithdrawals((prev) => {
             const map = new Map();

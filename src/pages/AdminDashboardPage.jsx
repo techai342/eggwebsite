@@ -514,7 +514,9 @@ export default function AdminDashboardPage() {
     getWhatsAppSupportUrl,
     showToast,
     navigateTo,
-    logout
+    logout,
+    syncWithSupabase,
+    isLiveSyncing
   } = useFarm();
 
   // Route security clearance
@@ -660,6 +662,13 @@ export default function AdminDashboardPage() {
       setRateSyed(platformSettings.marketRates.eggRates.syed ?? 33);
     }
   }, [platformSettings]);
+
+  // Auto-sync requests whenever Admin views WITHDRAWALS or DEPOSITS
+  React.useEffect(() => {
+    if (isAdmin && (activeTab === 'WITHDRAWALS' || activeTab === 'GATEWAYS')) {
+      syncWithSupabase?.();
+    }
+  }, [isAdmin, activeTab, syncWithSupabase]);
 
   // Live Support Chat Threads Memo
   const chatThreads = useMemo(() => {
@@ -916,6 +925,7 @@ export default function AdminDashboardPage() {
       const res = await approveWithdrawal(withdrawalId);
       if (res?.success) {
         showToast('success', res.message || 'Withdrawal approved successfully!');
+        syncWithSupabase?.();
       }
     } catch (err) {
       showToast('error', err?.message || 'Failed to approve withdrawal.');
@@ -1777,9 +1787,21 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
 
-              <span className="text-[11px] text-slate-400 font-medium">
-                Showing {filteredWithdrawals.length} cashout orders
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => syncWithSupabase?.()}
+                  disabled={isLiveSyncing}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+                  title="Sync latest sell egg requests from database"
+                >
+                  <i className={`fa-solid fa-arrows-rotate text-[11px] ${isLiveSyncing ? 'animate-spin' : ''}`}></i>
+                  <span>{isLiveSyncing ? 'Syncing...' : 'Refresh Requests'}</span>
+                </button>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  Showing {filteredWithdrawals.length} cashout orders
+                </span>
+              </div>
             </div>
 
             {/* Withdrawals List */}
@@ -3905,7 +3927,11 @@ export default function AdminDashboardPage() {
         <RejectWithdrawalModal
           withdrawal={rejectModalWithdrawal}
           onClose={() => setRejectModalWithdrawal(null)}
-          onConfirm={(id, reason, refund) => rejectWithdrawal(id, reason, refund)}
+          onConfirm={async (id, reason, refund) => {
+            const res = await rejectWithdrawal(id, reason, refund);
+            syncWithSupabase?.();
+            return res;
+          }}
         />
       )}
 
