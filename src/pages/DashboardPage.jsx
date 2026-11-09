@@ -131,11 +131,15 @@ export default function DashboardPage() {
     }
   };
 
-  // 1-Tap Copy Referral Code
+  // 1-Tap Copy Referral Code & Link
   const handleCopyInvitationCode = () => {
     const username = user?.username || 'mrsaqib242';
     const siteTitle = 'AL Rehman Meta Eggs';
-    const shareMessage = `🌟 Welcome to ${siteTitle} 🌟\n\n🔑 Your Invitation Code: ${username}\n\n📲 Official Android App Download:\n👉 https://alkram-meta-eggs.digital/app 👈\n\n🚀 Start your smart digital ${siteTitle} farming journey today & earn daily harvest yields!\n💡 Register now & enter this Invitation Code during registration.`;
+    const origin = typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://eggwebsite-xi.vercel.app';
+    const refLink = `${origin}/#/team?ref=${username}`;
+    const shareMessage = `🌟 Welcome to ${siteTitle} 🌟\n\n🔑 Your Invitation Code: ${username}\n\n🌐 Register & Join Our Farm:\n👉 ${refLink} 👈\n\n🚀 Start your smart digital ${siteTitle} farming journey today & earn daily harvest yields!\n💡 Click the link above or enter Invitation Code "${username}" during registration.`;
 
     if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareMessage).then(() => {
@@ -151,7 +155,12 @@ export default function DashboardPage() {
   // WhatsApp Share URL
   const whatsappShareUrl = useMemo(() => {
     const username = user?.username || 'mrsaqib242';
-    const msg = `🌟 Welcome to AL Rehman Meta Eggs 🌟\n\n🔑 Your Invitation Code: ${username}\n\n📲 Official Android App Download:\n👉 https://alkram-meta-eggs.digital/app 👈\n\n🚀 Start your smart digital AL Rehman Meta Eggs farming journey today & earn daily harvest yields!`;
+    const siteTitle = 'AL Rehman Meta Eggs';
+    const origin = typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://eggwebsite-xi.vercel.app';
+    const refLink = `${origin}/#/team?ref=${username}`;
+    const msg = `🌟 Welcome to ${siteTitle} 🌟\n\n🔑 Your Invitation Code: ${username}\n\n🌐 Register & Join Our Farm:\n👉 ${refLink} 👈\n\n🚀 Start your smart digital ${siteTitle} farming journey today & earn daily harvest yields!`;
     return `https://wa.me/?text=${encodeURIComponent(msg)}`;
   }, [user]);
 
@@ -851,7 +860,8 @@ export default function DashboardPage() {
           </div>
 
           <a
-            href="https://alkram-meta-eggs.digital/app/Alkram_Meta_Eggs.apk"
+            href="/Alkram_Meta_Eggs.apk"
+            download="Alkram_Meta_Eggs.apk"
             className="flex-shrink-0 bg-gradient-to-r from-[#153d2b] via-[#1b4b35] to-[#1e523a] hover:from-[#1b4b35] hover:to-[#28734a] text-[#c9f36a] font-manrope font-black text-[9.5px] px-3.5 py-2 rounded-xl shadow-xs active:scale-95 transition-all uppercase tracking-wider flex items-center gap-1.5"
           >
             <i className="fa-solid fa-download text-[9px] animate-bounce"></i>

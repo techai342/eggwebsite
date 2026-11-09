@@ -39,6 +39,24 @@ export default function TeamPage() {
   const l2Percent = Number(platformSettings?.referralCommissionLevel2 !== undefined ? platformSettings.referralCommissionLevel2 : 1.0);
   const henUnitPrice = Number(platformSettings?.henUnitPrice || ASSET_SPEC?.unitPrice || 500);
 
+  // Auto-redirect unauthenticated visitors who opened a referral link to RegisterPage
+  React.useEffect(() => {
+    if (!user?.isLoggedIn && typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        let ref = urlParams.get('ref');
+        if (!ref && window.location.hash.includes('?')) {
+          const hashQuery = window.location.hash.split('?')[1];
+          const hashParams = new URLSearchParams(hashQuery);
+          ref = hashParams.get('ref');
+        }
+        if (ref) {
+          navigateTo('/register?ref=' + encodeURIComponent(ref.trim()));
+        }
+      } catch (_) {}
+    }
+  }, [user?.isLoggedIn, navigateTo]);
+
   // Active tab for Simulator Tool: 'REGISTER' | 'PURCHASE'
   const [simulatorTab, setSimulatorTab] = useState('REGISTER');
 

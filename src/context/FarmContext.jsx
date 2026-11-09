@@ -619,6 +619,63 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               return list;
             });
           }
+
+          // Fetch user's live referral downlines
+          try {
+            const { data: dbDownlines } = await supabase
+              .from('users')
+              .select('id, account_id, username, full_name, upliner_code, created_at')
+              .or(`upliner_code.eq.${user.username},upliner_code.eq.${user.referralCode || user.username}`);
+
+            if (Array.isArray(dbDownlines) && dbDownlines.length > 0 && isMounted) {
+              const downlineUsernames = dbDownlines.map((d) => d.username);
+              let assetMap = {};
+              if (downlineUsernames.length > 0) {
+                const { data: dbDownlineAssets } = await supabase
+                  .from('farm_assets')
+                  .select('username, units, unit_cost, total_cost')
+                  .in('username', downlineUsernames);
+
+                if (Array.isArray(dbDownlineAssets)) {
+                  dbDownlineAssets.forEach((a) => {
+                    const uName = a.username;
+                    const units = Number(a.units) || 0;
+                    const cost = Number(a.total_cost) || units * (Number(a.unit_cost) || 500);
+                    if (!assetMap[uName]) assetMap[uName] = { units: 0, spent: 0 };
+                    assetMap[uName].units += units;
+                    assetMap[uName].spent += cost;
+                  });
+                }
+              }
+
+              const l1Rate = (Number(platformSettings?.referralCommissionLevel1 ?? 2.0)) / 100;
+              const mappedMembers = dbDownlines.map((d) => {
+                const stats = assetMap[d.username] || { units: 0, spent: 0 };
+                return {
+                  id: `tm_db_${d.id}`,
+                  username: d.username,
+                  fullName: d.full_name,
+                  tierLevel: 1,
+                  upliner: d.upliner_code || user.username,
+                  joinDate: d.created_at ? d.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+                  assetsPurchased: stats.units,
+                  totalSpentPkr: stats.spent,
+                  commissionEarnedPkr: Number((stats.spent * l1Rate).toFixed(2))
+                };
+              });
+
+              setTeamMembers((prev) => {
+                const map = new Map();
+                mappedMembers.forEach((m) => map.set(m.username.toLowerCase(), m));
+                (prev || []).forEach((m) => {
+                  if (!map.has(m.username.toLowerCase())) {
+                    map.set(m.username.toLowerCase(), m);
+                  }
+                });
+                return Array.from(map.values());
+              });
+            }
+          } catch (_) {}
         }
 
         // 4. Fetch live support messages from Supabase (safe fallback)
@@ -2340,7 +2397,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   const referralLink = useMemo(() => {
     const origin = typeof window !== 'undefined' && window.location?.origin
       ? window.location.origin
-      : 'https://alkram-meta-eggs.digital';
+      : 'https://eggwebsite-xi.vercel.app';
     return `${origin}/#/team?ref=${referralCode}`;
   }, [referralCode]);
 
@@ -4063,6 +4120,63 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             return Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
           });
         }
+
+        // 5. Fetch user's live referral downlines
+        try {
+          const { data: dbDownlines } = await supabase
+            .from('users')
+            .select('id, account_id, username, full_name, upliner_code, created_at')
+            .or(`upliner_code.eq.${user.username},upliner_code.eq.${user.referralCode || user.username}`);
+
+          if (Array.isArray(dbDownlines) && dbDownlines.length > 0) {
+            const downlineUsernames = dbDownlines.map((d) => d.username);
+            let assetMap = {};
+            if (downlineUsernames.length > 0) {
+              const { data: dbDownlineAssets } = await supabase
+                .from('farm_assets')
+                .select('username, units, unit_cost, total_cost')
+                .in('username', downlineUsernames);
+
+              if (Array.isArray(dbDownlineAssets)) {
+                dbDownlineAssets.forEach((a) => {
+                  const uName = a.username;
+                  const units = Number(a.units) || 0;
+                  const cost = Number(a.total_cost) || units * (Number(a.unit_cost) || 500);
+                  if (!assetMap[uName]) assetMap[uName] = { units: 0, spent: 0 };
+                  assetMap[uName].units += units;
+                  assetMap[uName].spent += cost;
+                });
+              }
+            }
+
+            const l1Rate = (Number(platformSettings?.referralCommissionLevel1 ?? 2.0)) / 100;
+            const mappedMembers = dbDownlines.map((d) => {
+              const stats = assetMap[d.username] || { units: 0, spent: 0 };
+              return {
+                id: `tm_db_${d.id}`,
+                username: d.username,
+                fullName: d.full_name,
+                tierLevel: 1,
+                upliner: d.upliner_code || user.username,
+                joinDate: d.created_at ? d.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+                assetsPurchased: stats.units,
+                totalSpentPkr: stats.spent,
+                commissionEarnedPkr: Number((stats.spent * l1Rate).toFixed(2))
+              };
+            });
+
+            setTeamMembers((prev) => {
+              const map = new Map();
+              mappedMembers.forEach((m) => map.set(m.username.toLowerCase(), m));
+              (prev || []).forEach((m) => {
+                if (!map.has(m.username.toLowerCase())) {
+                  map.set(m.username.toLowerCase(), m);
+                }
+              });
+              return Array.from(map.values());
+            });
+          }
+        } catch (_) {}
       }
       return { success: true };
     } catch (e) {

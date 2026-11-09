@@ -258,6 +258,24 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Referral Welcome Banner if joined via referral link */}
+          {referralCode && (
+            <div className="mb-4 p-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-300/80 text-emerald-900 text-xs flex items-center justify-between gap-2 shadow-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs">
+                  <i className="fa-solid fa-users"></i>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-emerald-700 block">Invited By Sponsor</span>
+                  <span className="font-mono font-black text-sm text-emerald-950">@{referralCode}</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-800 bg-white/80 border border-emerald-300 px-2 py-1 rounded-lg">
+                <i className="fa-solid fa-link text-[9px] mr-1 text-emerald-600"></i>Referral Linked
+              </span>
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username & Full Name in Grid on Tablet/Laptop */}
@@ -396,7 +414,7 @@ export default function RegisterPage() {
                 </label>
                 {referralCode && (
                   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    <i className="fa-solid fa-check text-[9px] mr-1"></i>Sponsor Linked
+                    <i className="fa-solid fa-check text-[9px] mr-1"></i>Sponsor: @{referralCode}
                   </span>
                 )}
               </div>
