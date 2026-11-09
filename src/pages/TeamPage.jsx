@@ -64,6 +64,20 @@ export default function TeamPage() {
   // Active tab for Simulator Tool: 'REGISTER' | 'PURCHASE'
   const [simulatorTab, setSimulatorTab] = useState('REGISTER');
 
+  // Control visibility of extra testing/simulation tools and lower referral sections from UI
+  // Code is completely preserved and active; hidden from public UI as requested.
+  const [showLowerSections, setShowLowerSections] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('debug') === 'true' || urlParams.get('sim') === 'true') {
+          return true;
+        }
+      } catch (_) {}
+    }
+    return false;
+  });
+
   // Downline Registration Form state
   const [newUsername, setNewUsername] = useState('');
   const [newTierLevel, setNewTierLevel] = useState(1);
@@ -446,9 +460,12 @@ export default function TeamPage() {
           </div>
         </div>
 
-        {/* ==================================================== */}
-        {/* SECTION 3: DYNAMIC REFERRAL STATISTICS CARDS         */}
-        {/* ==================================================== */}
+        {/* Hidden from UI as requested by user; code preserved completely */}
+        {showLowerSections && (
+          <>
+            {/* ==================================================== */}
+            {/* SECTION 3: DYNAMIC REFERRAL STATISTICS CARDS         */}
+            {/* ==================================================== */}
         <div>
           <div className="flex items-center justify-between mb-2.5 px-1">
             <h3 className="font-manrope font-black text-xs text-[#153d2b] uppercase tracking-wider flex items-center gap-1.5">
@@ -1259,6 +1276,8 @@ export default function TeamPage() {
             </button>
           </div>
         </div>
+        </>
+        )}
       </div>
     </AppShell>
   );
