@@ -70,6 +70,37 @@ export default function MyFarmPage() {
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
   const [collectedCount, setCollectedCount] = useState(0);
 
+  // Live continuous wall-clock timestamp (guarantees second-by-second live ticking & instant catchup on app reopen)
+  const [currentWallClockMs, setCurrentWallClockMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const tick = () => setCurrentWallClockMs(Date.now());
+    const interval = setInterval(tick, 1000);
+
+    const handleResume = () => {
+      setCurrentWallClockMs(Date.now());
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleResume);
+      window.addEventListener('pageshow', handleResume);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          handleResume();
+        }
+      });
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleResume);
+        window.removeEventListener('pageshow', handleResume);
+        document.removeEventListener('visibilitychange', handleResume);
+      }
+    };
+  }, []);
+
   // Compute flock totals (active laying vs completed)
   const activeFlockAssets = useMemo(() => {
     return activeAssets.filter((a) => {
@@ -525,13 +556,13 @@ export default function MyFarmPage() {
                 const isCompleted = daysRemaining === 0 || asset.status === 'completed';
                 const expiryDate = new Date(purchaseTs + totalDays * 24 * 60 * 60 * 1000);
 
-                // Individual batch harvest cycle calculation
+                // Individual batch harvest cycle calculation driven by real wall-clock time
                 const batchAnchor = asset.lastHarvest || asset.lastHarvestAt || asset.last_harvest_at || asset.purchaseDate || asset.purchasedAt;
                 const purchaseDateObj = new Date(purchaseTs);
                 const batchLastMs = batchAnchor ? new Date(batchAnchor).getTime() : purchaseTs;
-                const batchNextMs = batchLastMs + 24 * 60 * 60 * 1000;
-                const isBatchReady = Date.now() >= batchNextMs && !isCompleted;
-                const batchDiffMs = Math.max(0, batchNextMs - Date.now());
+                const batchNextMs = (batchLastMs && !isNaN(batchLastMs)) ? (batchLastMs + 24 * 60 * 60 * 1000) : (purchaseTs + 24 * 60 * 60 * 1000);
+                const isBatchReady = currentWallClockMs >= batchNextMs && !isCompleted;
+                const batchDiffMs = Math.max(0, batchNextMs - currentWallClockMs);
 
                 const purchaseTimeStr = purchaseDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const nextTimeStr = new Date(batchNextMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

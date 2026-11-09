@@ -1062,9 +1062,41 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     return newLog;
   }, [user]);
 
+  // Live real-time wall-clock ticker: guarantees batch countdowns & egg readiness update continuously and catch up instantly on tab resume
+  const [clockTick, setClockTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setClockTick(Date.now());
+    }, 1000);
+
+    const handleResume = () => {
+      setClockTick(Date.now());
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleResume);
+      window.addEventListener('pageshow', handleResume);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          handleResume();
+        }
+      });
+    }
+
+    return () => {
+      clearInterval(timer);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleResume);
+        window.removeEventListener('pageshow', handleResume);
+        document.removeEventListener('visibilitychange', handleResume);
+      }
+    };
+  }, []);
+
   // Per-batch dynamic harvest telemetry: checks each batch's individual 24h cycle
   const readyFlockStats = useMemo(() => {
-    const now = Date.now();
+    const now = clockTick;
     let readyEggs = 0;
     let readyBatchesCount = 0;
     let minDiffMs = Infinity;
@@ -1120,7 +1152,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       hasReadyEggs: readyEggs > 0,
       totalActiveHens: flock.reduce((sum, a) => sum + (Number(a.units) || 1), 0)
     };
-  }, [activeAssets, lastHarvest]);
+  }, [activeAssets, lastHarvest, clockTick]);
 
   // Cooldown calculation helper (Per-batch aware)
   const cooldownHoursRemaining = useMemo(() => {
@@ -1132,7 +1164,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     if (lastHarvest) {
       const last = new Date(lastHarvest).getTime();
       if (!isNaN(last)) {
-        const now = Date.now();
+        const now = clockTick;
         const hoursPassed = (now - last) / (1000 * 60 * 60);
         if (hoursPassed < 24 && hoursPassed >= 0) {
           return Math.ceil(Math.max(1, 24 - hoursPassed));
@@ -1140,7 +1172,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       }
     }
     return cooldownActive ? 24 : 0;
-  }, [readyFlockStats, cooldownActive, lastHarvest]);
+  }, [readyFlockStats, cooldownActive, lastHarvest, clockTick]);
 
   // Farmer & Super Admin Authentication
   const login = useCallback(async (usernameOrEmail, password) => {
@@ -2253,7 +2285,29 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     checkAndAutoHarvest();
     const timer = setInterval(checkAndAutoHarvest, 5000);
-    return () => clearInterval(timer);
+
+    const handleResume = () => {
+      checkAndAutoHarvest();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleResume);
+      window.addEventListener('pageshow', handleResume);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          handleResume();
+        }
+      });
+    }
+
+    return () => {
+      clearInterval(timer);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleResume);
+        window.removeEventListener('pageshow', handleResume);
+        document.removeEventListener('visibilitychange', handleResume);
+      }
+    };
   }, [isAutoHarvestEnabled, lastHarvest, activeAssets, triggerAutoHarvest]);
 
   // Toggle Auto-Harvest Mode (Green = ON, Red = OFF)

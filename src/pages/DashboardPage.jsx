@@ -97,7 +97,29 @@ export default function DashboardPage() {
     };
     updateClock();
     const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
+
+    const handleResume = () => {
+      updateClock();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleResume);
+      window.addEventListener('pageshow', handleResume);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          handleResume();
+        }
+      });
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleResume);
+        window.removeEventListener('pageshow', handleResume);
+        document.removeEventListener('visibilitychange', handleResume);
+      }
+    };
   }, [readyFlockStats, lastHarvest, cooldownActive]);
 
   // P2P trade animation step loop
