@@ -562,13 +562,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             }
           }
 
-          // Fetch user's withdrawals (All withdrawals if Admin, own for regular Farmer)
+          // Fetch user's withdrawals (All withdrawals if Admin, strictly own for regular Farmer)
           const isAdminUser =
             user?.role === 'admin' ||
             user?.username === 'admin' ||
-            user?.email === 'admin@gmail.com' ||
-            credentials?.email === 'admin@gmail.com' ||
-            credentials?.username === 'admin';
+            user?.email === 'admin@gmail.com';
 
           let wdQuery = supabase.from('withdrawals').select('*');
           if (!isAdminUser && user?.username) {
@@ -595,14 +593,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               txHash: w.tx_hash,
               rejectReason: w.reject_reason
             }));
-            setWithdrawals((prev) => {
-              const map = new Map();
-              formattedWds.forEach((w) => map.set(String(w.id), w));
-              (prev || []).forEach((w) => {
-                if (!map.has(String(w.id))) map.set(String(w.id), w);
-              });
-              const list = Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-              return list;
+            setWithdrawals(() => {
+              if (isAdminUser) {
+                return formattedWds;
+              }
+              return formattedWds.filter((w) => !w.username || (user?.username && w.username.toLowerCase() === user.username.toLowerCase()));
             });
           }
 
@@ -1558,6 +1553,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setActiveAssets([]);
     setTransactions([]);
     setWithdrawals([]);
+    const freshCreds = { username: cleanUsername, email: targetEmail, password: cleanPassword };
+    setCredentials(freshCreds);
 
     const activeSession = {
       id: newUserRecord.id,
@@ -1576,6 +1573,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setUser(activeSession);
     persistState({
       user: activeSession,
+      credentials: freshCreds,
       balance: 0,
       eggVault: 0,
       activeAssets: [],
@@ -2499,8 +2497,13 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       (sum, a) => sum + (Number(a.totalCost) || (Number(a.units) || 0) * (Number(a.unitCost) || 500)),
       0
     );
-    const totalEggsSold = withdrawals.reduce((sum, w) => sum + (Number(w.eggs) || 0), 0);
-    const totalSalesPkr = withdrawals.reduce((sum, w) => sum + (Number(w.amountPkr) || 0), 0);
+    // User's own withdrawals for non-admin accounts
+    const userWds = (user?.role === 'admin' || user?.username === 'admin')
+      ? (withdrawals || [])
+      : (withdrawals || []).filter((w) => w.username && user?.username && w.username.toLowerCase() === user.username.toLowerCase());
+
+    const totalEggsSold = userWds.reduce((sum, w) => sum + (Number(w.eggs) || 0), 0);
+    const totalSalesPkr = userWds.reduce((sum, w) => sum + (Number(w.amountPkr) || 0), 0);
 
     return {
       totalUnitsBought,
@@ -2510,10 +2513,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       currentEggVault: eggVault,
       currentBalance: balance,
       activeAssetsCount: activeAssets.length,
-      withdrawalsCount: withdrawals.length,
+      withdrawalsCount: userWds.length,
       transactionsCount: transactions.length
     };
-  }, [activeAssets, withdrawals, eggVault, balance, transactions]);
+  }, [activeAssets, withdrawals, eggVault, balance, transactions, user]);
 
   // Referral Helpers & Dynamic Selectors
   const referralCode = useMemo(() => {
@@ -4196,13 +4199,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
           setActiveAssets(formattedAssets);
         }
 
-        // 3. Fetch withdrawals (All for Admin, own for regular Farmer)
+        // 3. Fetch withdrawals (All for Admin, strictly own for regular Farmer)
         const isAdminUser =
           user?.role === 'admin' ||
           user?.username === 'admin' ||
-          user?.email === 'admin@gmail.com' ||
-          credentials?.email === 'admin@gmail.com' ||
-          credentials?.username === 'admin';
+          user?.email === 'admin@gmail.com';
 
         let wdQuery = supabase.from('withdrawals').select('*');
         if (!isAdminUser && user?.username) {
@@ -4229,13 +4230,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             txHash: w.tx_hash,
             rejectReason: w.reject_reason
           }));
-          setWithdrawals((prev) => {
-            const map = new Map();
-            formattedWds.forEach((w) => map.set(String(w.id), w));
-            (prev || []).forEach((w) => {
-              if (!map.has(String(w.id))) map.set(String(w.id), w);
-            });
-            return Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+          setWithdrawals(() => {
+            if (isAdminUser) {
+              return formattedWds;
+            }
+            return formattedWds.filter((w) => !w.username || (user?.username && w.username.toLowerCase() === user.username.toLowerCase()));
           });
         }
 
