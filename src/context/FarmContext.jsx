@@ -549,6 +549,17 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               gateway: a.gateway
             }));
             setActiveAssets(formattedAssets);
+
+            const latestHarvestTimestamp = dbAssets.reduce((latest, a) => {
+              const t = a.last_harvest_at || a.purchased_at;
+              if (!t) return latest;
+              return (!latest || new Date(t).getTime() > new Date(latest).getTime()) ? t : latest;
+            }, currentDbUser?.last_harvest_at || null);
+
+            if (latestHarvestTimestamp && isMounted) {
+              setLastHarvest(latestHarvestTimestamp);
+              setCooldownActive(true);
+            }
           }
 
           // Fetch user's withdrawals (All withdrawals if Admin, own for regular Farmer)
@@ -1242,24 +1253,37 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               .select('*')
               .eq('username', dbUser.username);
             if (Array.isArray(dbAssets)) {
-              setActiveAssets(
-                dbAssets.map((a) => ({
-                  id: String(a.id),
-                  name: a.asset_name,
-                  units: Number(a.units),
-                  unitCost: Number(a.unit_cost),
-                  totalCost: Number(a.units) * Number(a.unit_cost),
-                  dailyYield: Number(a.daily_yield_per_unit || 1) * Number(a.units),
-              dailyYieldPerUnit: Number(a.daily_yield_per_unit || 1),
-                  termDays: Number(a.term_days || 120),
-                  daysRemaining: Math.max(
-                    0,
-                    Math.ceil((new Date(a.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                  ),
-                  purchaseDate: a.purchased_at,
-                  gateway: a.gateway
-                }))
-              );
+              const formattedDbAssets = dbAssets.map((a) => ({
+                id: String(a.id),
+                name: a.asset_name,
+                units: Number(a.units),
+                unitCost: Number(a.unit_cost),
+                totalCost: Number(a.units) * Number(a.unit_cost),
+                dailyYield: Number(a.daily_yield_per_unit || 1) * Number(a.units),
+                dailyYieldPerUnit: Number(a.daily_yield_per_unit || 1),
+                termDays: Number(a.term_days || 120),
+                daysRemaining: Math.max(
+                  0,
+                  Math.ceil((new Date(a.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                ),
+                purchaseDate: a.purchased_at,
+                purchasedAt: a.purchased_at,
+                lastHarvest: a.last_harvest_at || a.purchased_at,
+                lastHarvestAt: a.last_harvest_at || a.purchased_at,
+                gateway: a.gateway
+              }));
+              setActiveAssets(formattedDbAssets);
+
+              const latestHarvestTimestamp = dbAssets.reduce((latest, a) => {
+                const t = a.last_harvest_at || a.purchased_at;
+                if (!t) return latest;
+                return (!latest || new Date(t).getTime() > new Date(latest).getTime()) ? t : latest;
+              }, dbUser?.last_harvest_at || null);
+
+              if (latestHarvestTimestamp) {
+                setLastHarvest(latestHarvestTimestamp);
+                setCooldownActive(true);
+              }
             }
           } catch (_) {}
 
@@ -1990,8 +2014,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     const evaluated = activeFlock.map((asset) => {
       const anchor = asset.lastHarvest || asset.lastHarvestAt || asset.last_harvest_at || asset.purchaseDate || asset.purchasedAt || lastHarvest;
       const lastMs = anchor ? new Date(anchor).getTime() : 0;
-      const nextMs = (lastMs && !isNaN(lastMs)) ? (lastMs + 24 * 60 * 60 * 1000) : 0;
-      const isReady = currentMs >= nextMs;
+      const nextMs = (lastMs && !isNaN(lastMs) && lastMs > 0) ? (lastMs + 24 * 60 * 60 * 1000) : (currentMs + 24 * 60 * 60 * 1000);
+      const isReady = (lastMs && !isNaN(lastMs) && lastMs > 0) ? (currentMs >= nextMs) : false;
       const diffMs = Math.max(0, nextMs - currentMs);
       return {
         asset,
@@ -2162,124 +2186,37 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   }, [persistState]);
 
   // Automated 24-Hour Yield Engine (Auto-Play / Auto-Collect)
-  const triggerAutoHarvest = useCallback((cyclesToHarvest = 1) => {
-    if (user?.status === 'Blocked') return { success: false, eggsCollected: 0 };
-
-    const activeFlock = activeAssets.filter((a) => {
-      const term = Number(a.termDays) || 120;
-      const elapsed = a.daysElapsed !== undefined ? Number(a.daysElapsed) : 0;
-      const remaining = a.daysRemaining !== undefined ? Number(a.daysRemaining) : (term - elapsed);
-      return remaining > 0 && a.status !== 'completed';
-    });
-
-    const totalActiveUnits = activeFlock.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
-    if (totalActiveUnits <= 0) return { success: false, eggsCollected: 0 };
-
-    const cycles = Math.max(1, Math.min(120, Math.floor(Number(cyclesToHarvest) || 1)));
-    const dailyRate = Number(platformSettings?.dailyEggYield) || ASSET_SPEC.dailyYieldPerUnit || 1;
-    const eggsPerCycle = totalActiveUnits * dailyRate;
-    const totalEggsYield = eggsPerCycle * cycles;
-    const newVault = Math.floor(Number(eggVault || 0) + totalEggsYield);
-    const nowIso = new Date().toISOString();
-
-    const newTrx = {
-      id: `AUTO-HRV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      type: 'HARVEST',
-      description: `🤖 Auto-Harvest: Collected ${totalEggsYield} fresh eggs (${cycles} x 24h cycle${cycles > 1 ? 's' : ''}) from ${totalActiveUnits} active hens`,
-      amount: totalEggsYield,
-      unit: 'Egg',
-      date: nowIso,
-      status: 'Completed'
-    };
-
-    const updatedTransactions = [newTrx, ...transactions];
-
-    const updatedAssets = activeAssets.map((asset) => {
-      const term = Number(asset.termDays) || 120;
-      const currentElapsed = asset.daysElapsed !== undefined ? Number(asset.daysElapsed) : Math.max(0, term - (Number(asset.daysRemaining) || term));
-      const nextElapsed = Math.min(term, currentElapsed + cycles);
-      const nextRemaining = Math.max(0, term - nextElapsed);
-      const units = Number(asset.units) || 1;
-      const harvestYield = units * dailyRate * cycles;
-      const prevHarvested = asset.eggsHarvested !== undefined ? Number(asset.eggsHarvested) : (currentElapsed * units);
-      const nextHarvested = prevHarvested + harvestYield;
-      const isMatured = nextRemaining === 0 || nextElapsed >= term;
-
-      return {
-        ...asset,
-        units,
-        dailyYield: units * dailyRate,
-        dailyYieldPerUnit: dailyRate,
-        daysElapsed: nextElapsed,
-        daysRemaining: nextRemaining,
-        eggsHarvested: nextHarvested,
-        status: isMatured ? 'completed' : (asset.status || 'active')
-      };
-    });
-
-    setActiveAssets(updatedAssets);
-    setEggVault(newVault);
-    setLastHarvest(nowIso);
-    setCooldownActive(true);
-    setTransactions(updatedTransactions);
-
-    persistState({
-      activeAssets: updatedAssets,
-      eggVault: newVault,
-      lastHarvest: nowIso,
-      cooldownActive: true,
-      transactions: updatedTransactions
-    });
-
-    try {
-      supabase.from('harvest_logs').insert({
-        username: user?.username || 'mrsaqib242',
-        active_units: totalActiveUnits,
-        eggs_collected: totalEggsYield,
-        next_harvest_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      }).catch(() => {});
-    } catch (_) {}
-
-    logActivity({
-      action: 'AUTO_HARVEST',
-      category: 'TRANSACTION',
-      userId: user?.id || user?.accountId,
-      username: user?.username,
-      details: `🤖 Auto-Harvested ${totalEggsYield} fresh eggs into vault`,
-      status: 'SUCCESS'
-    });
-
-    showToast('success', `🤖 Auto-Harvest Active: +${totalEggsYield} Fresh Eggs collected automatically into your vault!`);
-    return { success: true, eggsCollected: totalEggsYield, eggVault: newVault };
-  }, [user, activeAssets, eggVault, transactions, platformSettings, persistState, showToast, logActivity]);
+  const triggerAutoHarvest = useCallback((targetAssetId = null) => {
+    return harvestEggs(new Date(), targetAssetId);
+  }, [harvestEggs]);
 
   // Auto-Harvest 24h Background Watcher & Offline Catch-Up Engine
   useEffect(() => {
     if (!isAutoHarvestEnabled) return;
     if (!activeAssets || activeAssets.length === 0) return;
-    const activeUnits = activeAssets
-      .filter((a) => (Number(a.daysRemaining) || 120) > 0 && a.status !== 'completed')
-      .reduce((sum, a) => sum + (Number(a.units) || 0), 0);
-    if (activeUnits <= 0) return;
 
     const checkAndAutoHarvest = () => {
       if (!isAutoHarvestEnabled) return;
+      if (!activeAssets || activeAssets.length === 0) return;
       const now = Date.now();
-      let lastTime = lastHarvest ? new Date(lastHarvest).getTime() : null;
 
-      if (!lastTime) {
-        const oldest = activeAssets[0]?.purchaseDate || activeAssets[0]?.purchasedAt;
-        lastTime = oldest ? new Date(oldest).getTime() : now;
-      }
+      // Check if ANY active batch has actually reached its individual 24h unlock time
+      const hasReadyBatch = activeAssets.some((asset) => {
+        const term = Number(asset.termDays) || 120;
+        const elapsed = asset.daysElapsed !== undefined ? Number(asset.daysElapsed) : 0;
+        const remaining = asset.daysRemaining !== undefined ? Number(asset.daysRemaining) : (term - elapsed);
+        if (remaining <= 0 || asset.status === 'completed') return false;
 
-      if (!isNaN(lastTime)) {
-        const hoursPassed = (now - lastTime) / (1000 * 60 * 60);
-        if (hoursPassed >= 24) {
-          const cycles = Math.min(120, Math.floor(hoursPassed / 24));
-          if (cycles >= 1) {
-            triggerAutoHarvest(cycles);
-          }
-        }
+        const anchor = asset.lastHarvest || asset.lastHarvestAt || asset.last_harvest_at || asset.purchaseDate || asset.purchasedAt;
+        if (!anchor) return false;
+        const anchorMs = new Date(anchor).getTime();
+        if (isNaN(anchorMs) || anchorMs <= 0) return false;
+
+        return now >= (anchorMs + 24 * 60 * 60 * 1000);
+      });
+
+      if (hasReadyBatch) {
+        harvestEggs(new Date(), null);
       }
     };
 
@@ -2308,7 +2245,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         document.removeEventListener('visibilitychange', handleResume);
       }
     };
-  }, [isAutoHarvestEnabled, lastHarvest, activeAssets, triggerAutoHarvest]);
+  }, [isAutoHarvestEnabled, activeAssets, harvestEggs]);
 
   // Toggle Auto-Harvest Mode (Green = ON, Red = OFF)
   const toggleAutoHarvest = useCallback((forcedVal) => {
