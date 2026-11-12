@@ -1258,17 +1258,6 @@ export default function BuyAssetPage() {
                   </span>
                   <i className="fa-solid fa-arrow-right text-xs"></i>
                 </button>
-
-                {/* Instant Purchase Fallback / Demo Activation */}
-                <div className="pt-1 text-center">
-                  <button
-                    type="button"
-                    onClick={handleConfirmPurchase}
-                    className="text-[9px] font-extrabold text-slate-400 hover:text-emerald-700 uppercase tracking-wider underline transition-colors"
-                  >
-                    Instant Direct Purchase (Demo / Simulation)
-                  </button>
-                </div>
               </>
             )}
           </div>
