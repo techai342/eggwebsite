@@ -546,7 +546,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               purchasedAt: a.purchased_at,
               lastHarvest: a.last_harvest_at || a.purchased_at,
               lastHarvestAt: a.last_harvest_at || a.purchased_at,
-              gateway: a.gateway
+              gateway: a.gateway,
+              username: user.username
             }));
             setActiveAssets(formattedAssets);
 
@@ -559,6 +560,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
             if (latestHarvestTimestamp && isMounted) {
               setLastHarvest(latestHarvestTimestamp);
               setCooldownActive(true);
+            } else if (dbAssets.length === 0 && isMounted) {
+              setLastHarvest(null);
+              setCooldownActive(false);
             }
           }
 
@@ -597,7 +601,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               if (isAdminUser) {
                 return formattedWds;
               }
-              return formattedWds.filter((w) => !w.username || (user?.username && w.username.toLowerCase() === user.username.toLowerCase()));
+              return formattedWds.filter((w) => user?.username && w.username && w.username.toLowerCase() === user.username.toLowerCase());
             });
           }
 
@@ -605,7 +609,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
           const { data: dbTxs } = await supabase
             .from('transactions')
             .select('*')
-            .eq('username', user.username)
+            .ilike('username', user.username)
             .order('date', { ascending: false });
 
           if (Array.isArray(dbTxs) && isMounted) {
@@ -616,13 +620,17 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               unit: t.unit || 'PKR',
               description: t.description,
               status: t.status,
-              date: t.date
+              date: t.date,
+              username: user.username
             }));
             setTransactions((prev) => {
               const map = new Map();
               formattedTxs.forEach((t) => map.set(String(t.id), t));
               (prev || []).forEach((t) => {
-                if (!map.has(String(t.id))) map.set(String(t.id), t);
+                const belongsToUser = !t.username || (user?.username && t.username.toLowerCase() === user.username.toLowerCase());
+                if (belongsToUser && !map.has(String(t.id))) {
+                  map.set(String(t.id), t);
+                }
               });
               const list = Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
               return list;
@@ -1242,13 +1250,15 @@ export function FarmProvider({ children, includeToastContainer = true }) {
           setEggVault(userVault);
 
           // Fetch user's assets from Supabase
+          let formattedDbAssets = [];
+          let latestHarvestTimestamp = null;
           try {
             const { data: dbAssets } = await supabase
               .from('farm_assets')
               .select('*')
-              .eq('username', dbUser.username);
+              .ilike('username', dbUser.username);
             if (Array.isArray(dbAssets)) {
-              const formattedDbAssets = dbAssets.map((a) => ({
+              formattedDbAssets = dbAssets.map((a) => ({
                 id: String(a.id),
                 name: a.asset_name,
                 units: Number(a.units),
@@ -1265,11 +1275,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
                 purchasedAt: a.purchased_at,
                 lastHarvest: a.last_harvest_at || a.purchased_at,
                 lastHarvestAt: a.last_harvest_at || a.purchased_at,
-                gateway: a.gateway
+                gateway: a.gateway,
+                username: dbUser.username
               }));
               setActiveAssets(formattedDbAssets);
 
-              const latestHarvestTimestamp = dbAssets.reduce((latest, a) => {
+              latestHarvestTimestamp = dbAssets.reduce((latest, a) => {
                 const t = a.last_harvest_at || a.purchased_at;
                 if (!t) return latest;
                 return (!latest || new Date(t).getTime() > new Date(latest).getTime()) ? t : latest;
@@ -1278,11 +1289,143 @@ export function FarmProvider({ children, includeToastContainer = true }) {
               if (latestHarvestTimestamp) {
                 setLastHarvest(latestHarvestTimestamp);
                 setCooldownActive(true);
+              } else {
+                setLastHarvest(null);
+                setCooldownActive(false);
               }
+            } else {
+              setActiveAssets([]);
+              setLastHarvest(null);
+              setCooldownActive(false);
             }
-          } catch (_) {}
+          } catch (_) {
+            setActiveAssets([]);
+            setLastHarvest(null);
+            setCooldownActive(false);
+          }
 
-          persistState({ user: activeSession, balance: userBal, eggVault: userVault });
+          // Fetch user's own withdrawals strictly
+          let formattedWds = [];
+          try {
+            let wdQuery = supabase.from('withdrawals').select('*');
+            if (!isAdmin) {
+              wdQuery = wdQuery.ilike('username', dbUser.username);
+            }
+            const { data: dbWds } = await wdQuery.order('date', { ascending: false });
+            if (Array.isArray(dbWds)) {
+              formattedWds = dbWds.map((w) => ({
+                id: String(w.id),
+                dbId: w.id,
+                store: w.store_name,
+                eggs: Number(w.eggs_liquidated),
+                rate: Number(w.rate),
+                amountPkr: Number(w.amount_pkr),
+                method: w.method,
+                accountTitle: w.account_title,
+                accountNumber: w.account_number,
+                bankName: w.bank_name,
+                date: w.date,
+                status: w.status || 'Pending',
+                username: w.username,
+                userId: w.user_id,
+                txHash: w.tx_hash,
+                rejectReason: w.reject_reason
+              }));
+              setWithdrawals(formattedWds);
+            } else {
+              setWithdrawals([]);
+            }
+          } catch (_) {
+            setWithdrawals([]);
+          }
+
+          // Fetch user's own transactions strictly
+          let formattedTxs = [];
+          try {
+            const { data: dbTxs } = await supabase
+              .from('transactions')
+              .select('*')
+              .ilike('username', dbUser.username)
+              .order('date', { ascending: false });
+            if (Array.isArray(dbTxs)) {
+              formattedTxs = dbTxs.map((t) => ({
+                id: String(t.id),
+                type: t.type,
+                amount: Number(t.amount),
+                unit: t.unit || 'PKR',
+                description: t.description,
+                status: t.status,
+                date: t.date,
+                username: dbUser.username
+              }));
+              setTransactions(formattedTxs);
+            } else {
+              setTransactions([]);
+            }
+          } catch (_) {
+            setTransactions([]);
+          }
+
+          // Fetch downlines
+          let mappedMembers = [];
+          try {
+            const { data: dbDownlines } = await supabase
+              .from('users')
+              .select('id, account_id, username, full_name, upliner_code, created_at')
+              .or(`upliner_code.ilike.${dbUser.username},upliner_code.ilike.${dbUser.referral_code || dbUser.username}`);
+            if (Array.isArray(dbDownlines) && dbDownlines.length > 0) {
+              const downlineUsernames = dbDownlines.map((d) => d.username);
+              let assetMap = {};
+              if (downlineUsernames.length > 0) {
+                const { data: dbDownlineAssets } = await supabase
+                  .from('farm_assets')
+                  .select('username, units, unit_cost, total_cost')
+                  .in('username', downlineUsernames);
+                if (Array.isArray(dbDownlineAssets)) {
+                  dbDownlineAssets.forEach((a) => {
+                    const uName = (a.username || '').toLowerCase();
+                    if (!assetMap[uName]) assetMap[uName] = { units: 0, totalCost: 0 };
+                    assetMap[uName].units += Number(a.units || 0);
+                    assetMap[uName].totalCost += Number(a.total_cost || (a.units * (a.unit_cost || 500)));
+                  });
+                }
+              }
+              mappedMembers = dbDownlines.map((d, idx) => {
+                const uName = (d.username || '').toLowerCase();
+                const stats = assetMap[uName] || { units: 0, totalCost: 0 };
+                return {
+                  id: String(d.id || `tm_${idx}`),
+                  username: d.username,
+                  tierLevel: 1,
+                  upliner: d.upliner_code,
+                  joinDate: (d.created_at || new Date().toISOString()).split('T')[0],
+                  assetsPurchased: stats.units,
+                  totalSpentPkr: stats.totalCost,
+                  commissionEarnedPkr: Math.round(stats.totalCost * 0.02)
+                };
+              });
+              setTeamMembers(mappedMembers);
+            } else {
+              setTeamMembers([]);
+            }
+          } catch (_) {
+            setTeamMembers([]);
+          }
+
+          setDepositRequests([]);
+
+          persistState({
+            user: activeSession,
+            balance: userBal,
+            eggVault: userVault,
+            activeAssets: formattedDbAssets,
+            withdrawals: formattedWds,
+            transactions: formattedTxs,
+            teamMembers: mappedMembers,
+            depositRequests: [],
+            lastHarvest: latestHarvestTimestamp,
+            cooldownActive: Boolean(latestHarvestTimestamp)
+          });
 
           logActivity({
             action: 'LOGIN',
@@ -1360,8 +1503,59 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         token: `jwt_session_${Date.now()}`
       };
 
+      const userBal = Number(registeredUser.balance || 0);
+      const userVault = Number(registeredUser.eggVault || 0);
+      const userCleanUName = String(registeredUser.username || '').toLowerCase();
+
       setUser(activeSession);
-      persistState({ user: activeSession });
+      setBalance(userBal);
+      setEggVault(userVault);
+
+      // Filter activeAssets for this user
+      const userAssets = (activeAssets || []).filter(
+        (a) => a.username && a.username.toLowerCase() === userCleanUName
+      );
+      setActiveAssets(userAssets);
+
+      // Filter withdrawals for this user
+      const userWds = assignedRole === 'admin'
+        ? withdrawals
+        : (withdrawals || []).filter((w) => w.username && w.username.toLowerCase() === userCleanUName);
+      setWithdrawals(userWds);
+
+      // Filter transactions for this user
+      const userTxs = assignedRole === 'admin'
+        ? transactions
+        : (transactions || []).filter((t) => !t.username || t.username.toLowerCase() === userCleanUName);
+      setTransactions(userTxs);
+
+      // Filter team members
+      const userTeam = (teamMembers || []).filter(
+        (m) => m.upliner && m.upliner.toLowerCase() === userCleanUName
+      );
+      setTeamMembers(userTeam);
+
+      const userDeps = (depositRequests || []).filter(
+        (d) => d.username && d.username.toLowerCase() === userCleanUName
+      );
+      setDepositRequests(userDeps);
+
+      const hasAssets = userAssets.length > 0;
+      setCooldownActive(hasAssets);
+      setLastHarvest(hasAssets ? (registeredUser.lastHarvest || null) : null);
+
+      persistState({
+        user: activeSession,
+        balance: userBal,
+        eggVault: userVault,
+        activeAssets: userAssets,
+        withdrawals: userWds,
+        transactions: userTxs,
+        teamMembers: userTeam,
+        depositRequests: userDeps,
+        lastHarvest: hasAssets ? (registeredUser.lastHarvest || null) : null,
+        cooldownActive: hasAssets
+      });
 
       logActivity({
         action: 'LOGIN',
@@ -1553,6 +1747,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setActiveAssets([]);
     setTransactions([]);
     setWithdrawals([]);
+    setDepositRequests([]);
+    setLastHarvest(null);
+    setCooldownActive(false);
     const freshCreds = { username: cleanUsername, email: targetEmail, password: cleanPassword };
     setCredentials(freshCreds);
 
@@ -1579,6 +1776,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       activeAssets: [],
       transactions: [],
       withdrawals: [],
+      depositRequests: [],
+      lastHarvest: null,
+      cooldownActive: false,
       users: updatedUsers
     });
 
@@ -1626,13 +1826,60 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       status: 'SUCCESS'
     });
 
-    const updatedUser = {
-      ...user,
+    const loggedOutUser = {
+      id: '',
+      username: '',
+      email: '',
+      name: '',
+      accountId: '',
+      upliner: 'N/A',
+      referralCode: '',
+      role: 'farmer',
+      status: 'Active',
       isLoggedIn: false,
       token: null
     };
-    setUser(updatedUser);
-    persistState({ user: updatedUser });
+
+    setUser(loggedOutUser);
+    setBalance(0);
+    setEggVault(0);
+    setActiveAssets([]);
+    setTransactions([]);
+    setWithdrawals([]);
+    setTeamMembers([]);
+    setDepositRequests([]);
+    setLastHarvest(null);
+    setCooldownActive(false);
+
+    persistState({
+      user: loggedOutUser,
+      balance: 0,
+      eggVault: 0,
+      activeAssets: [],
+      transactions: [],
+      withdrawals: [],
+      teamMembers: [],
+      depositRequests: [],
+      lastHarvest: null,
+      cooldownActive: false
+    });
+
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('farm_user');
+        window.localStorage.removeItem('farm_balance');
+        window.localStorage.removeItem('metaeggs_deposit_requests');
+        window.localStorage.removeItem('alrehman_remember_user');
+      }
+    } catch (_) {}
+
+    try {
+      if (typeof window !== 'undefined') {
+        window.location.hash = '';
+        window.history.pushState({}, '', '/');
+      }
+    } catch (_) {}
+
     const msg = 'You have been logged out successfully.';
     showToast('info', msg);
     return { success: true, message: msg };
@@ -1775,7 +2022,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       lastHarvestAt: nowIso,
       expiresAt: new Date(Date.now() + termDays * 24 * 60 * 60 * 1000).toISOString(),
       gateway: validGateway.name,
-      status: 'active'
+      status: 'active',
+      username: user?.username || 'mrsaqib242'
     };
 
     const newTrx = {
@@ -1786,7 +2034,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       unit: 'PKR',
       date: nowIso,
       status: 'Completed',
-      gateway: validGateway.name
+      gateway: validGateway.name,
+      username: user?.username || 'mrsaqib242'
     };
 
     const instantEggs = dailyYield; // Day-1 instant yield: 1 Hen = 1 Egg immediately
@@ -1799,7 +2048,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       amount: instantEggs,
       unit: 'Egg',
       date: nowIso,
-      status: 'Completed'
+      status: 'Completed',
+      username: user?.username || 'mrsaqib242'
     };
 
     const updatedAssets = [...activeAssets, newAsset];
@@ -2371,7 +2621,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       amount: pkrNet,
       unit: 'PKR',
       date: new Date().toISOString(),
-      status: 'Pending'
+      status: 'Pending',
+      username: user?.username || 'mrsaqib242'
     };
 
     const updatedWithdrawals = [withdrawalRecord, ...withdrawals];
@@ -2492,18 +2743,30 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
   // Farm Analytics Aggregator
   const analytics = useMemo(() => {
-    const totalUnitsBought = activeAssets.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
-    const totalBuyVolumePkr = activeAssets.reduce(
+    const isSpecialAdmin = user?.role === 'admin' || user?.username === 'admin';
+    const userAssets = isSpecialAdmin
+      ? (activeAssets || [])
+      : (activeAssets || []).filter(
+          (a) => !a.username || (user?.username && a.username.toLowerCase() === user.username.toLowerCase())
+        );
+
+    const totalUnitsBought = userAssets.reduce((sum, a) => sum + (Number(a.units) || 0), 0);
+    const totalBuyVolumePkr = userAssets.reduce(
       (sum, a) => sum + (Number(a.totalCost) || (Number(a.units) || 0) * (Number(a.unitCost) || 500)),
       0
     );
+
     // User's own withdrawals for non-admin accounts
-    const userWds = (user?.role === 'admin' || user?.username === 'admin')
+    const userWds = isSpecialAdmin
       ? (withdrawals || [])
-      : (withdrawals || []).filter((w) => w.username && user?.username && w.username.toLowerCase() === user.username.toLowerCase());
+      : (withdrawals || []).filter((w) => !w.username || (user?.username && w.username.toLowerCase() === user.username.toLowerCase()));
 
     const totalEggsSold = userWds.reduce((sum, w) => sum + (Number(w.eggs) || 0), 0);
     const totalSalesPkr = userWds.reduce((sum, w) => sum + (Number(w.amountPkr) || 0), 0);
+
+    const userTxs = isSpecialAdmin
+      ? (transactions || [])
+      : (transactions || []).filter((t) => !t.username || (user?.username && t.username.toLowerCase() === user.username.toLowerCase()));
 
     return {
       totalUnitsBought,
@@ -2512,9 +2775,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       totalSalesPkr,
       currentEggVault: eggVault,
       currentBalance: balance,
-      activeAssetsCount: activeAssets.length,
+      activeAssetsCount: userAssets.length,
       withdrawalsCount: userWds.length,
-      transactionsCount: transactions.length
+      transactionsCount: userTxs.length
     };
   }, [activeAssets, withdrawals, eggVault, balance, transactions, user]);
 
@@ -4376,7 +4639,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     }
     // Auto-open Farm Dashboard if user has an active authenticated session
     if (initial?.user?.isLoggedIn) {
-      return '/dashboard';
+      if (!hash || hash === '/' || hash === '/login' || hash === '/user/login') {
+        return '/dashboard';
+      }
+      return hash.startsWith('/') ? hash : '/' + hash;
     }
     return '/';
   };
@@ -4418,6 +4684,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         return;
       }
 
+      if (user?.isLoggedIn && (!hash || hash === '/' || hash === '/login' || hash === '/user/login')) {
+        setCurrentRoute('/dashboard');
+        return;
+      }
+
       if (hash && hash !== '/') {
         setCurrentRoute(hash.startsWith('/') ? hash : '/' + hash);
       } else {
@@ -4438,7 +4709,7 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       window.removeEventListener('hashchange', handleRouteChange);
       window.removeEventListener('popstate', handleRouteChange);
     };
-  }, []);
+  }, [user?.isLoggedIn]);
 
   const getAnalytics = useCallback(() => analytics, [analytics]);
 

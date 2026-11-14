@@ -28,6 +28,7 @@ export const WithdrawPage = SellEggPage; // Alias as per PROJECT.md and DISPATCH
 export default function App() {
   const farm = useFarm();
   const currentRoute = farm?.currentRoute || '/';
+  const user = farm?.user;
 
   // Normalize route string (strip query strings, leading hashes, anchor fragments, trailing slashes)
   let cleanRoute = (currentRoute || '/').split('?')[0];
@@ -35,6 +36,11 @@ export default function App() {
   cleanRoute = cleanRoute.split('#')[0];
   if (!cleanRoute.startsWith('/')) cleanRoute = '/' + cleanRoute;
   const normalizedRoute = cleanRoute.replace(/\/$/, '') || '/';
+
+  // If user has an active authenticated session and visits landing or login, route directly to Dashboard
+  if (user?.isLoggedIn && (normalizedRoute === '/' || normalizedRoute === '/login' || normalizedRoute === '/user/login')) {
+    return <DashboardPage />;
+  }
 
   switch (normalizedRoute) {
     case '/login':
