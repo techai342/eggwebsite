@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFarm } from '../context/FarmContext';
 import henImg from '../assets/hen.png';
 import logoImg from '../assets/logo.webp';
@@ -22,13 +22,25 @@ import '../rawafiles.css';
  * - Client-side state integration with useFarm().login()
  */
 export default function LoginPage() {
-  const { login, navigateTo, showToast } = useFarm();
-  const [username, setUsername] = useState('');
+  const { login, navigateTo, showToast, user } = useFarm();
+  const [username, setUsername] = useState(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('alrehman_remember_user') || (user?.isLoggedIn ? user?.username : '') || '';
+    }
+    return '';
+  });
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // If already authenticated, redirect straight to Dashboard
+  useEffect(() => {
+    if (user?.isLoggedIn) {
+      navigateTo('/dashboard');
+    }
+  }, [user?.isLoggedIn, navigateTo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

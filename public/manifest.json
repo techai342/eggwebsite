@@ -1,0 +1,28 @@
+{
+  "short_name": "Meta Eggs",
+  "name": "AL Rehman Meta Eggs",
+  "description": "AL Rehman Meta Eggs - VIP Digital Poultry & Egg Yield Engine",
+  "icons": [
+    {
+      "src": "/assets/dp.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/assets/dp.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/assets/dp.png",
+      "type": "image/png",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0d2c20",
+  "theme_color": "#153d2b",
+  "display": "standalone",
+  "orientation": "portrait"
+}

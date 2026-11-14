@@ -4374,6 +4374,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     if (currentPath && currentPath !== '/' && currentPath !== '/index.html') {
       return currentPath;
     }
+    // Auto-open Farm Dashboard if user has an active authenticated session
+    if (initial?.user?.isLoggedIn) {
+      return '/dashboard';
+    }
     return '/';
   };
 
@@ -4420,6 +4424,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         const currentPath = window.location.pathname;
         if (currentPath && currentPath !== '/' && currentPath !== '/index.html') {
           setCurrentRoute(currentPath);
+        } else if (user?.isLoggedIn) {
+          setCurrentRoute('/dashboard');
         } else {
           setCurrentRoute('/');
         }

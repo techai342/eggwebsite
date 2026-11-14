@@ -1,6 +1,10 @@
 import React from 'react'
+import { useFarm } from '../context/FarmContext'
 
 export default function Navbar() {
+  const farm = useFarm();
+  const user = farm?.user;
+
   return (
     <header className="site-header">
       <div className="nav-inner">
@@ -25,31 +29,48 @@ export default function Navbar() {
         </nav>
 
         <div className="nav-actions">
-          <a
-            href="#/login"
-            className="btn btn-dark"
-            onClick={(e) => {
-              e.preventDefault();
-              if (typeof window !== 'undefined') {
-                window.location.hash = '#/login';
-              }
-            }}
-          >
-            <i className="fa-solid fa-arrow-right-to-bracket"></i>
-            Login
-          </a>
-          <a
-            href="#/register"
-            className="btn btn-lime nav-register"
-            onClick={(e) => {
-              e.preventDefault();
-              if (typeof window !== 'undefined') {
-                window.location.hash = '#/register';
-              }
-            }}
-          >
-            Get Started <i className="fa-solid fa-arrow-right"></i>
-          </a>
+          {user?.isLoggedIn ? (
+            <a
+              href="#/dashboard"
+              className="btn btn-lime nav-register"
+              onClick={(e) => {
+                e.preventDefault();
+                if (typeof window !== 'undefined') {
+                  window.location.hash = '#/dashboard';
+                }
+              }}
+            >
+              <i className="fa-solid fa-gauge-high"></i> Dashboard
+            </a>
+          ) : (
+            <>
+              <a
+                href="#/login"
+                className="btn btn-dark"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (typeof window !== 'undefined') {
+                    window.location.hash = '#/login';
+                  }
+                }}
+              >
+                <i className="fa-solid fa-arrow-right-to-bracket"></i>
+                Login
+              </a>
+              <a
+                href="#/register"
+                className="btn btn-lime nav-register"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (typeof window !== 'undefined') {
+                    window.location.hash = '#/register';
+                  }
+                }}
+              >
+                Get Started <i className="fa-solid fa-arrow-right"></i>
+              </a>
+            </>
+          )}
         </div>
       </div>
     </header>
