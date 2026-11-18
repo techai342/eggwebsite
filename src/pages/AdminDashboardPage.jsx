@@ -75,6 +75,189 @@ function AdminAccessDeniedGuard({ user, onReturn, onLogin }) {
 }
 
 /**
+ * AdminChangePasswordModal: Dialog allowing Super Admin to rotate credentials
+ * directly from any cockpit screen with live Supabase database sync.
+ */
+function AdminChangePasswordModal({
+  onClose,
+  onSubmit,
+  currentPass,
+  setCurrentPass,
+  newPass,
+  setNewPass,
+  confirmPass,
+  setConfirmPass,
+  showCurrent,
+  setShowCurrent,
+  showNew,
+  setShowNew,
+  showConfirm,
+  setShowConfirm,
+  isUpdating,
+  feedback
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div className="rounded-2xl w-full max-w-md bg-gradient-to-b from-[#0a2216] via-[#0d2c20] to-[#081a10] border border-amber-400/40 p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative text-white">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-amber-400/20 pb-3 mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300">
+              <i className="fa-solid fa-key text-sm"></i>
+            </div>
+            <div>
+              <h3 className="font-manrope font-black text-sm sm:text-base text-white uppercase tracking-tight">
+                Change Admin Password
+              </h3>
+              <p className="text-[11px] text-amber-200/80">
+                Super Admin: <span className="font-bold text-white">@mrsaqib242</span> (Root Governance)
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-black/40 text-slate-300 hover:text-white hover:bg-black/60 flex items-center justify-center transition-all cursor-pointer"
+          >
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        {feedback && (
+          <div className={`p-3 rounded-xl border text-xs font-bold mb-4 flex items-center gap-2 ${
+            feedback.type === 'success'
+              ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+              : 'bg-rose-950/40 border-rose-500/50 text-rose-300'
+          }`}>
+            <i className={`fa-solid ${feedback.type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-exclamation text-rose-400'}`}></i>
+            <span>{feedback.message}</span>
+          </div>
+        )}
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          {/* Current Password */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+              Current Password
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                <i className="fa-solid fa-lock-open"></i>
+              </span>
+              <input
+                type={showCurrent ? 'text' : 'password'}
+                value={currentPass}
+                onChange={(e) => setCurrentPass(e.target.value)}
+                placeholder="Default: password123"
+                required
+                className="w-full bg-black/50 border border-amber-400/30 rounded-xl py-2 pl-9 pr-10 text-white font-mono text-xs sm:text-sm focus:outline-none focus:border-amber-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent(!showCurrent)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+                tabIndex={-1}
+              >
+                <i className={`fa-solid ${showCurrent ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+              </button>
+            </div>
+          </div>
+
+          {/* New Password */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+              New Password (Min 6 chars)
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                <i className="fa-solid fa-key"></i>
+              </span>
+              <input
+                type={showNew ? 'text' : 'password'}
+                value={newPass}
+                onChange={(e) => setNewPass(e.target.value)}
+                placeholder="Enter strong new password"
+                required
+                className="w-full bg-black/50 border border-amber-400/30 rounded-xl py-2 pl-9 pr-10 text-white font-mono text-xs sm:text-sm focus:outline-none focus:border-amber-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+                tabIndex={-1}
+              >
+                <i className={`fa-solid ${showNew ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+              Confirm New Password
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                <i className="fa-solid fa-shield"></i>
+              </span>
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPass}
+                onChange={(e) => setConfirmPass(e.target.value)}
+                placeholder="Re-enter new password"
+                required
+                className="w-full bg-black/50 border border-amber-400/30 rounded-xl py-2 pl-9 pr-10 text-white font-mono text-xs sm:text-sm focus:outline-none focus:border-amber-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+                tabIndex={-1}
+              >
+                <i className={`fa-solid ${showConfirm ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+              </button>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-black/40 border border-amber-400/20 text-[10.5px] text-slate-300 flex items-center gap-2">
+            <i className="fa-solid fa-cloud-arrow-up text-amber-400"></i>
+            <span>Instantly synchronizes to Supabase Cloud (<code className="text-amber-300">public.users</code>) and active session.</span>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-amber-400/20">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl bg-black/50 hover:bg-black/70 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-manrope font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              {isUpdating ? (
+                <>
+                  <i className="fa-solid fa-circle-notch fa-spin text-xs"></i>
+                  <span>Syncing...</span>
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-floppy-disk text-xs"></i>
+                  <span>Update Password</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/**
  * UserBalanceModal: Dialog allowing Super Admin to adjust liquid PKR,
  * egg inventory, and active hen flock with an audit note.
  */
@@ -516,7 +699,9 @@ export default function AdminDashboardPage() {
     navigateTo,
     logout,
     syncWithSupabase,
-    isLiveSyncing
+    isLiveSyncing,
+    changePassword,
+    credentials
   } = useFarm();
 
   // Route security clearance
@@ -533,6 +718,66 @@ export default function AdminDashboardPage() {
   const [rejectModalDeposit, setRejectModalDeposit] = useState(null);
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [isAttachingReceiptForId, setIsAttachingReceiptForId] = useState(null);
+
+  // Super Admin Password Rotation States
+  const [adminCurrentPass, setAdminCurrentPass] = useState('');
+  const [adminNewPass, setAdminNewPass] = useState('');
+  const [adminConfirmPass, setAdminConfirmPass] = useState('');
+  const [showAdminCurrentPass, setShowAdminCurrentPass] = useState(false);
+  const [showAdminNewPass, setShowAdminNewPass] = useState(false);
+  const [showAdminConfirmPass, setShowAdminConfirmPass] = useState(false);
+  const [showAdminPassModal, setShowAdminPassModal] = useState(false);
+  const [isUpdatingAdminPass, setIsUpdatingAdminPass] = useState(false);
+  const [adminPassFeedback, setAdminPassFeedback] = useState(null);
+
+  const handleAdminPasswordChange = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setAdminPassFeedback(null);
+
+    if (!adminCurrentPass || !adminNewPass || !adminConfirmPass) {
+      const msg = 'All three password fields are required.';
+      setAdminPassFeedback({ type: 'error', message: msg });
+      showToast?.('error', msg);
+      return;
+    }
+
+    if (adminNewPass.length < 6) {
+      const msg = 'New password must be at least 6 characters.';
+      setAdminPassFeedback({ type: 'error', message: msg });
+      showToast?.('error', msg);
+      return;
+    }
+
+    if (adminNewPass !== adminConfirmPass) {
+      const msg = 'New password and confirm password do not match.';
+      setAdminPassFeedback({ type: 'error', message: msg });
+      showToast?.('error', msg);
+      return;
+    }
+
+    setIsUpdatingAdminPass(true);
+    try {
+      const res = changePassword(adminCurrentPass, adminNewPass, adminConfirmPass);
+      if (res && res.success) {
+        const successMsg = 'Super Admin password updated successfully! Synced to Supabase Cloud DB.';
+        setAdminPassFeedback({ type: 'success', message: successMsg });
+        showToast?.('success', successMsg);
+        setAdminCurrentPass('');
+        setAdminNewPass('');
+        setAdminConfirmPass('');
+      } else {
+        const errMsg = res?.message || 'Failed to update admin password.';
+        setAdminPassFeedback({ type: 'error', message: errMsg });
+        showToast?.('error', errMsg);
+      }
+    } catch (err) {
+      const errMsg = err?.message || 'Failed to update admin password.';
+      setAdminPassFeedback({ type: 'error', message: errMsg });
+      showToast?.('error', errMsg);
+    } finally {
+      setIsUpdatingAdminPass(false);
+    }
+  };
 
   const handleAdminAttachReceipt = async (depId, file) => {
     if (!file) return;
@@ -1243,6 +1488,18 @@ export default function AdminDashboardPage() {
                 <i className="fa-solid fa-sack-dollar text-xs"></i>
                 <span>Rs. {kpis.totalLiquidatedPkr.toLocaleString()} Liquidated</span>
               </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setAdminPassFeedback(null);
+                  setShowAdminPassModal(true);
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500 hover:to-yellow-400 hover:text-[#082013] text-amber-300 border border-amber-400/40 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95"
+                title="Change Super Admin Password"
+              >
+                <i className="fa-solid fa-key text-xs"></i>
+                <span>Change Password</span>
+              </button>
             </div>
           </div>
         </div>
@@ -2713,7 +2970,8 @@ export default function AdminDashboardPage() {
             TAB 5: PLATFORM SETTINGS & ECONOMIC GOVERNANCE
            ========================================================================= */}
         {activeTab === 'SETTINGS' && (
-          <form onSubmit={handleSaveSettings} className="space-y-5">
+          <div className="space-y-6">
+            <form onSubmit={handleSaveSettings} className="space-y-5">
             {/* Header & Quick Presets Toolbar */}
             <div className="rounded-2xl p-5 bg-gradient-to-r from-[#0d2a1c] via-[#092116] to-[#04120a] border border-amber-400/30 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
@@ -3402,7 +3660,157 @@ export default function AdminDashboardPage() {
               </button>
             </div>
           </form>
-        )}
+
+          {/* Super Admin Security & Password Rotation Card */}
+          <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-r from-[#140b20] via-[#0d1624] to-[#081a14] border border-amber-400/40 shadow-xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-400/20 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300 text-lg shadow-inner">
+                  <i className="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                  <h4 className="font-manrope font-black text-sm sm:text-base text-white uppercase tracking-tight flex items-center gap-2">
+                    <span>Super Admin Security &amp; Password Rotation</span>
+                    <span className="text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full uppercase">
+                      256-Bit SSL
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Update root operator credentials. Instantly syncs to active session and live Supabase Cloud Database (<code className="text-amber-300">public.users</code>).
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+                <i className="fa-solid fa-cloud-arrow-up text-xs"></i>
+                <span>Supabase Live Sync Active</span>
+              </div>
+            </div>
+
+            {adminPassFeedback && (
+              <div className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                adminPassFeedback.type === 'success'
+                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+                  : 'bg-rose-950/40 border-rose-500/50 text-rose-300'
+              }`}>
+                <i className={`fa-solid ${adminPassFeedback.type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-exclamation text-rose-400'}`}></i>
+                <span>{adminPassFeedback.message}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAdminPasswordChange} className="space-y-4 pt-1">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Current Password */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Current Admin Password
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                      <i className="fa-solid fa-lock-open"></i>
+                    </span>
+                    <input
+                      type={showAdminCurrentPass ? 'text' : 'password'}
+                      value={adminCurrentPass}
+                      onChange={(e) => setAdminCurrentPass(e.target.value)}
+                      placeholder="Default: password123"
+                      required
+                      className="w-full bg-black/50 border border-amber-400/30 rounded-xl py-2.5 pl-9 pr-10 text-white font-mono text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminCurrentPass(!showAdminCurrentPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      tabIndex={-1}
+                    >
+                      <i className={`fa-solid ${showAdminCurrentPass ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    New Admin Password
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                      <i className="fa-solid fa-key"></i>
+                    </span>
+                    <input
+                      type={showAdminNewPass ? 'text' : 'password'}
+                      value={adminNewPass}
+                      onChange={(e) => setAdminNewPass(e.target.value)}
+                      placeholder="Min 6 characters"
+                      required
+                      className="w-full bg-black/50 border border-amber-400/30 rounded-xl py-2.5 pl-9 pr-10 text-white font-mono text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminNewPass(!showAdminNewPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      tabIndex={-1}
+                    >
+                      <i className={`fa-solid ${showAdminNewPass ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                      <i className="fa-solid fa-shield"></i>
+                    </span>
+                    <input
+                      type={showAdminConfirmPass ? 'text' : 'password'}
+                      value={adminConfirmPass}
+                      onChange={(e) => setAdminConfirmPass(e.target.value)}
+                      placeholder="Re-type new password"
+                      required
+                      className="w-full bg-black/50 border border-amber-400/30 rounded-xl py-2.5 pl-9 pr-10 text-white font-mono text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminConfirmPass(!showAdminConfirmPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      tabIndex={-1}
+                    >
+                      <i className={`fa-solid ${showAdminConfirmPass ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                  <i className="fa-solid fa-lock text-amber-400 text-xs"></i>
+                  <span>Applies to root <b className="text-white">mrsaqib242</b> &amp; <b className="text-white">admin@gmail.com</b></span>
+                </span>
+                <button
+                  type="submit"
+                  disabled={isUpdatingAdminPass}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-[#082013] font-manrope font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isUpdatingAdminPass ? (
+                    <>
+                      <i className="fa-solid fa-circle-notch fa-spin text-sm"></i>
+                      <span>Syncing to Supabase...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-shield-check text-sm"></i>
+                      <span>Update Admin Password</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
         {/* =========================================================================
             TAB 6: LIVE SUPPORT INBOX & CHAT COCKPIT
@@ -4023,6 +4431,31 @@ export default function AdminDashboardPage() {
           deposit={rejectModalDeposit}
           onClose={() => setRejectModalDeposit(null)}
           onConfirm={(id, reason) => handleRejectDepositConfirm(id, reason)}
+        />
+      )}
+
+      {/* Super Admin Change Password Dialog Modal */}
+      {showAdminPassModal && (
+        <AdminChangePasswordModal
+          onClose={() => {
+            setShowAdminPassModal(false);
+            setAdminPassFeedback(null);
+          }}
+          onSubmit={handleAdminPasswordChange}
+          currentPass={adminCurrentPass}
+          setCurrentPass={setAdminCurrentPass}
+          newPass={adminNewPass}
+          setNewPass={setAdminNewPass}
+          confirmPass={adminConfirmPass}
+          setConfirmPass={setAdminConfirmPass}
+          showCurrent={showAdminCurrentPass}
+          setShowCurrent={setShowAdminCurrentPass}
+          showNew={showAdminNewPass}
+          setShowNew={setShowAdminNewPass}
+          showConfirm={showAdminConfirmPass}
+          setShowConfirm={setShowAdminConfirmPass}
+          isUpdating={isUpdatingAdminPass}
+          feedback={adminPassFeedback}
         />
       )}
     </div>

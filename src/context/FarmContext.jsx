@@ -1227,7 +1227,9 @@ export function FarmProvider({ children, includeToastContainer = true }) {
           return { success: false, message: msg };
         }
 
-        const dbPassMatches = password === dbUser.password_hash || password === credentials.password || password === 'password123';
+        const dbPassMatches = dbUser.password_hash
+          ? (password === dbUser.password_hash || password === credentials.password)
+          : (password === credentials.password || password === 'password123');
         if (dbPassMatches) {
           const isAdmin =
             dbUser.role === 'admin' ||
@@ -1912,7 +1914,12 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       return { success: false, message: msg };
     }
 
-    if (currentPassword !== credentials.password) {
+    const currentMatches =
+      currentPassword === credentials.password ||
+      (user?.password && currentPassword === user.password) ||
+      (currentPassword === 'password123' && (!credentials.password || credentials.password === 'password123'));
+
+    if (!currentMatches) {
       const msg = 'Current password does not match existing records.';
       showToast('error', msg);
       return { success: false, message: msg };
@@ -1939,7 +1946,8 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         (user?.id && u.id === user.id) ||
         (user?.username && String(u.username).toLowerCase() === String(user.username).toLowerCase()) ||
         (user?.email && String(u.email).toLowerCase() === String(user.email).toLowerCase()) ||
-        String(u.username).toLowerCase() === String(credentials.username).toLowerCase()
+        String(u.username).toLowerCase() === String(credentials.username).toLowerCase() ||
+        ((user?.role === 'admin' || user?.email === 'admin@gmail.com') && (u.role === 'admin' || u.email === 'admin@gmail.com' || u.username === 'mrsaqib242'))
       ) {
         return { ...u, password: newPassword };
       }
@@ -1950,6 +1958,59 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setUser(updatedUser);
     setUsers(updatedUsers);
     persistState({ credentials: updatedCreds, user: updatedUser, users: updatedUsers });
+
+    // Sync to Supabase Cloud Database!
+    if (supabase) {
+      try {
+        const isAdmin =
+          user?.role === 'admin' ||
+          user?.username === 'admin' ||
+          user?.email === 'admin@gmail.com' ||
+          user?.username === 'mrsaqib242';
+
+        if (isAdmin) {
+          // Update all admin rows in Supabase
+          supabase
+            .from('users')
+            .update({
+              password_hash: newPassword,
+              updated_at: new Date().toISOString()
+            })
+            .or('id.eq.1,username.ilike.mrsaqib242,email.ilike.admin@gmail.com,role.eq.admin')
+            .then(({ error }) => {
+              if (error) {
+                console.info('Supabase admin password sync note:', error.message);
+              } else {
+                console.info('Super Admin password successfully synced to Supabase Cloud DB!');
+              }
+            });
+        } else {
+          // Update farmer row
+          let query = supabase.from('users').update({
+            password_hash: newPassword,
+            updated_at: new Date().toISOString()
+          });
+
+          if (user?.id && !String(user.id).startsWith('usr_')) {
+            query = query.eq('id', user.id);
+          } else if (user?.email) {
+            query = query.ilike('email', user.email);
+          } else if (user?.username) {
+            query = query.ilike('username', user.username);
+          }
+
+          query.then(({ error }) => {
+            if (error) {
+              console.info('Supabase user password sync note:', error.message);
+            } else {
+              console.info('User password successfully synced to Supabase Cloud DB!');
+            }
+          });
+        }
+      } catch (err) {
+        console.info('Supabase sync catch:', err);
+      }
+    }
 
     logActivity({
       action: 'CHANGE_PASSWORD',
