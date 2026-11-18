@@ -209,16 +209,16 @@ const DEFAULT_INITIAL_STATE = {
   user: {
     id: 'usr_saqib',
     username: 'mrsaqib242',
-    email: 'admin@gmail.com',
+    email: 'saqib@farm.pk',
     name: 'Farmer Saqib',
     accountId: '#1197',
     upliner: 'N/A',
     referralCode: 'mrsaqib242',
     role: 'farmer',
     status: 'Active',
-    isLoggedIn: true,
+    isLoggedIn: false,
     password: 'password123',
-    token: 'jwt_seed_session_1197'
+    token: null
   },
   credentials: {
     username: 'mrsaqib242',
@@ -260,6 +260,12 @@ function loadInitialState() {
         }
         if (!loadedUser.status) {
           loadedUser.status = 'Active';
+        }
+
+        // Auto-purge any stale dummy seed sessions
+        if (loadedUser.token === 'jwt_seed_session_1197') {
+          loadedUser.isLoggedIn = false;
+          loadedUser.token = null;
         }
 
         const loadedSettings = parsed.platformSettings
