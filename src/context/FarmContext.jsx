@@ -1205,10 +1205,11 @@ export function FarmProvider({ children, includeToastContainer = true }) {
 
     // 0. Live check against Supabase users table
     try {
+      const lookupTerm = trimmedInput === 'admin' ? 'admin@gmail.com' : trimmedInput;
       const { data: dbUser } = await supabase
         .from('users')
         .select('*')
-        .or(`email.ilike.${trimmedInput},username.ilike.${trimmedInput}`)
+        .or(`email.ilike.${lookupTerm},username.ilike.${trimmedInput}`)
         .maybeSingle();
 
       if (dbUser) {
