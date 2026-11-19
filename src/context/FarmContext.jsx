@@ -4686,8 +4686,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
   const getInitialRoute = () => {
     if (typeof window === 'undefined') return '/';
     const ref = extractReferralParam();
-    const hash = window.location.hash.replace(/^#\/?/, '/');
-    const path = window.location.pathname;
+    const rawHash = (window.location.hash || '').replace(/^#\/?/, '/');
+    const hash = (rawHash && rawHash !== '/') ? (rawHash.startsWith('/') ? rawHash : '/' + rawHash) : '';
+    const rawPath = window.location.pathname || '';
+    const path = (rawPath && rawPath !== '/' && rawPath !== '/index.html') ? rawPath : '';
 
     // If referral link opened anywhere (hash or search), immediately route to Register page
     if (ref && !hash.startsWith('/register') && !path.startsWith('/register')) {
@@ -4698,21 +4700,18 @@ export function FarmProvider({ children, includeToastContainer = true }) {
       return target;
     }
 
-    if (hash && hash !== '/') {
-      return hash.startsWith('/') ? hash : '/' + hash;
-    }
-    const currentPath = window.location.pathname;
-    if (currentPath && currentPath !== '/' && currentPath !== '/index.html') {
-      return currentPath;
-    }
-    // Auto-open Farm Dashboard if user has an active authenticated session
-    if (initial?.user?.isLoggedIn) {
-      if (!hash || hash === '/' || hash === '/login' || hash === '/user/login') {
+    // Effective route: explicit hash has top priority, then clean pathname
+    const effectiveRoute = hash || path;
+
+    // Auto-open Farm Dashboard if user has an active authenticated session and visits root/login
+    if (!effectiveRoute || effectiveRoute === '/' || effectiveRoute === '/login' || effectiveRoute === '/user/login') {
+      if (initial?.user?.isLoggedIn) {
         return '/dashboard';
       }
-      return hash.startsWith('/') ? hash : '/' + hash;
+      return effectiveRoute || '/';
     }
-    return '/';
+
+    return effectiveRoute;
   };
 
   const [currentRoute, setCurrentRoute] = useState(getInitialRoute);
@@ -4724,13 +4723,17 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     setCurrentRoute(cleanPath);
     if (typeof window !== 'undefined') {
       if (cleanPath === '/') {
-        window.history.pushState({}, '', '/');
         if (window.location.hash) {
           window.location.hash = '';
         }
+        try {
+          window.history.pushState({}, '', '/');
+        } catch (_) {}
       } else {
-        window.location.hash = '#' + cleanPath;
-        window.history.pushState({}, '', cleanPath);
+        const targetHash = '#' + cleanPath;
+        if (window.location.hash !== targetHash) {
+          window.location.hash = targetHash;
+        }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -4740,8 +4743,10 @@ export function FarmProvider({ children, includeToastContainer = true }) {
     if (typeof window === 'undefined') return;
     const handleRouteChange = () => {
       const ref = extractReferralParam();
-      const hash = window.location.hash.replace(/^#\/?/, '/');
-      const path = window.location.pathname;
+      const rawHash = (window.location.hash || '').replace(/^#\/?/, '/');
+      const hash = (rawHash && rawHash !== '/') ? (rawHash.startsWith('/') ? rawHash : '/' + rawHash) : '';
+      const rawPath = window.location.pathname || '';
+      const path = (rawPath && rawPath !== '/' && rawPath !== '/index.html') ? rawPath : '';
 
       if (ref && !hash.startsWith('/register') && !path.startsWith('/register')) {
         const target = `/register?ref=${encodeURIComponent(ref)}`;
@@ -4752,23 +4757,21 @@ export function FarmProvider({ children, includeToastContainer = true }) {
         return;
       }
 
-      if (user?.isLoggedIn && (!hash || hash === '/' || hash === '/login' || hash === '/user/login')) {
-        setCurrentRoute('/dashboard');
+      // Priority: explicit hash route, then pathname route
+      const effectiveRoute = hash || path;
+
+      // Only redirect to dashboard if the effective route is genuinely empty or root / or login
+      if (!effectiveRoute || effectiveRoute === '/' || effectiveRoute === '/login' || effectiveRoute === '/user/login') {
+        if (user?.isLoggedIn) {
+          setCurrentRoute('/dashboard');
+        } else {
+          setCurrentRoute(effectiveRoute || '/');
+        }
         return;
       }
 
-      if (hash && hash !== '/') {
-        setCurrentRoute(hash.startsWith('/') ? hash : '/' + hash);
-      } else {
-        const currentPath = window.location.pathname;
-        if (currentPath && currentPath !== '/' && currentPath !== '/index.html') {
-          setCurrentRoute(currentPath);
-        } else if (user?.isLoggedIn) {
-          setCurrentRoute('/dashboard');
-        } else {
-          setCurrentRoute('/');
-        }
-      }
+      // Any explicit route (/sell-egg, /my-farm, /buy-asset, /admin, /team, /change-password, etc.)
+      setCurrentRoute(effectiveRoute);
     };
 
     window.addEventListener('hashchange', handleRouteChange);

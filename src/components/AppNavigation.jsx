@@ -248,9 +248,9 @@ export function AppHeader({
           <nav className="flex items-center gap-1 lg:gap-2">
             {[
               { label: 'Home', path: '/dashboard', icon: 'fa-house-chimney', active: currentRoute === '/dashboard' || currentRoute === '/' || currentRoute === '/home' },
-              { label: 'My Farm', path: '/my-farm', icon: 'fa-egg', active: currentRoute === '/my-farm' || currentRoute === '/farm' },
-              { label: 'Buy Hens', path: '/buy-asset', icon: 'fa-cart-shopping', active: currentRoute === '/buy-asset' || currentRoute === '/deposit' || currentRoute === '/buy' },
-              { label: 'Sell Eggs', path: '/sell-egg', icon: 'fa-hand-holding-dollar', active: currentRoute === '/sell-egg' || currentRoute === '/withdraw' || currentRoute === '/sale' },
+              { label: 'My Farm', path: '/my-farm', icon: 'fa-egg', active: currentRoute === '/my-farm' || currentRoute === '/farm' || currentRoute === '/myfarm' || currentRoute === '/my_farm' },
+              { label: 'Buy Hens', path: '/buy-asset', icon: 'fa-cart-shopping', active: currentRoute === '/buy-asset' || currentRoute === '/deposit' || currentRoute === '/buy' || currentRoute === '/buy-hens' },
+              { label: 'Sell Eggs', path: '/sell-egg', icon: 'fa-hand-holding-dollar', active: currentRoute === '/sell-egg' || currentRoute === '/sell' || currentRoute === '/sell-eggs' || currentRoute === '/withdraw' || currentRoute === '/sale' },
               { label: 'My Team', path: '/team', icon: 'fa-users', active: currentRoute === '/team' },
               { label: 'Security', path: '/change-password', icon: 'fa-shield-halved', active: currentRoute === '/change-password' || currentRoute === '/profile' }
             ].map((link) => (
@@ -667,9 +667,9 @@ export function AppBottomNav({ currentRoute = '/dashboard', onNavigate }) {
   };
 
   const isHomeActive = currentRoute === '/dashboard' || currentRoute === '/home' || currentRoute === '/user/dashboard' || currentRoute === '/';
-  const isFarmActive = currentRoute === '/my-farm' || currentRoute === '/farm' || currentRoute === '/user/farm' || currentRoute === '/dashboard#farm';
-  const isBuyActive = currentRoute === '/buy-asset' || currentRoute === '/deposit' || currentRoute === '/buy' || currentRoute === '/user/deposit';
-  const isSaleActive = currentRoute === '/sell-egg' || currentRoute === '/withdraw' || currentRoute === '/sale' || currentRoute === '/user/withdraw';
+  const isFarmActive = currentRoute === '/my-farm' || currentRoute === '/farm' || currentRoute === '/myfarm' || currentRoute === '/my_farm' || currentRoute === '/user/farm' || currentRoute === '/dashboard#farm';
+  const isBuyActive = currentRoute === '/buy-asset' || currentRoute === '/buy-hens' || currentRoute === '/deposit' || currentRoute === '/buy' || currentRoute === '/user/deposit';
+  const isSaleActive = currentRoute === '/sell-egg' || currentRoute === '/sell' || currentRoute === '/sell-eggs' || currentRoute === '/withdraw' || currentRoute === '/sale' || currentRoute === '/user/withdraw';
   const isProfileActive = currentRoute === '/change-password' || currentRoute === '/profile' || currentRoute === '/user/change-password';
 
   return (

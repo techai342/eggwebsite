@@ -751,19 +751,27 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Buy / Sell Primary Action Pills */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
             <button
               type="button"
               onClick={() => navigateTo('/buy-asset')}
-              className="bg-[#c9f36a] hover:bg-[#b8e858] active:scale-95 text-[#0d2c20] font-manrope font-black text-[10px] tracking-wider uppercase py-2 px-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
+              className="bg-[#c9f36a] hover:bg-[#b8e858] active:scale-95 text-[#0d2c20] font-manrope font-black text-[10px] tracking-wider uppercase py-2 px-1 rounded-lg flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
             >
               <i className="fa-solid fa-plus-circle text-[10.5px]"></i>
               <span>BUY Hens</span>
             </button>
             <button
               type="button"
+              onClick={() => navigateTo('/my-farm')}
+              className="bg-emerald-600/70 hover:bg-emerald-600/90 active:scale-95 text-white font-manrope font-black text-[10px] tracking-wider uppercase py-2 px-1 rounded-lg flex items-center justify-center gap-1 border border-emerald-400/30 shadow-md transition-all cursor-pointer"
+            >
+              <i className="fa-solid fa-egg text-[10.5px] text-[#c9f36a]"></i>
+              <span>MY Farm</span>
+            </button>
+            <button
+              type="button"
               onClick={() => navigateTo('/sell-egg')}
-              className="bg-white/15 hover:bg-white/25 active:scale-95 text-white font-manrope font-black text-[10px] tracking-wider uppercase py-2 px-2.5 rounded-lg flex items-center justify-center gap-1.5 border border-white/20 shadow-md transition-all cursor-pointer"
+              className="bg-white/15 hover:bg-white/25 active:scale-95 text-white font-manrope font-black text-[10px] tracking-wider uppercase py-2 px-1 rounded-lg flex items-center justify-center gap-1 border border-white/20 shadow-md transition-all cursor-pointer"
             >
               <i className="fa-solid fa-hand-holding-dollar text-[10.5px] text-[#c9f36a]"></i>
               <span>SELL Eggs</span>
@@ -1092,7 +1100,11 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-2 gap-2.5 mb-2.5">
             {/* Total Buy Units */}
-            <div className="bg-gradient-to-b from-white to-[#fbfdf9] border border-[#28734a]/20 hover:border-[#16a34a]/60 rounded-[26px] p-3.5 flex flex-col justify-between shadow-[0_4px_16px_rgba(21,61,43,0.06)] relative overflow-hidden transition-all duration-300 group">
+            <div
+              onClick={() => navigateTo('/my-farm')}
+              title="Open My Farm"
+              className="bg-gradient-to-b from-white to-[#fbfdf9] border border-[#28734a]/20 hover:border-[#16a34a]/60 rounded-[26px] p-3.5 flex flex-col justify-between shadow-[0_4px_16px_rgba(21,61,43,0.06)] relative overflow-hidden transition-all duration-300 group cursor-pointer active:scale-98"
+            >
               <div className="flex items-start justify-between gap-1 mb-2.5">
                 <span className="text-[9.5px] font-black text-[#153d2b] uppercase tracking-wide leading-tight pt-0.5">
                   Total Hens Bought
@@ -1121,7 +1133,11 @@ export default function DashboardPage() {
             </div>
 
             {/* Total Egg Sale */}
-            <div className="bg-gradient-to-b from-white to-[#fffcf7] border border-[#28734a]/20 hover:border-amber-400/60 rounded-[26px] p-3.5 flex flex-col justify-between shadow-[0_4px_16px_rgba(21,61,43,0.06)] relative overflow-hidden transition-all duration-300 group">
+            <div
+              onClick={() => navigateTo('/sell-egg')}
+              title="Sell Eggs (P2P Liquidation)"
+              className="bg-gradient-to-b from-white to-[#fffcf7] border border-[#28734a]/20 hover:border-amber-400/60 rounded-[26px] p-3.5 flex flex-col justify-between shadow-[0_4px_16px_rgba(21,61,43,0.06)] relative overflow-hidden transition-all duration-300 group cursor-pointer active:scale-98"
+            >
               <div className="flex items-start justify-between gap-1 mb-2.5">
                 <span className="text-[9.5px] font-black text-[#153d2b] uppercase tracking-wide leading-tight pt-0.5">
                   Total Egg Sale

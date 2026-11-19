@@ -58,19 +58,30 @@ export default function App() {
 
     case '/my-farm':
     case '/farm':
+    case '/myfarm':
+    case '/my_farm':
     case '/user/farm':
+    case '/user/my-farm':
       return <MyFarmPage />;
 
     case '/buy-asset':
+    case '/buy-hens':
+    case '/buy-hen':
     case '/deposit':
     case '/buy':
     case '/user/deposit':
+    case '/user/buy':
       return <BuyAssetPage />;
 
     case '/sell-egg':
+    case '/sell-eggs':
+    case '/sell':
     case '/withdraw':
     case '/sale':
     case '/user/withdraw':
+    case '/user/sale':
+    case '/user/sell':
+    case '/user/sell-egg':
       return <SellEggPage />;
 
     case '/change-password':
