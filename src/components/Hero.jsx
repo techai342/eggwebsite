@@ -30,9 +30,7 @@ export default function Hero() {
           </h1>
 
           <p className="hero-description">
-            Discover our digital farm experience, explore available
-            poultry products, and learn about hens, egg production
-            and modern farming.
+            Discover AL Rehman Meta Eggs — Pakistan's premier digital poultry farm &amp; P2P egg yield agribusiness. Adopt high-yield hen flocks, harvest daily eggs with 24h yields, and liquidate instantly via Easypisa, JazzCash &amp; Bank Transfer.
           </p>
 
           <div className="hero-buttons">
